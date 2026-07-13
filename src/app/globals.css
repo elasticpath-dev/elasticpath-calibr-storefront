@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Brand design tokens — overridden at runtime from NEXT_PUBLIC_BRAND_* env vars */
+    --color-brand-primary: #000000;
+    --color-brand-secondary: #144e31;
+    --color-brand-accent: #56dc9b;
+    --color-brand-muted: #666666;
+
+    /* Ink (neutral) scale — overridden at runtime from NEXT_PUBLIC_COLOR_INK_* env vars */
+    --color-ink-900: #0e1521;
+    --color-ink-800: #232c3a;
+    --color-ink-700: #3d4654;
+    --color-ink-600: #5c6675;
+    --color-ink-400: #8c95a3;
+    --color-ink-300: #c2c8d0;
+    --color-ink-200: #dde1e6;
+    --color-ink-100: #eef0f2;
+    --color-ink-50:  #f7f8f9;
+
+    /* Success scale — overridden at runtime from NEXT_PUBLIC_COLOR_SUCCESS env var */
+    --color-success-600: #18804c;
+    --color-success-500: #21a765;
+    --color-success-400: #2bcc7e;
+    --color-success-300: #86efac;
+    --color-success-200: #a6ebca;
+    --color-success-100: #d6f8e5;
+    --color-success-50:  #effcf6;
+
+    /* Error scale — overridden at runtime from NEXT_PUBLIC_COLOR_ERROR env var */
+    --color-error-700: #a8341f;
+    --color-error-600: #c2402b;
+    --color-error-100: #fff0ee;
+
+    /* Warning scale — overridden at runtime from NEXT_PUBLIC_COLOR_WARNING env var */
+    --color-warning-600: #b26a00;
+    --color-warning-300: #ffb852;
+    --color-warning-100: #ffe5a0;
+    --color-warning-50:  #fff4e0;
+
+    /* Typography — --font-inter comes from next/font/google in app/layout.tsx */
+    --font-sans: var(--font-inter), system-ui, sans-serif;
+  }
+
+  * {
+    @apply border-gray-200;
+  }
+
+  body {
+    @apply bg-white text-gray-900 font-sans antialiased;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+}
+
+@layer components {
+  .container-px {
+    @apply px-4 sm:px-6 lg:px-8;
+  }
+}
