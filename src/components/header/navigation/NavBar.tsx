@@ -7,13 +7,14 @@ import { useState, useRef, useCallback } from "react";
 import type { NavItem } from "./types";
 import { NAV_ITEMS } from "./nav-items";
 import { useNavigation } from "@/context/NavigationContext";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type NavBarProps = {
   lang: string;
 };
 
 export function NavBar({ lang }: NavBarProps) {
-  const { navItems: dynamicNavItems } = useNavigation();
+  const { navItems: dynamicNavItems, isLoading } = useNavigation();
   const navItems: NavItem[] =
     dynamicNavItems.length > 0 ? dynamicNavItems : NAV_ITEMS;
   const pathname = usePathname();
@@ -35,6 +36,20 @@ export function NavBar({ lang }: NavBarProps) {
   const cancelClose = useCallback(() => {
     if (closeTimer.current) clearTimeout(closeTimer.current);
   }, []);
+
+  if (isLoading) {
+    return (
+      <nav aria-label="Main navigation" className="hidden lg:block">
+        <ul className="flex items-center gap-2 px-3.5 py-2">
+          {[72, 96, 84, 64, 88].map((width, i) => (
+            <li key={i}>
+              <Skeleton height={16} width={width} />
+            </li>
+          ))}
+        </ul>
+      </nav>
+    );
+  }
 
   return (
     <nav aria-label="Main navigation" className="hidden lg:block">

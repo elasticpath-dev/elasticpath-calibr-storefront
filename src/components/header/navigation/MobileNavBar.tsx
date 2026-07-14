@@ -9,6 +9,7 @@ import { locales, localeNames, type Locale } from "@/lib/i18n/config";
 import type { NavItem } from "./types";
 import { NAV_ITEMS } from "./nav-items";
 import { useNavigation } from "@/context/NavigationContext";
+import { Skeleton } from "@/components/ui/Skeleton";
 
 type MobileNavBarProps = {
   lang: string;
@@ -19,7 +20,7 @@ type DrillState =
   | { level: "mega"; item: NavItem };
 
 export function MobileNavBar({ lang }: MobileNavBarProps) {
-  const { navItems: dynamicNavItems } = useNavigation();
+  const { navItems: dynamicNavItems, isLoading } = useNavigation();
   const navItems: NavItem[] =
     dynamicNavItems.length > 0 ? dynamicNavItems : NAV_ITEMS;
   const [isOpen, setIsOpen] = useState(false);
@@ -91,6 +92,7 @@ export function MobileNavBar({ lang }: MobileNavBarProps) {
             lang={lang}
             pathname={pathname}
             navItems={navItems}
+            isLoading={isLoading}
             onDrill={(item) => setDrill({ level: "mega", item })}
             onClose={close}
           />
@@ -151,17 +153,33 @@ function TopPanel({
   lang,
   pathname,
   navItems,
+  isLoading,
   onDrill,
   onClose,
 }: {
   lang: string;
   pathname: string;
   navItems: NavItem[];
+  isLoading: boolean;
   onDrill: (item: NavItem) => void;
   onClose: () => void;
 }) {
   const isActive = (href: string) =>
     pathname === `/${lang}${href}` || pathname.startsWith(`/${lang}${href}/`);
+
+  if (isLoading) {
+    return (
+      <nav className="flex-1 overflow-y-auto py-2">
+        <ul>
+          {[1, 2, 3].map((i) => (
+            <li key={i} className="px-5 py-3.5">
+              <Skeleton height={16} width={120} />
+            </li>
+          ))}
+        </ul>
+      </nav>
+    );
+  }
 
   return (
     <nav className="flex-1 overflow-y-auto py-2">
