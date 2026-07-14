@@ -7,7 +7,6 @@ import { Menu, X, ChevronDown, ChevronLeft, Globe } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { locales, localeNames, type Locale } from "@/lib/i18n/config";
 import type { NavItem } from "./types";
-import { NAV_ITEMS } from "./nav-items";
 import { useNavigation } from "@/context/NavigationContext";
 import { Skeleton } from "@/components/ui/Skeleton";
 
@@ -20,9 +19,7 @@ type DrillState =
   | { level: "mega"; item: NavItem };
 
 export function MobileNavBar({ lang }: MobileNavBarProps) {
-  const { navItems: dynamicNavItems, isLoading } = useNavigation();
-  const navItems: NavItem[] =
-    dynamicNavItems.length > 0 ? dynamicNavItems : NAV_ITEMS;
+  const { navItems, isLoading, error } = useNavigation();
   const [isOpen, setIsOpen] = useState(false);
   const [drill, setDrill] = useState<DrillState>({ level: "top" });
   const [mounted, setMounted] = useState(false);
@@ -93,6 +90,7 @@ export function MobileNavBar({ lang }: MobileNavBarProps) {
             pathname={pathname}
             navItems={navItems}
             isLoading={isLoading}
+            error={error}
             onDrill={(item) => setDrill({ level: "mega", item })}
             onClose={close}
           />
@@ -154,6 +152,7 @@ function TopPanel({
   pathname,
   navItems,
   isLoading,
+  error,
   onDrill,
   onClose,
 }: {
@@ -161,6 +160,7 @@ function TopPanel({
   pathname: string;
   navItems: NavItem[];
   isLoading: boolean;
+  error: string | null;
   onDrill: (item: NavItem) => void;
   onClose: () => void;
 }) {
@@ -177,6 +177,14 @@ function TopPanel({
             </li>
           ))}
         </ul>
+      </nav>
+    );
+  }
+
+  if (error) {
+    return (
+      <nav className="flex-1 overflow-y-auto py-2">
+        <p className="px-5 py-3.5 text-sm text-red-600">{error}</p>
       </nav>
     );
   }

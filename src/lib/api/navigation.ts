@@ -36,6 +36,11 @@ async function fetchAllCatalogNodes(
       client,
       query: { "page[limit]": BigInt(limit), "page[offset]": BigInt(offset) },
     });
+    if (res.error) {
+      const detail =
+        (res.error as any)?.errors?.[0]?.detail ?? JSON.stringify(res.error);
+      throw new Error(detail);
+    }
     const batch = res.data?.data ?? [];
     all.push(...batch);
     const total = Number(res.data?.meta?.results?.total ?? all.length);

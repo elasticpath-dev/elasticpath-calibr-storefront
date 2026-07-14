@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import type { NavItem } from "./types";
-import { NAV_ITEMS } from "./nav-items";
 import { useNavigation } from "@/context/NavigationContext";
 import { Skeleton } from "@/components/ui/Skeleton";
 
@@ -14,9 +13,7 @@ type NavBarProps = {
 };
 
 export function NavBar({ lang }: NavBarProps) {
-  const { navItems: dynamicNavItems, isLoading } = useNavigation();
-  const navItems: NavItem[] =
-    dynamicNavItems.length > 0 ? dynamicNavItems : NAV_ITEMS;
+  const { navItems, isLoading, error } = useNavigation();
   const pathname = usePathname();
   const [openKey, setOpenKey] = useState<string | null>(null);
   const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -47,6 +44,14 @@ export function NavBar({ lang }: NavBarProps) {
             </li>
           ))}
         </ul>
+      </nav>
+    );
+  }
+
+  if (error) {
+    return (
+      <nav aria-label="Main navigation" className="hidden lg:block">
+        <p className="px-3.5 py-2 text-sm text-red-600">{error}</p>
       </nav>
     );
   }

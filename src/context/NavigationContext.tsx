@@ -13,6 +13,7 @@ import { useAuth } from "@/context/AuthContext";
 type NavigationContextValue = {
   navItems: NavItem[];
   isLoading: boolean;
+  error: string | null;
 };
 
 const NavigationContext = createContext<NavigationContextValue | null>(null);
@@ -21,6 +22,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, credentials, isLoading: authLoading } = useAuth();
   const [navItems, setNavItems] = useState<NavItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Hierarchies are resolved "by context" and can differ per account (B2B
   // catalog rules), so the nav tree is fetched once per session/account
@@ -30,12 +32,24 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     if (authLoading) return; // wait for auth hydration so we don't fetch twice on load
     let cancelled = false;
     setIsLoading(true);
+    setError(null);
     fetch("/api/navigation")
-      .then((res) => (res.ok ? (res.json() as Promise<NavItem[]>) : null))
-      .then((data) => {
-        if (!cancelled && data) setNavItems(data);
+      .then(async (res) => {
+        const json = await res.json().catch(() => null);
+        if (!res.ok) {
+          throw new Error(json?.error ?? "Failed to load navigation");
+        }
+        return json?.data as NavItem[];
       })
-      .catch(() => {})
+      .then((data) => {
+        if (!cancelled) setNavItems(data ?? []);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setNavItems([]);
+          setError(err instanceof Error ? err.message : "Failed to load navigation");
+        }
+      })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
       });
@@ -45,7 +59,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   }, [authLoading, isAuthenticated, credentials?.selected]);
 
   return (
-    <NavigationContext.Provider value={{ navItems, isLoading }}>
+    <NavigationContext.Provider value={{ navItems, isLoading, error }}>
       {children}
     </NavigationContext.Provider>
   );
