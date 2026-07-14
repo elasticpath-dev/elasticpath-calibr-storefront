@@ -15,7 +15,6 @@ type Props = {
   initialOriginalPrice?: string;
   variations?: ProductVariation[];
   variationMatrix?: Record<string, unknown>;
-  childSlugs?: Record<string, string>;
   selectedOptionIds?: string[];
   parentId?: string;
   navigateOnSelect?: boolean;
@@ -34,7 +33,6 @@ export function ProductActions({
   initialOriginalPrice,
   variations,
   variationMatrix,
-  childSlugs,
   selectedOptionIds,
   parentId,
   navigateOnSelect,
@@ -64,7 +62,6 @@ export function ProductActions({
       lang={lang}
       variations={variations}
       variationMatrix={variationMatrix}
-      childSlugs={childSlugs}
       selectedOptionIds={selectedOptionIds}
       parentId={parentId}
       navigateOnSelect={navigateOnSelect}

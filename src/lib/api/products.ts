@@ -102,7 +102,6 @@ export type ProductDetailData = {
   additionalImages?: string[];
   variations?: ProductVariation[];
   variationMatrix?: Record<string, unknown>;
-  childSlugs?: Record<string, string>;
   selectedOptionIds?: string[];
   productType?: string;
   parentId?: string;
@@ -153,19 +152,6 @@ export async function parseExtensions(
     .filter((g): g is ProductExtensionGroup => g !== null);
 }
 
-function extractChildIds(matrix: Record<string, unknown>): string[] {
-  const ids: string[] = [];
-  function traverse(node: unknown) {
-    if (typeof node === "string") {
-      ids.push(node);
-    } else if (node && typeof node === "object") {
-      Object.values(node as Record<string, unknown>).forEach(traverse);
-    }
-  }
-  traverse(matrix);
-  return [...new Set(ids)];
-}
-
 export type MatrixChildInfo = {
   id: string;
   variationOptions: Array<{ variationName: string; optionName: string }>;
@@ -210,31 +196,6 @@ export function deriveMatrixChildren(
   }
   traverse(variationMatrix, []);
   return children;
-}
-
-async function buildChildSlugs(
-  client: Awaited<ReturnType<typeof createElasticPathClient>>,
-  matrix: Record<string, unknown>,
-): Promise<Record<string, string>> {
-  const childIds = extractChildIds(matrix);
-  if (!childIds.length) return {};
-  const responses = await Promise.all(
-    childIds.map((id) =>
-      getByContextProduct({
-        client,
-        path: { product_id: id },
-        query: {},
-      }).catch(() => null),
-    ),
-  );
-  const slugMap: Record<string, string> = {};
-  for (const r of responses) {
-    const p = r?.data?.data;
-    if (p?.id && p.attributes?.slug) {
-      slugMap[p.id] = p.attributes.slug;
-    }
-  }
-  return slugMap;
 }
 
 function formatProduct(
@@ -539,7 +500,7 @@ export async function getProductBySlug(
   );
 
   if (formatted.productType === "child") {
-    // Fetch parent product to get the full variation list and child slug map
+    // Fetch parent product to get the full variation list
     const parentId =
       ((product.attributes as Record<string, unknown>)?.base_product_id as
         | string
@@ -564,10 +525,6 @@ export async function getProductBySlug(
           formatted.variations = parentFormatted.variations;
         if (parentFormatted.variationMatrix) {
           formatted.variationMatrix = parentFormatted.variationMatrix;
-          formatted.childSlugs = await buildChildSlugs(
-            client,
-            parentFormatted.variationMatrix,
-          );
         }
         if (!formatted.customInputs && parentFormatted.customInputs) {
           formatted.customInputs = parentFormatted.customInputs;
@@ -577,15 +534,6 @@ export async function getProductBySlug(
         }
       }
     }
-  } else if (
-    formatted.variationMatrix &&
-    Object.keys(formatted.variationMatrix).length > 0
-  ) {
-    // Parent product — fetch child slugs for navigation
-    formatted.childSlugs = await buildChildSlugs(
-      client,
-      formatted.variationMatrix,
-    );
   }
 
   return formatted;

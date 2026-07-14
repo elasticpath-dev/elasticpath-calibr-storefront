@@ -173,7 +173,6 @@ export function QuickViewButton({ product, lang }: Props) {
                     lang={lang}
                     variations={detail.variations}
                     variationMatrix={detail.variationMatrix}
-                    childSlugs={detail.childSlugs}
                     selectedOptionIds={detail.selectedOptionIds}
                     navigateOnSelect={false}
                     onVariantResolved={handleVariantResolved}
@@ -202,7 +201,6 @@ export function QuickViewButton({ product, lang }: Props) {
                     lang={lang}
                     variations={detail.variations}
                     variationMatrix={detail.variationMatrix}
-                    childSlugs={detail.childSlugs}
                     selectedOptionIds={detail.selectedOptionIds}
                     navigateOnSelect={false}
                     onVariantResolved={handleVariantResolved}

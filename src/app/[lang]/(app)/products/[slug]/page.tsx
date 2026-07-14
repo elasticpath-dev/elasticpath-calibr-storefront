@@ -163,7 +163,6 @@ export default async function ProductDetailPage({ params }: Props) {
                   initialOriginalPrice={product.originalPriceFormatted}
                   variations={product.variations}
                   variationMatrix={product.variationMatrix}
-                  childSlugs={product.childSlugs}
                   selectedOptionIds={product.selectedOptionIds}
                   parentId={product.parentId}
                   imageUrl={product.imageUrl ?? undefined}
@@ -206,7 +205,6 @@ export default async function ProductDetailPage({ params }: Props) {
                       initialOriginalPrice={product.originalPriceFormatted}
                       variations={product.variations}
                       variationMatrix={product.variationMatrix}
-                      childSlugs={product.childSlugs}
                       selectedOptionIds={product.selectedOptionIds}
                       parentId={product.parentId}
                       productCustomInputs={product.customInputs}
@@ -223,7 +221,6 @@ export default async function ProductDetailPage({ params }: Props) {
                     initialOriginalPrice={product.originalPriceFormatted}
                     variations={product.variations}
                     variationMatrix={product.variationMatrix}
-                    childSlugs={product.childSlugs}
                     selectedOptionIds={product.selectedOptionIds}
                     parentId={product.parentId}
                     productCustomInputs={product.customInputs}

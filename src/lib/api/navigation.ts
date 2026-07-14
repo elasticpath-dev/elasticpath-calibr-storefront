@@ -1,8 +1,7 @@
 import {
   getByContextAllHierarchies,
-  getByContextHierarchyChildNodes,
-  getByContextChildNodes,
   getByContextAllNodes,
+  type Node,
 } from "@epcc-sdk/sdks-shopper";
 
 export type NavHierarchyData = {
@@ -11,7 +10,7 @@ export type NavHierarchyData = {
   name: string;
 };
 import { createElasticPathClient } from "@/lib/create-elastic-path-client";
-import type { NavItem } from "@/components/header/navigation/types";
+import type { NavItem, NavColumn } from "@/components/header/navigation/types";
 
 export type NavNodeData = {
   id: string;
@@ -19,6 +18,36 @@ export type NavNodeData = {
   name: string;
   hierarchyId: string;
 };
+
+type Crumb = { id: string; name: string; slug: string };
+
+// /catalog/nodes returns every node flat, each carrying its own
+// meta.breadcrumbs (hierarchy -> ... -> itself, with id/name/slug at every
+// level) — that's enough to reconstruct the whole nav tree locally instead
+// of walking hierarchies -> L2 children -> L3 children as separate calls.
+async function fetchAllCatalogNodes(
+  client: Awaited<ReturnType<typeof createElasticPathClient>>,
+): Promise<Node[]> {
+  const limit = 100;
+  let offset = 0;
+  const all: Node[] = [];
+  for (;;) {
+    const res = await getByContextAllNodes({
+      client,
+      query: { "page[limit]": BigInt(limit), "page[offset]": BigInt(offset) },
+    });
+    const batch = res.data?.data ?? [];
+    all.push(...batch);
+    const total = Number(res.data?.meta?.results?.total ?? all.length);
+    offset += limit;
+    if (batch.length === 0 || all.length >= total) break;
+  }
+  return all;
+}
+
+function toCrumb(b: { id?: string; name?: string; slug?: string }): Crumb {
+  return { id: b.id ?? "", name: b.name ?? "", slug: b.slug ?? b.id ?? "" };
+}
 
 // Not cached: hierarchies/nodes are resolved "by context", which can differ
 // per authenticated account (B2B catalog rules scope visible categories to
@@ -29,70 +58,78 @@ export type NavNodeData = {
 // only runs once per session/account rather than "again and again".
 async function fetchSiteNavigation(): Promise<NavItem[]> {
   const client = await createElasticPathClient();
+  // The API returns nodes with hierarchy roots last (and in reverse
+  // creation order) — reversing puts them first, in creation order, since
+  // insertion order into the maps below determines the nav's display order.
+  const nodes = (await fetchAllCatalogNodes(client)).reverse();
 
-  const hierRes = await getByContextAllHierarchies({ client });
-  const hierarchies = (hierRes.data?.data ?? []).slice(0, 5);
+  // Depth 1 = hierarchy root (top-level nav item), depth 2 = mega-menu
+  // column, depth 3 = column item — breadcrumbs always end with the node
+  // itself, so depth === breadcrumbs.length.
+  const hierarchiesById = new Map<string, Crumb>();
+  const l2ByHierarchy = new Map<string, Map<string, Crumb>>();
+  const l3ByL2 = new Map<string, Crumb[]>();
 
-  const navItems = await Promise.all(
-    hierarchies.map(async (h) => {
-      const hierarchySlug = h.attributes?.slug ?? h.id!;
-      const hierarchyHref = `/category/${hierarchySlug}`;
+  for (const node of nodes) {
+    const breadcrumbs = node.meta?.breadcrumbs;
+    if (!breadcrumbs?.length) continue;
+    const crumbs = breadcrumbs.map(toCrumb);
+    const depth = crumbs.length;
 
-      const childRes = await getByContextHierarchyChildNodes({
-        client,
-        path: { hierarchy_id: h.id! },
-        query: { "page[limit]": BigInt(10) },
-      });
-      const l2Nodes = (childRes.data?.data ?? []).slice(0, 5);
+    if (depth === 1) {
+      hierarchiesById.set(crumbs[0].id, crumbs[0]);
+    } else if (depth === 2) {
+      const hierarchyId = crumbs[0].id;
+      if (!l2ByHierarchy.has(hierarchyId))
+        l2ByHierarchy.set(hierarchyId, new Map());
+      l2ByHierarchy.get(hierarchyId)!.set(crumbs[1].id, crumbs[1]);
+    } else if (depth === 3) {
+      const l2Id = crumbs[1].id;
+      if (!l3ByL2.has(l2Id)) l3ByL2.set(l2Id, []);
+      l3ByL2.get(l2Id)!.push(crumbs[2]);
+    }
+    // Deeper levels aren't rendered — the mega menu only supports 2 levels
+    // of nesting under a hierarchy, matching the previous implementation.
+  }
 
-      // For each L2 node, fetch its L3 children in parallel
-      const columns = await Promise.all(
-        l2Nodes.map(async (l2) => {
-          const l2Slug = l2.attributes?.slug ?? l2.id!;
-          const l2Href = `/category/${hierarchySlug}/${l2Slug}`;
+  const hierarchies = Array.from(hierarchiesById.values()).slice(0, 5);
 
-          const l3Res = await getByContextChildNodes({
-            client,
-            path: { node_id: l2.id! },
-            query: { "page[limit]": BigInt(8) },
-          }).catch(() => null);
-          const l3Nodes = l3Res?.data?.data ?? [];
+  return hierarchies.map((h): NavItem => {
+    const hierarchyHref = `/category/${h.slug}`;
+    const l2List = Array.from(l2ByHierarchy.get(h.id)?.values() ?? []).slice(
+      0,
+      5,
+    );
 
-          const items = [
-            ...l3Nodes.map((l3) => ({
-              key: l3.id ?? "",
-              label: l3.attributes?.name ?? "",
-              href: `/category/${hierarchySlug}/${l2Slug}/${l3.attributes?.slug ?? l3.id}`,
-            })),
-            {
-              key: `view-all-${l2.id}`,
-              label: `View all ${l2.attributes?.name ?? ""}`,
-              href: l2Href,
-            },
-          ];
+    const columns: NavColumn[] = l2List.map((l2) => {
+      const l2Href = `${hierarchyHref}/${l2.slug}`;
+      const l3List = (l3ByL2.get(l2.id) ?? []).slice(0, 8);
 
-          return {
-            groups: [
-              {
-                heading: l2.attributes?.name ?? "",
-                headingHref: l2Href,
-                items,
-              },
-            ],
-          };
-        })
-      );
+      const items = [
+        ...l3List.map((l3) => ({
+          key: l3.id,
+          label: l3.name,
+          href: `${l2Href}/${l3.slug}`,
+        })),
+        {
+          key: `view-all-${l2.id}`,
+          label: `View all ${l2.name}`,
+          href: l2Href,
+        },
+      ];
 
       return {
-        key: h.id ?? "",
-        label: h.attributes?.name ?? "",
-        href: hierarchyHref,
-        megaMenu: columns.length > 0 ? { columns } : undefined,
-      } satisfies NavItem;
-    })
-  );
+        groups: [{ heading: l2.name, headingHref: l2Href, items }],
+      };
+    });
 
-  return navItems;
+    return {
+      key: h.id,
+      label: h.name,
+      href: hierarchyHref,
+      megaMenu: columns.length > 0 ? { columns } : undefined,
+    };
+  });
 }
 
 export async function buildSiteNavigation(): Promise<NavItem[]> {
@@ -128,6 +165,7 @@ export async function getNodeBySlug(slug: string): Promise<NavNodeData | null> {
     slug: node.attributes?.slug ?? "",
     name: node.attributes?.name ?? "",
     hierarchyId:
-      (node.relationships as { hierarchy?: { data?: { id?: string } } })?.hierarchy?.data?.id ?? "",
+      (node.relationships as { hierarchy?: { data?: { id?: string } } })
+        ?.hierarchy?.data?.id ?? "",
   };
 }

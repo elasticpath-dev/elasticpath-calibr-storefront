@@ -7,6 +7,28 @@ import type { ProductCardData } from "@/lib/api/products";
 
 export type SelectedProduct = { id: string; name: string };
 
+// Plasmic renders separate DOM trees per responsive breakpoint (toggled via
+// CSS, not JS), so one carousel placed in Studio can mount several identical
+// ProductCarousel instances at once — each with the same url. Dedupe by url
+// so they share a single in-flight request instead of firing one each.
+const inFlightRequests = new Map<string, Promise<ProductCardData[]>>();
+
+async function fetchCarouselProducts(url: string): Promise<ProductCardData[]> {
+  const cached = inFlightRequests.get(url);
+  if (cached) return cached;
+
+  const request = fetch(url)
+    .then((res) => res.json())
+    .then((json) => (json.data ?? []) as ProductCardData[])
+    .catch(() => [])
+    .finally(() => {
+      inFlightRequests.delete(url);
+    });
+
+  inFlightRequests.set(url, request);
+  return request;
+}
+
 export type ProductCarouselProps = {
   selectionMode?: "products" | "node";
   products?: SelectedProduct[];
@@ -52,9 +74,7 @@ export function ProductCarousel({
           setProducts([]);
           return;
         }
-        const res = await fetch(url);
-        const json = await res.json();
-        setProducts(json.data ?? []);
+        setProducts(await fetchCarouselProducts(url));
       } catch {
         setProducts([]);
       } finally {

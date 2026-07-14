@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useMemo, useTransition } from "react";
+import React, { useState, useMemo, useRef, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { ProductCustomInput, ProductVariation } from "@/lib/api/products";
 import type { ProductField } from "@/context/CartContext";
+import { getProductByIdAction } from "@/lib/actions/product";
 import { ProductVariationSelector } from "./ProductVariationSelector";
 import { QuantityAddToCart } from "./QuantityAddToCart";
 import { CustomInputsForm } from "./CustomInputsForm";
@@ -14,7 +15,6 @@ type Props = {
   lang: string;
   variations?: ProductVariation[];
   variationMatrix?: Record<string, unknown>;
-  childSlugs?: Record<string, string>;
   selectedOptionIds?: string[];
   navigateOnSelect?: boolean;
   onVariantResolved?: (childId: string | null) => void;
@@ -30,7 +30,6 @@ export function VariantAddToCart({
   lang,
   variations,
   variationMatrix,
-  childSlugs,
   selectedOptionIds,
   navigateOnSelect = true,
   onVariantResolved,
@@ -125,18 +124,26 @@ export function VariantAddToCart({
     isDigital,
   ]);
 
+  const childSlugCache = useRef<Map<string, string>>(new Map());
+
   function handleOptionChange(variationId: string, optionId: string) {
     setSelectedOptions((prev) => ({ ...prev, [variationId]: optionId }));
   }
 
-  function handleProductResolved(childId: string | null) {
+  async function handleProductResolved(childId: string | null) {
     setResolvedProductId(childId);
     onVariantResolved?.(childId);
-    if (navigateOnSelect && childId && childSlugs?.[childId]) {
-      startTransition(() => {
-        router.replace(`/${lang}/products/${childSlugs![childId]}`);
-      });
-    }
+    if (!navigateOnSelect || !childId) return;
+
+    // Only fetch the resolved child's own data once a full selection is
+    // made — not every child up front just to know its slug.
+    const cached = childSlugCache.current.get(childId);
+    const slug = cached ?? (await getProductByIdAction(childId))?.slug;
+    if (!slug) return;
+    childSlugCache.current.set(childId, slug);
+    startTransition(() => {
+      router.replace(`/${lang}/products/${slug}`);
+    });
   }
 
   return (
