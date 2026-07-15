@@ -13,7 +13,7 @@ export type EpConnectionConfig = {
   storeId?: string;
 };
 
-function getAuthClient(connection: EpConnectionConfig) {
+export function getAuthClient(connection: EpConnectionConfig) {
   const { client } = configureClient(
     {
       baseUrl: `https://${connection.endpointUrl}`,
@@ -54,14 +54,13 @@ export type AccountMemberCredentials = {
   member_email?: string;
 };
 
-function buildCredentials(
+export function buildCredentials(
   result: Awaited<ReturnType<typeof postV2AccountMembersTokens>>,
 ): AccountMemberCredentials {
   const tokens = result.data?.data;
   if (!tokens?.length) {
     const errDetail =
-      (result as any)?.error?.errors?.[0]?.detail ??
-      "Authentication failed. Check your email and password.";
+      (result as any)?.error?.errors?.[0]?.detail ?? "Authentication failed.";
     throw new Error(errDetail);
   }
   const accountMemberId = (result.data?.meta as any)?.account_member_id ?? "";
@@ -86,7 +85,7 @@ function buildCredentials(
   };
 }
 
-async function fetchMemberProfile(
+export async function fetchMemberProfile(
   amToken: string,
   accountMemberId: string,
   connection: EpConnectionConfig,

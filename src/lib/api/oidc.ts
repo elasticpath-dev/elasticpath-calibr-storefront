@@ -1,7 +1,10 @@
-import type {
-  AccountMemberCredential,
-  AccountMemberCredentials,
-  EpConnectionConfig,
+import { postV2AccountMembersTokens } from "@epcc-sdk/sdks-shopper";
+import {
+  getAuthClient,
+  buildCredentials,
+  fetchMemberProfile,
+  type AccountMemberCredentials,
+  type EpConnectionConfig,
 } from "./auth";
 
 export type OidcProfileInfo = {
@@ -139,84 +142,31 @@ export async function exchangeOidcCode(params: {
   config: EpConnectionConfig;
 }): Promise<AccountMemberCredentials> {
   const { code, redirectUri, codeVerifier, config } = params;
-  const { endpointUrl, clientId } = config;
 
-  const accessToken = await getImplicitToken(endpointUrl, clientId, config);
-
-  const tokenRes = await fetch(`https://${endpointUrl}/v2/account-members/tokens`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-      ...extraHeaders(config),
-    },
-    body: JSON.stringify({
+  // Same client construction (and same /v2/account-members/tokens call) as
+  // password login in auth.ts — the hand-rolled fetch this replaced sent an
+  // extra manually-obtained bearer token EPCC's account-management-token
+  // endpoint doesn't expect, causing "authentication failed".
+  const client = getAuthClient(config);
+  const result = await postV2AccountMembersTokens({
+    client,
+    body: {
       data: {
         type: "account_management_authentication_token",
         authentication_mechanism: "oidc",
         oauth_authorization_code: code,
         oauth_redirect_uri: redirectUri,
         oauth_code_verifier: codeVerifier,
-      },
-    }),
-    cache: "no-store",
+      } as any,
+    },
   });
+  const credentials = buildCredentials(result);
 
-  if (!tokenRes.ok) {
-    const body = await tokenRes.json().catch(() => ({}));
-    const detail =
-      (body as any)?.errors?.[0]?.detail ?? "OIDC authentication failed.";
-    throw new Error(detail);
-  }
-
-  const tokenData = await tokenRes.json();
-  const tokens: any[] = tokenData?.data ?? [];
-
-  if (!tokens.length) throw new Error("No account tokens returned from OIDC login.");
-
-  const accountMemberId: string = tokenData?.meta?.account_member_id ?? "";
-
-  const accounts = tokens.reduce<Record<string, AccountMemberCredential>>(
-    (acc, t) => ({
-      ...acc,
-      [t.account_id]: {
-        account_id: t.account_id,
-        account_name: t.account_name ?? "",
-        token: t.token,
-        expires: t.expires,
-      },
-    }),
-    {},
-  );
-
-  const credentials: AccountMemberCredentials = {
-    accounts,
-    selected: tokens[0].account_id,
-    accountMemberId,
-  };
-
-  // Fetch member profile for display name/email
-  if (accountMemberId && tokens[0]?.token) {
-    try {
-      const memberRes = await fetch(
-        `https://${endpointUrl}/v2/account-members/${accountMemberId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "EP-Account-Management-Authentication-Token": tokens[0].token,
-            ...extraHeaders(config),
-          },
-          cache: "no-store",
-        },
-      );
-      if (memberRes.ok) {
-        const memberData = await memberRes.json();
-        credentials.member_name = memberData?.data?.name ?? "";
-        credentials.member_email = memberData?.data?.email ?? "";
-      }
-    } catch {
-      // Non-fatal: display name/email unavailable
-    }
+  const firstToken = Object.values(credentials.accounts)[0]?.token ?? "";
+  if (credentials.accountMemberId && firstToken) {
+    const profile = await fetchMemberProfile(firstToken, credentials.accountMemberId, config);
+    credentials.member_name = profile.name;
+    credentials.member_email = profile.email;
   }
 
   return credentials;
