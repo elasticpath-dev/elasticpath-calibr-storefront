@@ -278,7 +278,9 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
       passwordProfileId:
         r.auth?.passwordProfileId || defaults.auth.passwordProfileId,
       oidcProfileIds:
-        (r.auth as any)?.oidcProfileIds ?? defaults.auth.oidcProfileIds,
+        r.auth?.oidcProfileIds?.length
+          ? r.auth.oidcProfileIds
+          : defaults.auth.oidcProfileIds,
     },
     currency: {
       default: r.currency?.default || defaults.currency.default,
