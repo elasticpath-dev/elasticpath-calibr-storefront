@@ -128,6 +128,25 @@ function normalizeHex(v: string | undefined, fallback: string): string {
   return v.startsWith("#") ? v : `#${v}`;
 }
 
+// The external tenant config API has been observed sending oidcProfileIds
+// as a single raw string (not wrapped in an array) rather than the
+// documented string[] shape — normalize both so a lone/comma-separated
+// string doesn't get passed downstream as a "string[]" that's actually a
+// string (fetchOidcProfiles() calls .map() on it and would throw).
+function normalizeOidcProfileIds(v: unknown, fallback: string[]): string[] {
+  if (Array.isArray(v)) {
+    const ids = v.filter((id): id is string => typeof id === "string" && !!id);
+    return ids.length ? ids : fallback;
+  }
+  if (typeof v === "string" && v.trim()) {
+    return v
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return fallback;
+}
+
 /**
  * Reads every current NEXT_PUBLIC_* var directly — this is today's
  * single-tenant behavior, centralized into one place instead of scattered
@@ -277,10 +296,10 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
     auth: {
       passwordProfileId:
         r.auth?.passwordProfileId || defaults.auth.passwordProfileId,
-      oidcProfileIds:
-        r.auth?.oidcProfileIds?.length
-          ? r.auth.oidcProfileIds
-          : defaults.auth.oidcProfileIds,
+      oidcProfileIds: normalizeOidcProfileIds(
+        r.auth?.oidcProfileIds,
+        defaults.auth.oidcProfileIds,
+      ),
     },
     currency: {
       default: r.currency?.default || defaults.currency.default,
