@@ -82,7 +82,8 @@
     "passwordMismatch": "Passwords do not match",
     "loginFailed": "Login failed",
     "registrationFailed": "Registration failed",
-    "requestFailed": "Request failed"
+    "requestFailed": "Request failed",
+    "orContinueWith": "Or continue with"
   },
   "checkout": {
     "title": "Checkout",

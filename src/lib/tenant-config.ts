@@ -27,7 +27,7 @@ export type TenantConfig = {
   epcc: { endpointUrl: string; clientId: string };
   /** Never exposed to Client Components — see ClientTenantConfig. */
   security: { gatekeeperPassword: string };
-  auth: { passwordProfileId: string };
+  auth: { passwordProfileId: string; oidcProfileIds: string[] };
   currency: { default: string; available: string[] };
   inventory: { multiLocation: boolean };
   /** Extra headers attached to every EPCC API request, when non-empty. */
@@ -71,6 +71,7 @@ export type ClientTenantConfig = {
   epccEndpointUrl: string;
   epccClientId: string;
   passwordProfileId: string;
+  oidcProfileIds: string[];
   multiLocation: boolean;
   storeName: string;
   brandInk900: string;
@@ -93,6 +94,7 @@ export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
     epccEndpointUrl: config.epcc.endpointUrl,
     epccClientId: config.epcc.clientId,
     passwordProfileId: config.auth.passwordProfileId,
+    oidcProfileIds: config.auth.oidcProfileIds,
     multiLocation: config.inventory.multiLocation,
     storeName: config.site.name,
     brandInk900: config.theme.ink900,
@@ -153,7 +155,13 @@ function buildTenantConfigFromEnv(): TenantConfig {
   return {
     epcc: { endpointUrl, clientId: e.NEXT_PUBLIC_EPCC_CLIENT_ID ?? "" },
     security: { gatekeeperPassword: e.GATEKEEPER_PASSWORD?.trim() ?? "" },
-    auth: { passwordProfileId: e.NEXT_PUBLIC_PASSWORD_PROFILE_ID ?? "" },
+    auth: {
+      passwordProfileId: e.NEXT_PUBLIC_PASSWORD_PROFILE_ID ?? "",
+      oidcProfileIds: (e.NEXT_PUBLIC_OIDC_PROFILE_IDS ?? "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+    },
     currency: { default: defaultCurrency, available: availableCurrencies },
     inventory: {
       multiLocation: e.NEXT_PUBLIC_EP_INVENTORIES_MULTI_LOCATION === "true",
@@ -269,6 +277,8 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
     auth: {
       passwordProfileId:
         r.auth?.passwordProfileId || defaults.auth.passwordProfileId,
+      oidcProfileIds:
+        (r.auth as any)?.oidcProfileIds ?? defaults.auth.oidcProfileIds,
     },
     currency: {
       default: r.currency?.default || defaults.currency.default,

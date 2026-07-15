@@ -1,8 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslations } from "next-intl";
+import { usePathname } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { useOidcProfiles } from "@/context/OidcProfilesContext";
+import { generateOidcLoginRedirectUrl } from "@/lib/oidc-utils";
 
 export type LoginFormData = {
   email: string;
@@ -30,6 +34,23 @@ export function LoginForm({
     handleSubmit,
     formState: { errors },
   } = useForm<LoginFormData>();
+  const oidcProfiles = useOidcProfiles();
+  const pathname = usePathname();
+  const [oidcLoadingId, setOidcLoadingId] = useState<string | null>(null);
+
+  async function handleOidcLogin(profileId: string, clientId: string, authorizationEndpoint: string) {
+    setOidcLoadingId(profileId);
+    try {
+      const url = await generateOidcLoginRedirectUrl(
+        authorizationEndpoint,
+        clientId,
+        pathname,
+      );
+      window.location.href = url;
+    } catch {
+      setOidcLoadingId(null);
+    }
+  }
 
   return (
     <div className="w-full">
@@ -104,6 +125,34 @@ export function LoginForm({
           {t("signInButton")}
         </button>
       </form>
+
+      {oidcProfiles.length > 0 && (
+        <div className="mt-5">
+          <div className="relative flex items-center">
+            <div className="flex-grow border-t border-gray-200" />
+            <span className="mx-3 text-xs text-gray-400 whitespace-nowrap">
+              {t("orContinueWith")}
+            </span>
+            <div className="flex-grow border-t border-gray-200" />
+          </div>
+          <div className="flex flex-col gap-2 mt-4">
+            {oidcProfiles.map((profile) => (
+              <button
+                key={profile.id}
+                type="button"
+                disabled={oidcLoadingId !== null}
+                onClick={() => handleOidcLogin(profile.id, profile.clientId, profile.authorizationEndpoint)}
+                className="w-full flex items-center justify-center gap-2 rounded-lg border border-gray-200 px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                {oidcLoadingId === profile.id && (
+                  <Loader2 size={14} className="animate-spin" />
+                )}
+                {profile.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {onSignUp && (
         <p className="mt-5 text-center text-sm text-gray-500">

@@ -82,7 +82,8 @@
     "passwordMismatch": "Las contraseñas no coinciden",
     "loginFailed": "Error al iniciar sesión",
     "registrationFailed": "Error al registrarse",
-    "requestFailed": "Error en la solicitud"
+    "requestFailed": "Error en la solicitud",
+    "orContinueWith": "O continuar con"
   },
   "checkout": {
     "title": "Pago",

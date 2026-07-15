@@ -82,7 +82,8 @@
     "passwordMismatch": "Les mots de passe ne correspondent pas",
     "loginFailed": "Échec de la connexion",
     "registrationFailed": "Échec de l'inscription",
-    "requestFailed": "Échec de la demande"
+    "requestFailed": "Échec de la demande",
+    "orContinueWith": "Ou continuer avec"
   },
   "checkout": {
     "title": "Paiement",
