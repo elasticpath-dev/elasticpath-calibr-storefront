@@ -44,7 +44,11 @@ export type TenantConfig = {
     filterItems: string;
     extensionsExcluded: string[];
   };
-  payments: { stripePublishableKey: string; stripeAccountId?: string };
+  payments: {
+    stripePublishableKey: string;
+    stripeAccountId?: string;
+    paypalEnabled: boolean;
+  };
   ui: {
     defaultCartMode: "drawer" | "full";
     defaultShoppingMode: "b2c" | "b2b";
@@ -77,6 +81,7 @@ export type ClientTenantConfig = {
   storeId?: string;
   stripePublishableKey: string;
   stripeAccountId?: string;
+  paypalEnabled: boolean;
   defaultCartMode: "drawer" | "full";
   defaultShoppingMode: "b2c" | "b2b";
   shoppingModeLocked: boolean;
@@ -98,6 +103,7 @@ export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
     storeId: config.requestHeaders.storeId,
     stripePublishableKey: config.payments.stripePublishableKey,
     stripeAccountId: config.payments.stripeAccountId,
+    paypalEnabled: config.payments.paypalEnabled,
     defaultCartMode: config.ui.defaultCartMode,
     defaultShoppingMode: config.ui.defaultShoppingMode,
     shoppingModeLocked: config.ui.shoppingModeLocked,
@@ -199,6 +205,7 @@ function buildTenantConfigFromEnv(): TenantConfig {
     payments: {
       stripePublishableKey: e.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
       stripeAccountId: e.NEXT_PUBLIC_STRIPE_ACCOUNT_ID || undefined,
+      paypalEnabled: e.NEXT_PUBLIC_PAYPAL_ENABLED === "true",
     },
     ui: {
       defaultCartMode:
@@ -305,6 +312,8 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
         defaults.payments.stripePublishableKey,
       stripeAccountId:
         r.payments?.stripeAccountId ?? defaults.payments.stripeAccountId,
+      paypalEnabled:
+        r.payments?.paypalEnabled ?? defaults.payments.paypalEnabled,
     },
     ui: {
       defaultCartMode: r.ui?.defaultCartMode ?? defaults.ui.defaultCartMode,

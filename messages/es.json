@@ -145,6 +145,9 @@
     "paymentReturnFailed": "No se pudo confirmar el pago",
     "paymentReturnFailedSubtitle": "Tu pago no se completó. Por favor intenta de nuevo o contacta al soporte.",
     "paymentReturnMissingOrder": "Información de pedido faltante. Por favor contacta al soporte.",
+    "paymentReturnCancelled": "Pago cancelado",
+    "paymentReturnCancelledSubtitle": "Cancelaste el pago de PayPal. Tu carrito se ha guardado — puedes intentarlo de nuevo o elegir otro método de pago.",
+    "backToCheckout": "Volver al pago",
     "loadingPayment": "Inicializando pago...",
     "verifyingPayment": "Verificando pago...",
     "placingOrder": "Realizando pedido...",
@@ -171,6 +174,8 @@
     "useAccountContact": "Usar el nombre y correo electrónico de mi cuenta para este pedido",
     "payCOD": "Pago contra entrega",
     "codDescription": "Paga en efectivo cuando recibas tu pedido.",
+    "payPayPal": "PayPal",
+    "paypalDescription": "Serás redirigido a PayPal para completar tu pago.",
     "manualGatewayDisabled": "Los pagos manuales aún no están habilitados para esta tienda. En Commerce Manager, ve a Configuración → Pago, selecciona Manual y actívalo; luego vuelve a intentarlo."
   },
   "address": {

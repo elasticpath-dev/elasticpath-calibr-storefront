@@ -145,6 +145,9 @@
     "paymentReturnFailed": "Le paiement n'a pas pu être confirmé",
     "paymentReturnFailedSubtitle": "Votre paiement n'a pas abouti. Veuillez réessayer ou contacter le support.",
     "paymentReturnMissingOrder": "Informations de commande manquantes. Veuillez contacter le support.",
+    "paymentReturnCancelled": "Paiement annulé",
+    "paymentReturnCancelledSubtitle": "Vous avez annulé le paiement PayPal. Votre panier a été conservé — vous pouvez réessayer ou choisir un autre mode de paiement.",
+    "backToCheckout": "Retour au paiement",
     "loadingPayment": "Initialisation du paiement...",
     "verifyingPayment": "Vérification du paiement...",
     "placingOrder": "Passage de la commande...",
@@ -171,6 +174,8 @@
     "useAccountContact": "Utiliser le nom et l'e-mail de mon compte pour cette commande",
     "payCOD": "Paiement à la livraison",
     "codDescription": "Payez en espèces à la réception de votre commande.",
+    "payPayPal": "PayPal",
+    "paypalDescription": "Vous serez redirigé vers PayPal pour finaliser votre paiement.",
     "manualGatewayDisabled": "Les paiements manuels ne sont pas encore activés pour ce magasin. Dans Commerce Manager, allez dans Paramètres → Paiement, sélectionnez Manuel, puis activez-le — ensuite réessayez."
   },
   "address": {

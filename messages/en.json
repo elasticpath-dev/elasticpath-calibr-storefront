@@ -145,6 +145,9 @@
     "paymentReturnFailed": "Payment could not be confirmed",
     "paymentReturnFailedSubtitle": "Your payment was not completed. Please try again or contact support.",
     "paymentReturnMissingOrder": "Missing order information. Please contact support.",
+    "paymentReturnCancelled": "Payment cancelled",
+    "paymentReturnCancelledSubtitle": "You cancelled the PayPal payment. Your cart has been saved — you can try again or choose another payment method.",
+    "backToCheckout": "Back to checkout",
     "loadingPayment": "Setting up payment...",
     "verifyingPayment": "Verifying payment...",
     "placingOrder": "Placing order...",
@@ -171,6 +174,8 @@
     "useAccountContact": "Use my account name and email for this order",
     "payCOD": "Cash on Delivery",
     "codDescription": "Pay in cash when your order is delivered.",
+    "payPayPal": "PayPal",
+    "paypalDescription": "You'll be redirected to PayPal to complete your payment.",
     "manualGatewayDisabled": "Manual payments aren't enabled for this store yet. In Commerce Manager, go to Settings → Payment, select Manual, and enable it — then try again."
   },
   "address": {

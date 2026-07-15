@@ -11,6 +11,7 @@ import {
   CreditCard,
   FileText,
   Banknote,
+  Wallet,
   Lock,
   User,
 } from "lucide-react";
@@ -37,6 +38,7 @@ import { type CheckoutFormData } from "@/hooks/use-checkout";
 import { useEpStripePayment } from "@/hooks/use-ep-stripe-payment";
 import { useEpPOPayment } from "@/hooks/use-ep-po-payment";
 import { useEpCODPayment } from "@/hooks/use-ep-cod-payment";
+import { useEpPayPalPayment } from "@/hooks/use-ep-paypal-payment";
 import { useAccountAddresses } from "@/hooks/use-account-addresses";
 import { getStripePromise } from "@/lib/stripe";
 import type { BillingAddr } from "@/hooks/use-ep-stripe-payment";
@@ -78,11 +80,22 @@ export function CheckoutFlow({
     isRedirecting: isCODRedirecting,
     error: codError,
   } = useEpCODPayment(lang, addresses);
+  const {
+    processPayment: processPayPalPayment,
+    isLoading: isPayPalLoading,
+    isRedirecting: isPayPalRedirecting,
+    error: paypalError,
+  } = useEpPayPalPayment(lang, addresses);
   const { isAuthenticated, credentials } = useAuth();
   const { shoppingMode, isHydrated: modeHydrated, shoppingModeLocked } =
     usePreferences();
-  const { storeName, brandInk900, stripePublishableKey, stripeAccountId } =
-    useTenantConfig();
+  const {
+    storeName,
+    brandInk900,
+    stripePublishableKey,
+    stripeAccountId,
+    paypalEnabled,
+  } = useTenantConfig();
   const isB2C = shoppingMode === "b2c";
 
   const stripeFormRef = useRef<HTMLFormElement>(null);
@@ -111,9 +124,13 @@ export function CheckoutFlow({
   // Elastic Path–hosted store (shoppingModeLocked), but keep it available
   // for B2B, or on any self-hosted/custom-domain store regardless of mode.
   const isPOPaymentEnabled = !isB2C || !shoppingModeLocked;
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "po" | "cod">(
-    isCardPaymentEnabled ? "card" : "po",
-  );
+  // PayPal needs the paypal_express_checkout gateway configured in Commerce
+  // Manager — gated by a tenant config flag since there's no client-side
+  // key to check the way Stripe has a publishable key.
+  const isPayPalPaymentEnabled = paypalEnabled;
+  const [paymentMethod, setPaymentMethod] = useState<
+    "card" | "po" | "cod" | "paypal"
+  >(isCardPaymentEnabled ? "card" : "po");
 
   // Correct the default once shopping-mode hydration completes, in case the
   // pre-hydration default above picked "po" but it turns out to be disabled.
@@ -133,7 +150,11 @@ export function CheckoutFlow({
   const [useAccountContact, setUseAccountContact] = useState(true);
 
   const isPlacingOrder =
-    isLoading || isPOLoading || isCODLoading || isStripeConfirming;
+    isLoading ||
+    isPOLoading ||
+    isCODLoading ||
+    isPayPalLoading ||
+    isStripeConfirming;
 
   const {
     register,
@@ -324,6 +345,7 @@ export function CheckoutFlow({
     !isRedirecting &&
     !isPORedirecting &&
     !isCODRedirecting &&
+    !isPayPalRedirecting &&
     items.length === 0
   ) {
     return (
@@ -380,6 +402,8 @@ export function CheckoutFlow({
     setBillingError(null);
     if (paymentMethod === "card") stripeFormRef.current?.requestSubmit();
     else if (paymentMethod === "po") poFormRef.current?.requestSubmit();
+    else if (paymentMethod === "paypal")
+      processPayPalPayment(savedFormData!, billingAddress ?? null, isDigitalOrder);
     else processCODPayment(savedFormData!, billingAddress ?? null, isDigitalOrder);
   }
 
@@ -789,6 +813,48 @@ export function CheckoutFlow({
                   </div>
                 )}
               </div>
+
+              {/* PayPal — hidden unless the paypal_express_checkout gateway is enabled for this tenant */}
+              {isPayPalPaymentEnabled && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("paypal")}
+                    className="w-full flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors text-left"
+                  >
+                    <span
+                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${paymentMethod === "paypal" ? "border-brand-primary" : "border-gray-300"}`}
+                    >
+                      {paymentMethod === "paypal" && (
+                        <span className="w-2 h-2 rounded-full bg-brand-primary" />
+                      )}
+                    </span>
+                    <Wallet
+                      size={16}
+                      className={
+                        paymentMethod === "paypal"
+                          ? "text-brand-primary"
+                          : "text-gray-400"
+                      }
+                    />
+                    <span
+                      className={`text-sm font-medium ${paymentMethod === "paypal" ? "text-gray-900" : "text-gray-500"}`}
+                    >
+                      {t("payPayPal")}
+                    </span>
+                  </button>
+                  {paymentMethod === "paypal" && (
+                    <div className="px-5 pb-5 space-y-3">
+                      <p className="text-sm text-gray-500">{t("paypalDescription")}</p>
+                      {paypalError && (
+                        <div className="flex items-start gap-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                          <span>{paypalError}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
