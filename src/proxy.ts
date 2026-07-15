@@ -42,5 +42,8 @@ export default async function middleware(request: NextRequest) {
 export const config = {
   // "ingest" is the PostHog reverse proxy (next.config rewrites) — the
   // locale middleware must not redirect it to /en/ingest.
-  matcher: ["/((?!_next|api|ingest|favicon.ico|plasmic-host|.*\\..*).*)"],
+  // "oidc" is the OIDC provider's static callback route (generateRedirectUri()
+  // registers it as a bare, locale-less URL) — prefixing it to /en/oidc would
+  // 404 since the page lives outside [lang].
+  matcher: ["/((?!_next|api|ingest|favicon.ico|plasmic-host|oidc|.*\\..*).*)"],
 };
