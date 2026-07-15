@@ -46,7 +46,16 @@ function OidcCallback() {
     const redirectUri = generateRedirectUri();
 
     completeOidcLogin(code, redirectUri, codeVerifier)
-      .then((credentials) => {
+      .then((result) => {
+        if (!result.success) {
+          console.error("[OIDC] Token exchange failed:", result.error);
+          setErrorMsg(result.error);
+          clearStoredOidcState();
+          return;
+        }
+
+        const { credentials } = result;
+
         // Store credentials so AuthContext hydrates them on the next page load
         localStorage.setItem(
           AM_CREDENTIALS_STORAGE_KEY,
