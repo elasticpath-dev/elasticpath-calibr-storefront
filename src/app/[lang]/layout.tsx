@@ -38,6 +38,9 @@ export default async function LocaleLayout({
   const oidcProfiles = await fetchOidcProfiles(tenantConfig.auth.oidcProfileIds, {
     endpointUrl: tenantConfig.epcc.endpointUrl,
     clientId: tenantConfig.epcc.clientId,
+    epContextTag: tenantConfig.requestHeaders.epContextTag,
+    environmentId: tenantConfig.requestHeaders.environmentId,
+    storeId: tenantConfig.requestHeaders.storeId,
   });
 
   return (

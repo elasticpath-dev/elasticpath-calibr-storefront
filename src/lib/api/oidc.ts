@@ -11,10 +11,39 @@ export type OidcProfileInfo = {
   authorizationEndpoint: string;
 };
 
-async function getImplicitToken(endpointUrl: string, clientId: string): Promise<string> {
+type ExtraEpHeaders = {
+  epContextTag?: string;
+  environmentId?: string;
+  storeId?: string;
+};
+
+// Some tenants scope their EPCC org by store/environment (multi-store orgs
+// sharing one endpoint) — without these headers, the realm/profile lookups
+// below can silently resolve against the wrong store and return nothing,
+// even though the request itself "succeeds". Mirrors the headers
+// create-elastic-path-client.ts/ep-client.ts already attach to every
+// SDK-based request.
+function extraHeaders(config: ExtraEpHeaders): Record<string, string> {
+  return {
+    ...(config.epContextTag ? { "EP-Context-Tag": config.epContextTag } : {}),
+    ...(config.environmentId
+      ? { "X-REQUEST-ENVIRONMENT-ID": config.environmentId }
+      : {}),
+    ...(config.storeId ? { "X-REQUEST-STORE-ID": config.storeId } : {}),
+  };
+}
+
+async function getImplicitToken(
+  endpointUrl: string,
+  clientId: string,
+  config: ExtraEpHeaders,
+): Promise<string> {
   const res = await fetch(`https://${endpointUrl}/oauth/access_token`, {
     method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      ...extraHeaders(config),
+    },
     body: `grant_type=implicit&client_id=${clientId}`,
     next: { revalidate: 3300 }, // cache slightly under the 1-hour EP token lifetime
   });
@@ -26,9 +55,13 @@ async function getImplicitToken(endpointUrl: string, clientId: string): Promise<
 async function getAuthRealmInfo(
   endpointUrl: string,
   accessToken: string,
+  config: ExtraEpHeaders,
 ): Promise<{ realmId: string; realmClientId: string }> {
   const res = await fetch(`https://${endpointUrl}/v2/settings/account-authentication`, {
-    headers: { Authorization: `Bearer ${accessToken}` },
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      ...extraHeaders(config),
+    },
     next: { revalidate: 3600 },
   });
   if (!res.ok) throw new Error(`EP account-authentication settings fetch failed: ${res.status}`);
@@ -45,11 +78,15 @@ async function fetchProfileById(
   realmId: string,
   realmClientId: string,
   profileId: string,
+  config: ExtraEpHeaders,
 ): Promise<OidcProfileInfo> {
   const res = await fetch(
     `https://${endpointUrl}/v2/authentication-realms/${realmId}/oidc-profiles/${profileId}`,
     {
-      headers: { Authorization: `Bearer ${accessToken}` },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        ...extraHeaders(config),
+      },
       next: { revalidate: 3600 },
     },
   );
@@ -65,7 +102,7 @@ async function fetchProfileById(
 
 export async function fetchOidcProfiles(
   profileIds: string[],
-  config: { endpointUrl: string; clientId: string },
+  config: { endpointUrl: string; clientId: string } & ExtraEpHeaders,
 ): Promise<OidcProfileInfo[]> {
   if (!profileIds.length) return [];
 
@@ -75,15 +112,17 @@ export async function fetchOidcProfiles(
   let realmClientId: string;
 
   try {
-    accessToken = await getImplicitToken(endpointUrl, clientId);
-    ({ realmId, realmClientId } = await getAuthRealmInfo(endpointUrl, accessToken));
+    accessToken = await getImplicitToken(endpointUrl, clientId, config);
+    ({ realmId, realmClientId } = await getAuthRealmInfo(endpointUrl, accessToken, config));
   } catch (err) {
     console.error("[OIDC] Failed to fetch auth realm:", err);
     return [];
   }
 
   const results = await Promise.allSettled(
-    profileIds.map((id) => fetchProfileById(endpointUrl, accessToken, realmId, realmClientId, id)),
+    profileIds.map((id) =>
+      fetchProfileById(endpointUrl, accessToken, realmId, realmClientId, id, config),
+    ),
   );
 
   return results.flatMap((r) => {
@@ -102,13 +141,14 @@ export async function exchangeOidcCode(params: {
   const { code, redirectUri, codeVerifier, config } = params;
   const { endpointUrl, clientId } = config;
 
-  const accessToken = await getImplicitToken(endpointUrl, clientId);
+  const accessToken = await getImplicitToken(endpointUrl, clientId, config);
 
   const tokenRes = await fetch(`https://${endpointUrl}/v2/account-members/tokens`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${accessToken}`,
+      ...extraHeaders(config),
     },
     body: JSON.stringify({
       data: {
@@ -164,6 +204,7 @@ export async function exchangeOidcCode(params: {
           headers: {
             Authorization: `Bearer ${accessToken}`,
             "EP-Account-Management-Authentication-Token": tokens[0].token,
+            ...extraHeaders(config),
           },
           cache: "no-store",
         },
