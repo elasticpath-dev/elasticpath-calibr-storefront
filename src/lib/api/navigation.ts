@@ -1,3 +1,4 @@
+import { unstable_cache, revalidateTag } from "next/cache";
 import {
   getByContextAllHierarchies,
   getByContextAllNodes,
@@ -9,7 +10,10 @@ export type NavHierarchyData = {
   slug: string;
   name: string;
 };
-import { createElasticPathClient } from "@/lib/create-elastic-path-client";
+import {
+  createElasticPathClient,
+  createElasticPathClientFromConfig,
+} from "@/lib/create-elastic-path-client";
 import { getTenantConfig } from "@/lib/tenant-config";
 import { getResolvedCatalogId } from "@/lib/api/catalog";
 import type { NavItem, NavColumn } from "@/components/header/navigation/types";
@@ -82,8 +86,10 @@ type CrumbWithPath = Crumb & { path: string };
 // hierarchy root is skipped entirely — and columns/links shift down to
 // depth 3/4 accordingly. Same /catalog/nodes data either way, just bucketed
 // starting one level deeper.
-async function fetchSiteNavigation(hideNavHierarchy: boolean): Promise<NavItem[]> {
-  const client = await createElasticPathClient();
+async function fetchSiteNavigation(
+  client: Awaited<ReturnType<typeof createElasticPathClient>>,
+  hideNavHierarchy: boolean,
+): Promise<NavItem[]> {
   // The API returns nodes with hierarchy roots last (and in reverse
   // creation order) — reversing puts them first, in creation order, since
   // insertion order into the maps below determines the nav's display order.
@@ -177,48 +183,93 @@ async function fetchSiteNavigation(hideNavHierarchy: boolean): Promise<NavItem[]
 // everyone sharing the same resolved catalog shares one. endpointUrl +
 // storeId + environmentId are included since one running server process can
 // serve multiple tenants (see tokenCache in create-elastic-path-client.ts
-// for the same pattern). No automatic expiry — cleared only via
-// clearNavigationCache()/the /api/navigation/clear-cache route.
-const navCache = new Map<string, NavItem[]>();
-const navFetchPromises = new Map<string, Promise<NavItem[]>>();
+// for the same pattern). Backed by Next's Data Cache (unstable_cache)
+// instead of a plain in-memory Map: on Vercel that's shared across
+// serverless instances, whereas a Map only survives within one warm
+// instance's memory and gets wiped whenever it's recycled. No automatic
+// expiry (revalidate: false) — cleared only via clearNavigationCache()/the
+// /api/navigation/clear-cache route.
+const NAV_CACHE_TAG = "navigation";
 
-function buildNavCacheKey(
+function navCacheTag(
   catalogId: string | null,
   endpointUrl: string,
   storeId: string | undefined,
   environmentId: string | undefined,
 ): string {
-  return [catalogId ?? "", endpointUrl, storeId ?? "", environmentId ?? ""].join("::");
+  return [NAV_CACHE_TAG, catalogId ?? "", endpointUrl, storeId ?? "", environmentId ?? ""].join(
+    ":",
+  );
+}
+
+// unstable_cache disallows cookies()/headers() inside the wrapped function,
+// so the client used here is built from plain config via
+// createElasticPathClientFromConfig rather than the cookie-aware
+// createElasticPathClient(). clientId/tokenCurrency/multiLocation/
+// epContextTag are captured via closure rather than passed as cache-key
+// arguments: for a given catalogId+endpointUrl+storeId+environmentId (the
+// key the caller asked for), those values are already fully determined by
+// the same tenant/context resolution that produced catalogId, so they can't
+// actually vary independently of it. Re-wrapping with unstable_cache on
+// every call (rather than once at module scope) is intentional — its cache
+// storage is keyed by keyParts, not by this wrapper's identity, so repeated
+// calls with the same key still hit the same Data Cache entry.
+function getCachedNavItems(
+  catalogId: string | null,
+  endpointUrl: string,
+  clientId: string,
+  tokenCurrency: string,
+  multiLocation: boolean,
+  epContextTag: string | undefined,
+  environmentId: string | undefined,
+  storeId: string | undefined,
+  hideNavHierarchy: boolean,
+): Promise<NavItem[]> {
+  return unstable_cache(
+    async () => {
+      const client = createElasticPathClientFromConfig({
+        endpointUrl,
+        clientId,
+        currency: tokenCurrency,
+        tokenCurrency,
+        multiLocation,
+        epContextTag,
+        environmentId,
+        storeId,
+      });
+      return fetchSiteNavigation(client, hideNavHierarchy);
+    },
+    [
+      "site-navigation",
+      catalogId ?? "",
+      endpointUrl,
+      storeId ?? "",
+      environmentId ?? "",
+      String(hideNavHierarchy),
+    ],
+    {
+      revalidate: false,
+      tags: [NAV_CACHE_TAG, navCacheTag(catalogId, endpointUrl, storeId, environmentId)],
+    },
+  )();
 }
 
 export async function buildSiteNavigation(): Promise<NavItem[]> {
   const tenantConfig = await getTenantConfig();
-  const { features, epcc, requestHeaders } = tenantConfig;
+  const { features, epcc, inventory, requestHeaders, currency } = tenantConfig;
   const catalogId = await getResolvedCatalogId();
-  const cacheKey = buildNavCacheKey(
+
+  return getCachedNavItems(
     catalogId,
     epcc.endpointUrl,
-    requestHeaders.storeId,
+    epcc.clientId,
+    currency.default,
+    inventory.multiLocation,
+    requestHeaders.epContextTag,
     requestHeaders.environmentId,
+    requestHeaders.storeId,
+    features.hideNavHierarchy,
   );
-
-  const cached = navCache.get(cacheKey);
-  if (cached) return cached;
-
-  const inFlight = navFetchPromises.get(cacheKey);
-  if (inFlight) return inFlight;
-
-  const promise = fetchSiteNavigation(features.hideNavHierarchy)
-    .then((data) => {
-      navCache.set(cacheKey, data);
-      return data;
-    })
-    .finally(() => {
-      navFetchPromises.delete(cacheKey);
-    });
-
-  navFetchPromises.set(cacheKey, promise);
-  return promise;
 }
 
 export type NavCacheKeyParts = {
@@ -235,18 +286,13 @@ export type NavCacheKeyParts = {
  */
 export function clearNavigationCache(key?: NavCacheKeyParts): void {
   if (!key) {
-    navCache.clear();
-    navFetchPromises.clear();
+    revalidateTag(NAV_CACHE_TAG, { expire: 0 });
     return;
   }
-  const cacheKey = buildNavCacheKey(
-    key.catalogId ?? null,
-    key.endpointUrl,
-    key.storeId,
-    key.environmentId,
+  revalidateTag(
+    navCacheTag(key.catalogId ?? null, key.endpointUrl, key.storeId, key.environmentId),
+    { expire: 0 },
   );
-  navCache.delete(cacheKey);
-  navFetchPromises.delete(cacheKey);
 }
 
 export async function getHierarchyBySlug(

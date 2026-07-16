@@ -54,6 +54,75 @@ async function getImplicitToken(
   return promise;
 }
 
+export type ElasticPathClientConfig = {
+  endpointUrl: string;
+  clientId: string;
+  /** Sent as the client's own X-MOLTIN-CURRENCY header on every request. */
+  currency: string;
+  /**
+   * Sent only when requesting the implicit token. getImplicitToken's cache
+   * key is endpointUrl:clientId (no currency), so whichever value wins the
+   * race to populate that entry sticks for every caller sharing it — pass
+   * the tenant's stable default here, not a shopper-varying selection.
+   */
+  tokenCurrency: string;
+  multiLocation: boolean;
+  epContextTag?: string;
+  environmentId?: string;
+  storeId?: string;
+};
+
+/**
+ * Builds the SDK client from plain, already-resolved config — no
+ * cookies()/headers() calls, unlike createElasticPathClient() below. Used
+ * directly by navigation.ts's unstable_cache-wrapped nav build, since
+ * Next.js disallows both of those dynamic APIs inside a cached function.
+ * The account-management token (and so any account-specific catalog rules)
+ * is intentionally left out here — navigation.ts's cache key is instead
+ * scoped by resolved catalogId, which already captures that variance.
+ */
+export function createElasticPathClientFromConfig(
+  config: ElasticPathClientConfig,
+  amToken?: string,
+) {
+  const client = createClient({
+    baseUrl: `https://${config.endpointUrl}`,
+    headers: { "X-MOLTIN-CURRENCY": config.currency },
+  });
+
+  client.interceptors.request.use(async (request) => {
+    const token = await getImplicitToken(
+      config.endpointUrl,
+      config.clientId,
+      config.tokenCurrency,
+    );
+    if (token?.access_token) {
+      request.headers.set("Authorization", `Bearer ${token.access_token}`);
+    }
+    if (config.multiLocation) {
+      request.headers.set("EP-Inventories-Multi-Location", "true");
+    }
+    if (config.epContextTag) {
+      request.headers.set("EP-Context-Tag", config.epContextTag);
+    }
+    if (config.environmentId) {
+      request.headers.set("X-REQUEST-ENVIRONMENT-ID", config.environmentId);
+    }
+    if (config.storeId) {
+      request.headers.set("X-REQUEST-STORE-ID", config.storeId);
+    }
+    if (amToken) {
+      request.headers.set(
+        "EP-Account-Management-Authentication-Token",
+        amToken,
+      );
+    }
+    return request;
+  });
+
+  return client;
+}
+
 export async function createElasticPathClient() {
   let amToken: string | undefined;
   try {
@@ -68,45 +137,19 @@ export async function createElasticPathClient() {
   ]);
   const { epcc, inventory, requestHeaders } = tenantConfig;
 
-  const client = createClient({
-    baseUrl: `https://${epcc.endpointUrl}`,
-    headers: { "X-MOLTIN-CURRENCY": currency },
-  });
-
-  client.interceptors.request.use(async (request) => {
-    const token = await getImplicitToken(
-      epcc.endpointUrl,
-      epcc.clientId,
-      tenantConfig.currency.default,
-    );
-    if (token?.access_token) {
-      request.headers.set("Authorization", `Bearer ${token.access_token}`);
-    }
-    if (inventory.multiLocation) {
-      request.headers.set("EP-Inventories-Multi-Location", "true");
-    }
-    if (requestHeaders.epContextTag) {
-      request.headers.set("EP-Context-Tag", requestHeaders.epContextTag);
-    }
-    if (requestHeaders.environmentId) {
-      request.headers.set(
-        "X-REQUEST-ENVIRONMENT-ID",
-        requestHeaders.environmentId,
-      );
-    }
-    if (requestHeaders.storeId) {
-      request.headers.set("X-REQUEST-STORE-ID", requestHeaders.storeId);
-    }
-    if (amToken) {
-      request.headers.set(
-        "EP-Account-Management-Authentication-Token",
-        amToken,
-      );
-    }
-    return request;
-  });
-
-  return client;
+  return createElasticPathClientFromConfig(
+    {
+      endpointUrl: epcc.endpointUrl,
+      clientId: epcc.clientId,
+      currency,
+      tokenCurrency: tenantConfig.currency.default,
+      multiLocation: inventory.multiLocation,
+      epContextTag: requestHeaders.epContextTag,
+      environmentId: requestHeaders.environmentId,
+      storeId: requestHeaders.storeId,
+    },
+    amToken,
+  );
 }
 
 export type ElasticPathClient = ReturnType<typeof createElasticPathClient>;
