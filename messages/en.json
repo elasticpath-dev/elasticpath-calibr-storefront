@@ -83,7 +83,14 @@
     "loginFailed": "Login failed",
     "registrationFailed": "Registration failed",
     "requestFailed": "Request failed",
-    "orContinueWith": "Or continue with"
+    "orContinueWith": "Or continue with",
+    "oidcMissingParams": "Missing authorization code or state parameter.",
+    "oidcStateMismatch": "Unable to validate identity. Please try signing in again.",
+    "oidcMissingVerifier": "Missing PKCE code verifier. Please try signing in again.",
+    "oidcSignInFailedTitle": "Sign-in failed",
+    "oidcSignInFailedGeneric": "Sign-in failed. Please try again.",
+    "returnToStore": "Return to store",
+    "signInRequiredTitle": "Sign In Required"
   },
   "checkout": {
     "title": "Checkout",

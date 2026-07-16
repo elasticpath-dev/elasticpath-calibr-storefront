@@ -83,7 +83,14 @@
     "loginFailed": "Error al iniciar sesión",
     "registrationFailed": "Error al registrarse",
     "requestFailed": "Error en la solicitud",
-    "orContinueWith": "O continuar con"
+    "orContinueWith": "O continuar con",
+    "oidcMissingParams": "Falta el código de autorización o el parámetro de estado.",
+    "oidcStateMismatch": "No se pudo validar la identidad. Por favor intenta iniciar sesión de nuevo.",
+    "oidcMissingVerifier": "Falta el verificador PKCE. Por favor intenta iniciar sesión de nuevo.",
+    "oidcSignInFailedTitle": "Error al iniciar sesión",
+    "oidcSignInFailedGeneric": "Error al iniciar sesión. Por favor intenta de nuevo.",
+    "returnToStore": "Volver a la tienda",
+    "signInRequiredTitle": "Inicio de sesión requerido"
   },
   "checkout": {
     "title": "Pago",

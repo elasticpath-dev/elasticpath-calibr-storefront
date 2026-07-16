@@ -1,5 +1,6 @@
 "use server";
 
+import { getTranslations } from "next-intl/server";
 import { getTenantConfig } from "@/lib/tenant-config";
 import { exchangeOidcCode } from "@/lib/api/oidc";
 import type { AccountMemberCredentials } from "@/lib/api/auth";
@@ -34,9 +35,14 @@ export async function completeOidcLogin(
     return { success: true, credentials };
   } catch (err) {
     console.error("[OIDC] completeOidcLogin failed:", err);
-    return {
-      success: false,
-      error: err instanceof Error ? err.message : "OIDC sign-in failed.",
-    };
+    if (err instanceof Error) {
+      return { success: false, error: err.message };
+    }
+    // This route lives outside [lang] (see proxy.ts), so there's no
+    // routing-negotiated locale for getTranslations() to resolve from —
+    // it falls back to the default locale here, same as the rest of this
+    // locale-agnostic page family (/gate, /oidc).
+    const t = await getTranslations("auth");
+    return { success: false, error: t("oidcSignInFailedGeneric") };
   }
 }

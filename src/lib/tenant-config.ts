@@ -27,7 +27,12 @@ export type TenantConfig = {
   epcc: { endpointUrl: string; clientId: string };
   /** Never exposed to Client Components — see ClientTenantConfig. */
   security: { gatekeeperPassword: string };
-  auth: { passwordProfileId: string; oidcProfileIds: string[] };
+  auth: {
+    passwordProfileId: string;
+    oidcProfileIds: string[];
+    /** When true, every page requires a signed-in shopper — enforced in proxy.ts. Never exposed to Client Components. */
+    requireLogin: boolean;
+  };
   currency: { default: string; available: string[] };
   inventory: { multiLocation: boolean };
   /** Extra headers attached to every EPCC API request, when non-empty. */
@@ -180,6 +185,7 @@ function buildTenantConfigFromEnv(): TenantConfig {
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean),
+      requireLogin: e.REQUIRE_LOGIN === "true",
     },
     currency: { default: defaultCurrency, available: availableCurrencies },
     inventory: {
@@ -300,6 +306,7 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
         r.auth?.oidcProfileIds,
         defaults.auth.oidcProfileIds,
       ),
+      requireLogin: r.auth?.requireLogin ?? defaults.auth.requireLogin,
     },
     currency: {
       default: r.currency?.default || defaults.currency.default,

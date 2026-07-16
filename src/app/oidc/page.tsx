@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import { NextIntlClientProvider, useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 import { completeOidcLogin } from "./actions";
 import {
@@ -10,8 +11,24 @@ import {
 } from "@/context/AuthContext";
 import { getStoredOidcState, clearStoredOidcState } from "@/lib/oidc-utils";
 import { generateRedirectUri } from "@/lib/oidc-utils";
+import { locales, defaultLocale, type Locale } from "@/lib/i18n/config";
+
+// This route deliberately lives outside [lang] (see proxy.ts matcher — it's
+// a static callback URL registered with the identity provider, and prefixing
+// it with a locale would 404). That also means it has no NextIntlClientProvider
+// from a parent layout — read the locale next-intl's own middleware already
+// stashed in a cookie for us (set on whatever /[lang]/... page the shopper
+// was on before starting sign-in) and load messages for it client-side.
+function readLocaleCookie(): Locale {
+  const match = document.cookie.match(/(?:^|; )NEXT_LOCALE=([^;]+)/);
+  const value = match?.[1];
+  return (locales as readonly string[]).includes(value ?? "")
+    ? (value as Locale)
+    : defaultLocale;
+}
 
 function OidcCallback() {
+  const t = useTranslations("auth");
   const searchParams = useSearchParams();
   const router = useRouter();
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -25,20 +42,20 @@ function OidcCallback() {
     const stateParam = searchParams.get("state");
 
     if (!code || !stateParam) {
-      setErrorMsg("Missing authorization code or state parameter.");
+      setErrorMsg(t("oidcMissingParams"));
       return;
     }
 
     const { state, codeVerifier, location } = getStoredOidcState();
 
     if (!state || state !== stateParam) {
-      setErrorMsg("Unable to validate identity. Please try signing in again.");
+      setErrorMsg(t("oidcStateMismatch"));
       clearStoredOidcState();
       return;
     }
 
     if (!codeVerifier) {
-      setErrorMsg("Missing PKCE code verifier. Please try signing in again.");
+      setErrorMsg(t("oidcMissingVerifier"));
       clearStoredOidcState();
       return;
     }
@@ -74,26 +91,24 @@ function OidcCallback() {
       })
       .catch((err) => {
         console.error("[OIDC] Token exchange failed:", err);
-        setErrorMsg(
-          err instanceof Error ? err.message : "Sign-in failed. Please try again.",
-        );
+        setErrorMsg(err instanceof Error ? err.message : t("oidcSignInFailedGeneric"));
         clearStoredOidcState();
       });
-  }, [searchParams, router]);
+  }, [searchParams, router, t]);
 
   if (errorMsg) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="max-w-sm text-center">
           <p className="text-sm font-medium text-gray-800 mb-2">
-            Sign-in failed
+            {t("oidcSignInFailedTitle")}
           </p>
           <p className="text-sm text-gray-500 mb-6">{errorMsg}</p>
           <button
             onClick={() => router.replace("/")}
             className="text-sm text-brand-primary hover:underline"
           >
-            Return to store
+            {t("returnToStore")}
           </button>
         </div>
       </div>
@@ -107,16 +122,33 @@ function OidcCallback() {
   );
 }
 
-export default function OidcPage() {
+function Spinner() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-        </div>
-      }
-    >
-      <OidcCallback />
-    </Suspense>
+    <div className="min-h-screen flex items-center justify-center">
+      <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+    </div>
+  );
+}
+
+export default function OidcPage() {
+  const [messages, setMessages] = useState<Record<string, unknown> | null>(null);
+  const [locale, setLocale] = useState<Locale>(defaultLocale);
+
+  useEffect(() => {
+    const resolved = readLocaleCookie();
+    setLocale(resolved);
+    import(`../../../messages/${resolved}.json`).then((mod) =>
+      setMessages(mod.default),
+    );
+  }, []);
+
+  if (!messages) return <Spinner />;
+
+  return (
+    <NextIntlClientProvider locale={locale} messages={messages}>
+      <Suspense fallback={<Spinner />}>
+        <OidcCallback />
+      </Suspense>
+    </NextIntlClientProvider>
   );
 }

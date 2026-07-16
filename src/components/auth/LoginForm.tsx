@@ -19,6 +19,11 @@ type Props = {
   error?: string | null;
   onForgotPassword?: () => void;
   onSignUp?: () => void;
+  /** Where OIDC should redirect back to after login — defaults to the
+   * current path (right for the AuthModal, opened from wherever the shopper
+   * already is); the login-required gate overrides this with the page the
+   * shopper was actually trying to reach (its own path isn't useful). */
+  returnPath?: string;
 };
 
 export function LoginForm({
@@ -27,6 +32,7 @@ export function LoginForm({
   error,
   onForgotPassword,
   onSignUp,
+  returnPath,
 }: Props) {
   const t = useTranslations("auth");
   const {
@@ -44,7 +50,7 @@ export function LoginForm({
       const url = await generateOidcLoginRedirectUrl(
         authorizationEndpoint,
         clientId,
-        pathname,
+        returnPath ?? pathname,
       );
       window.location.href = url;
     } catch {

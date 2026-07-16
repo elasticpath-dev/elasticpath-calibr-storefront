@@ -83,7 +83,14 @@
     "loginFailed": "Échec de la connexion",
     "registrationFailed": "Échec de l'inscription",
     "requestFailed": "Échec de la demande",
-    "orContinueWith": "Ou continuer avec"
+    "orContinueWith": "Ou continuer avec",
+    "oidcMissingParams": "Code d'autorisation ou paramètre d'état manquant.",
+    "oidcStateMismatch": "Impossible de valider l'identité. Veuillez réessayer de vous connecter.",
+    "oidcMissingVerifier": "Vérificateur PKCE manquant. Veuillez réessayer de vous connecter.",
+    "oidcSignInFailedTitle": "Échec de la connexion",
+    "oidcSignInFailedGeneric": "Échec de la connexion. Veuillez réessayer.",
+    "returnToStore": "Retour à la boutique",
+    "signInRequiredTitle": "Connexion requise"
   },
   "checkout": {
     "title": "Paiement",
