@@ -64,7 +64,13 @@ export default async function CategoryPage({ params }: Props) {
         <Header lang={lang} />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <Breadcrumb lang={lang} breadcrumbs={breadcrumbs} />
-          <CategorySearchClient lang={lang} categoryName={categoryName} slugs={slug} filterItems={features.filterItems} />
+          <CategorySearchClient
+            lang={lang}
+            categoryName={categoryName}
+            slugs={slug}
+            filterItems={features.filterItems}
+            hideNavHierarchy={features.hideNavHierarchy}
+          />
         </main>
       </div>
     );

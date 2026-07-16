@@ -48,6 +48,11 @@ export type TenantConfig = {
     searchEnabled: boolean;
     filterItems: string;
     extensionsExcluded: string[];
+    /** Hide catalog hierarchy roots from the top navigation and promote
+     * their direct children to top-level nav items instead — see
+     * navigation.ts, which derives this from the same /catalog/nodes call
+     * (no extra API request). */
+    hideNavHierarchy: boolean;
   };
   payments: {
     stripePublishableKey: string;
@@ -234,6 +239,7 @@ function buildTenantConfigFromEnv(): TenantConfig {
         .split(",")
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean),
+      hideNavHierarchy: e.NEXT_PUBLIC_HIDE_NAV_HIERARCHY === "true",
     },
     payments: {
       stripePublishableKey: e.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
@@ -343,6 +349,8 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
       extensionsExcluded: r.features?.extensionsExcluded?.length
         ? r.features.extensionsExcluded
         : defaults.features.extensionsExcluded,
+      hideNavHierarchy:
+        r.features?.hideNavHierarchy ?? defaults.features.hideNavHierarchy,
     },
     payments: {
       stripePublishableKey:

@@ -17,22 +17,20 @@ import { hasBulkBuyForCurrency } from "@/lib/bulk-buy";
 import { ProductCard } from "@/components/product/ProductCard";
 import { Pagination } from "@/components/ui/Pagination/Pagination";
 import { Button } from "@/components/ui/Button";
-import { SEARCH_INDEX_NAME } from "@/lib/instantsearch-routing";
+import {
+  CATEGORY_HIERARCHICAL_ATTRIBUTES,
+  SEARCH_INDEX_NAME,
+} from "@/lib/instantsearch-routing";
 import { FilterSidebar } from "@/components/search/filters";
 import { SortBy } from "@/components/search/SortBy";
 import type { ProductCardData } from "@/lib/api/products";
 
 function buildFacetBy(filterItems: string): string {
-  const base = [
-    "meta.search.categories.lvl0",
-    "meta.search.categories.lvl1",
-    "meta.search.categories.lvl2",
-  ];
   const extras = filterItems
     .split(",")
     .map((e) => e.trim().split("|")[0]?.trim())
     .filter(Boolean) as string[];
-  return [...base, ...extras].join(",");
+  return [...CATEGORY_HIERARCHICAL_ATTRIBUTES, ...extras].join(",");
 }
 
 function hitToCard(hit: Record<string, unknown>): ProductCardData {
@@ -66,10 +64,12 @@ function CategoryInner({
   lang,
   categoryName,
   filterItems,
+  hideNavHierarchy,
 }: {
   lang: string;
   categoryName: string;
   filterItems: string;
+  hideNavHierarchy: boolean;
 }) {
   const t = useTranslations("search");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -118,7 +118,7 @@ function CategoryInner({
 
       <div className="flex gap-8">
         <aside className="hidden lg:block w-56 flex-shrink-0">
-          <FilterSidebar filterItems={filterItems} />
+          <FilterSidebar filterItems={filterItems} hideNavHierarchy={hideNavHierarchy} />
         </aside>
 
         <div className="flex-1 min-w-0">
@@ -189,7 +189,7 @@ function CategoryInner({
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <FilterSidebar filterItems={filterItems} />
+            <FilterSidebar filterItems={filterItems} hideNavHierarchy={hideNavHierarchy} />
             <div className="mt-auto pt-6">
               <Button
                 className="w-full"
@@ -212,9 +212,16 @@ type Props = {
   categoryName: string;
   slugs: string[];
   filterItems?: string;
+  hideNavHierarchy?: boolean;
 };
 
-export function CategorySearchClient({ lang, categoryName, slugs, filterItems = "" }: Props) {
+export function CategorySearchClient({
+  lang,
+  categoryName,
+  slugs,
+  filterItems = "",
+  hideNavHierarchy = false,
+}: Props) {
   const epClient = useEpClient();
 
   const slugKey = slugs.join(",");
@@ -245,7 +252,12 @@ export function CategorySearchClient({ lang, categoryName, slugs, filterItems = 
       searchClient={searchClient}
       future={{ preserveSharedStateOnUnmount: true }}
     >
-      <CategoryInner lang={lang} categoryName={categoryName} filterItems={filterItems} />
+      <CategoryInner
+        lang={lang}
+        categoryName={categoryName}
+        filterItems={filterItems}
+        hideNavHierarchy={hideNavHierarchy}
+      />
     </InstantSearch>
   );
 }

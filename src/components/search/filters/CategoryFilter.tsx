@@ -4,30 +4,34 @@ import { type ReactNode } from "react";
 import { useHierarchicalMenu } from "react-instantsearch";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { CATEGORY_HIERARCHICAL_ATTRIBUTES } from "@/lib/instantsearch-routing";
 import { FilterSection } from "./FilterSection";
-
-const HIERARCHICAL_ATTRIBUTES = [
-  "meta.search.categories.lvl0",
-  "meta.search.categories.lvl1",
-  "meta.search.categories.lvl2",
-];
 
 type Props = {
   title?: string;
+  hideNavHierarchy?: boolean;
 };
 
-export function CategoryFilter({ title }: Props) {
+export function CategoryFilter({ title, hideNavHierarchy = false }: Props) {
   const t = useTranslations("search");
   const { items, refine, canToggleShowMore, isShowingMore, toggleShowMore } =
     useHierarchicalMenu({
-      attributes: HIERARCHICAL_ATTRIBUTES,
+      attributes: CATEGORY_HIERARCHICAL_ATTRIBUTES,
       limit: 8,
       showMore: true,
       showMoreLimit: 30,
       sortBy: ["count:desc"],
     });
 
-  if (!items.length) return null;
+  // The tree is always built from the full lvl0/lvl1/lvl2 chain (see
+  // CATEGORY_HIERARCHICAL_ATTRIBUTES) — when the hierarchy root is hidden
+  // from the top nav, hide it here too by rendering its children as the
+  // top level instead of the root itself.
+  const topItems = hideNavHierarchy
+    ? items.flatMap((item) => item.data ?? [])
+    : items;
+
+  if (!topItems.length) return null;
 
   function renderItems(list: typeof items, depth = 0): ReactNode {
     return list.map((item) => (
@@ -54,7 +58,7 @@ export function CategoryFilter({ title }: Props) {
 
   return (
     <FilterSection title={title ?? t("categories")}>
-      {renderItems(items)}
+      {renderItems(topItems)}
       {canToggleShowMore && (
         <button
           onClick={toggleShowMore}

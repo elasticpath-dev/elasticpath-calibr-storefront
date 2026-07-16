@@ -4,6 +4,18 @@ import type { UiState } from "instantsearch.js";
 
 export const SEARCH_INDEX_NAME = "search";
 
+// Each level's indexed value is the full path from the hierarchy root (e.g.
+// lvl1 = "Orgill Hierarchy > Paint and Sundries", not just "Paint and
+// Sundries") — react-instantsearch's hierarchical menu requires attributes[0]
+// to hold values with zero path separators, so lvl0 must always be requested
+// first regardless of hideNavHierarchy. Hiding the root from display is done
+// by flattening the rendered tree in CategoryFilter, not by dropping lvl0 here.
+export const CATEGORY_HIERARCHICAL_ATTRIBUTES = [
+  "meta.search.categories.lvl0",
+  "meta.search.categories.lvl1",
+  "meta.search.categories.lvl2",
+];
+
 const RESERVED = new Set(["q", "page"]);
 
 export function createSearchRouting() {

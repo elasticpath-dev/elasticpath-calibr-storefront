@@ -11,6 +11,7 @@ type Props = {
   showPriceRange?: boolean;
   currencyCode?: string;
   filterItems?: string;
+  hideNavHierarchy?: boolean;
 };
 
 export function FilterSidebar({
@@ -18,6 +19,7 @@ export function FilterSidebar({
   showPriceRange = true,
   currencyCode,
   filterItems,
+  hideNavHierarchy = false,
 }: Props) {
   const t = useTranslations("search");
   return (
@@ -26,7 +28,7 @@ export function FilterSidebar({
         <span className="text-sm font-semibold text-gray-900">{t("filters")}</span>
         <ClearFiltersButton />
       </div>
-      {showCategories && <CategoryFilter />}
+      {showCategories && <CategoryFilter hideNavHierarchy={hideNavHierarchy} />}
       {showPriceRange && <PriceRangeFilter currencyCode={currencyCode} />}
       <ProductSpecification filterItems={filterItems} />
     </div>

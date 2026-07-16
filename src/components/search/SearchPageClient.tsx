@@ -19,6 +19,7 @@ import { ProductCard } from "@/components/product/ProductCard";
 import { Pagination } from "@/components/ui/Pagination/Pagination";
 import { Button } from "@/components/ui/Button";
 import {
+  CATEGORY_HIERARCHICAL_ATTRIBUTES,
   createSearchRouting,
   SEARCH_INDEX_NAME,
 } from "@/lib/instantsearch-routing";
@@ -58,16 +59,11 @@ function hitToCard(hit: Record<string, unknown>): ProductCardData {
 }
 
 function buildFacetBy(filterItems: string): string {
-  const base = [
-    "meta.search.categories.lvl0",
-    "meta.search.categories.lvl1",
-    "meta.search.categories.lvl2",
-  ];
   const extras = filterItems
     .split(",")
     .map((e) => e.trim().split("|")[0]?.trim())
     .filter(Boolean) as string[];
-  return [...base, ...extras].join(",");
+  return [...CATEGORY_HIERARCHICAL_ATTRIBUTES, ...extras].join(",");
 }
 
 // ─── Search Results ───────────────────────────────────────────────────────────
@@ -75,9 +71,11 @@ function buildFacetBy(filterItems: string): string {
 function SearchInner({
   lang,
   filterItems,
+  hideNavHierarchy,
 }: {
   lang: string;
   filterItems: string;
+  hideNavHierarchy: boolean;
 }) {
   const t = useTranslations("search");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
@@ -132,7 +130,7 @@ function SearchInner({
       <div className="flex gap-8">
         {/* Desktop sidebar */}
         <aside className="hidden lg:block w-56 flex-shrink-0">
-          <FilterSidebar filterItems={filterItems} />
+          <FilterSidebar filterItems={filterItems} hideNavHierarchy={hideNavHierarchy} />
         </aside>
 
         {/* Product grid */}
@@ -212,7 +210,7 @@ function SearchInner({
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <FilterSidebar filterItems={filterItems} />
+            <FilterSidebar filterItems={filterItems} hideNavHierarchy={hideNavHierarchy} />
             <div className="mt-auto pt-6">
               <Button
                 className="w-full"
@@ -234,12 +232,14 @@ export type SearchPageClientProps = {
   lang: string;
   initialQuery?: string;
   filterItems?: string;
+  hideNavHierarchy?: boolean;
 };
 
 export function SearchPageClient({
   lang,
   initialQuery = "",
   filterItems = "",
+  hideNavHierarchy = false,
 }: SearchPageClientProps) {
   const epClient = useEpClient();
 
@@ -269,7 +269,7 @@ export function SearchPageClient({
         preserveSharedStateOnUnmount: true,
       }}
     >
-      <SearchInner lang={lang} filterItems={filterItems} />
+      <SearchInner lang={lang} filterItems={filterItems} hideNavHierarchy={hideNavHierarchy} />
     </InstantSearch>
   );
 }
