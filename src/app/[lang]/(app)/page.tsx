@@ -22,14 +22,16 @@ export default async function HomePage({ params }: PageProps) {
   return (
     <div className="min-h-screen bg-white">
       <Header lang={lang} />
-      {plasmicConfig.enabled ? (
-        <PlasmicContent component="homepage" prefetchedData={plasmicData} />
-      ) : (
-        <>
-          <HeroSection lang={lang} />
-          <FeaturedSection lang={lang} products={products} />
-        </>
-      )}
+      <main>
+        {plasmicConfig.enabled ? (
+          <PlasmicContent component="homepage" prefetchedData={plasmicData} />
+        ) : (
+          <>
+            <HeroSection lang={lang} />
+            <FeaturedSection lang={lang} products={products} />
+          </>
+        )}
+      </main>
     </div>
   );
 }
