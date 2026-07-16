@@ -113,7 +113,7 @@ export function ProductCarouselDisplay({
             msOverflowStyle: "none",
           }}
         >
-          {products.map((product) => (
+          {products.map((product, index) => (
             <div
               key={product.id}
               style={{
@@ -122,7 +122,11 @@ export function ProductCarouselDisplay({
                 scrollSnapAlign: "start",
               }}
             >
-              <ProductCard product={product} lang={lang} />
+              <ProductCard
+                product={product}
+                lang={lang}
+                priority={index < slidesToShow}
+              />
             </div>
           ))}
         </div>
@@ -145,12 +149,16 @@ export function ProductCarouselDisplay({
               type="button"
               onClick={() => scrollToIndex(i * slidesToShow)}
               aria-label={`Go to page ${i + 1}`}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                i === activeDot
-                  ? "w-6 bg-brand-primary"
-                  : "w-2 bg-gray-300 hover:bg-gray-400"
-              }`}
-            />
+              className="group flex items-center justify-center h-6 w-6 -mx-2"
+            >
+              <span
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  i === activeDot
+                    ? "w-6 bg-brand-primary"
+                    : "w-2 bg-gray-300 group-hover:bg-gray-400"
+                }`}
+              />
+            </button>
           ))}
         </div>
       )}
