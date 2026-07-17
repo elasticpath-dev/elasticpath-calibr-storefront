@@ -7,6 +7,7 @@ import { useTranslations } from "next-intl";
 import type { CartItemEntry, MatrixGroup } from "./types";
 import { buildMatrix } from "./types";
 import { Button } from "@/components/ui/Button";
+import { Price } from "@/components/product/Price";
 
 type FillMode =
   | "fillEmpty"
@@ -476,6 +477,16 @@ export function MatrixCartRow({
                     )}
                     {isPending && (
                       <span className="absolute top-[3px] right-[5px] w-[6px] h-[6px] rounded-full bg-amber-400" />
+                    )}
+                    {child.priceFormatted && (
+                      <div className="absolute bottom-[2px] right-[5px] pointer-events-none leading-none">
+                        <Price
+                          formatted={child.priceFormatted}
+                          originalFormatted={child.originalPriceFormatted}
+                          hideOriginal
+                          className="text-[9px]"
+                        />
+                      </div>
                     )}
                   </div>
                 );

@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Tag } from "lucide-react";
+import { Tag, ChevronDown, ShoppingBag, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { ProductThumbnail } from "./ProductThumbnail";
 import { ProductName } from "./ProductName";
@@ -10,7 +11,25 @@ import { QuantitySelector } from "./QuantitySelector";
 import { AddToCart } from "./AddToCart";
 import { QuantityAddToCart } from "./QuantityAddToCart";
 import { QuickViewButton } from "./QuickViewButton";
+import { MatrixCartRow } from "@/components/cart/MatrixCartRow";
+import type { MatrixGroup } from "@/components/cart/types";
+import { cn } from "@/lib/utils";
 import type { ProductCardData } from "@/lib/api/products";
+
+const EMPTY_CART_ITEMS_MAP = new Map<string, { cartItemId: string; quantity: number }>();
+
+type MatrixProps = {
+  group: MatrixGroup;
+  pendingQtys: Map<string, number>;
+  onQuantityChange: (
+    productId: string,
+    cartItemId: string | null,
+    newQty: number,
+  ) => Promise<void>;
+  onBulkAdd: (items: Array<{ productId: string; quantity: number }>) => Promise<void>;
+  onBulkUpdate: (items: Array<{ cartItemId: string; quantity: number }>) => Promise<void>;
+  disabled?: boolean;
+};
 
 type ProductCardProps = {
   product: ProductCardData;
@@ -29,6 +48,14 @@ type ProductCardProps = {
   bulkMode?: boolean;
   bulkQuantity?: number;
   onBulkQuantityChange?: (productId: string, quantity: number) => void;
+  /**
+   * row variant only: when the product has variations and this is set, an
+   * accordion toggle appears (instead of Quick View) that expands to show
+   * the same parent/child variant matrix as the cart, below the card.
+   */
+  matrix?: MatrixProps;
+  /** row variant only: called the first time a product's variants are shown, so the parent can lazily fetch its matrix data. */
+  onRequestMatrix?: (productId: string) => void;
 };
 
 export function ProductCard({
@@ -41,8 +68,45 @@ export function ProductCard({
   bulkMode = false,
   bulkQuantity = 0,
   onBulkQuantityChange,
+  matrix,
+  onRequestMatrix,
 }: ProductCardProps) {
   const t = useTranslations("product");
+  const [showVariants, setShowVariants] = useState(false);
+  const [isAddingMatrix, setIsAddingMatrix] = useState(false);
+
+  const toggleVariants = () => {
+    setShowVariants((prev) => {
+      const next = !prev;
+      if (next) onRequestMatrix?.(product.id);
+      return next;
+    });
+  };
+
+  // Matrix cells always stage into matrix.pendingQtys (never auto-add to
+  // cart on typing) — this gathers this product's own pending children and
+  // commits them in one call, then clears just this product's entries.
+  const handleAddMatrixToCart = async () => {
+    if (!matrix) return;
+    const items = matrix.group.children
+      .map((child) => ({
+        productId: child.id,
+        quantity: matrix.pendingQtys.get(child.id) ?? 0,
+      }))
+      .filter((item) => item.quantity > 0);
+    if (items.length === 0) return;
+    setIsAddingMatrix(true);
+    try {
+      await matrix.onBulkAdd(items);
+      items.forEach((item) => onBulkQuantityChange?.(item.productId, 0));
+    } finally {
+      setIsAddingMatrix(false);
+    }
+  };
+
+  const matrixPendingCount = matrix
+    ? matrix.group.children.filter((c) => (matrix.pendingQtys.get(c.id) ?? 0) > 0).length
+    : 0;
 
   const addToCartControl = bulkMode ? (
     <div className="flex items-center gap-2">
@@ -81,7 +145,8 @@ export function ProductCard({
     );
 
     return (
-      <article className="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-3 hover:shadow-md transition-shadow duration-200">
+      <>
+        <article className="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-3 hover:shadow-md transition-shadow duration-200">
         <Link href={`/${lang}/products/${product.slug}`} className="flex-none">
           <ProductThumbnail
             imageUrl={product.imageUrl}
@@ -129,13 +194,81 @@ export function ProductCard({
             className="text-sm"
             stacked={stackedPrice}
           />
-          {product.hasVariations || product.isBundle ? (
+          {product.hasVariations ? (
+            matrix || onRequestMatrix ? (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={toggleVariants}
+                  aria-expanded={showVariants}
+                  className={[
+                    "h-9 px-3 rounded-lg border text-xs font-semibold flex items-center gap-1.5 transition-colors",
+                    showVariants
+                      ? "bg-gray-900 border-gray-900 text-white"
+                      : "border-gray-200 text-gray-700 hover:bg-gray-50",
+                  ].join(" ")}
+                >
+                  {showVariants ? t("hideVariants") : t("showVariants")}
+                  <ChevronDown
+                    size={14}
+                    className={showVariants ? "rotate-180 transition-transform" : "transition-transform"}
+                  />
+                </button>
+                {showVariants && matrix && (
+                  <button
+                    type="button"
+                    onClick={handleAddMatrixToCart}
+                    disabled={matrixPendingCount === 0 || isAddingMatrix}
+                    className={cn(
+                      "inline-flex items-center justify-center gap-2 rounded-lg font-medium text-xs transition-all h-9 px-3",
+                      "bg-brand-primary text-white hover:opacity-90 disabled:opacity-60",
+                    )}
+                  >
+                    {isAddingMatrix ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <ShoppingBag size={14} />
+                    )}
+                    {t("addToCart")}
+                    {matrixPendingCount > 0 && (
+                      <span className="bg-white/20 text-white rounded-full px-1.5 text-[10px] font-bold leading-tight">
+                        {matrixPendingCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <QuickViewButton product={product} lang={lang} />
+            )
+          ) : product.isBundle ? (
             <QuickViewButton product={product} lang={lang} />
           ) : (
             addToCartControl
           )}
         </div>
       </article>
+
+      {product.hasVariations && matrix && showVariants && (
+        <div className="mt-2">
+          <MatrixCartRow
+            matrixGroup={matrix.group}
+            cartItemsByProductId={EMPTY_CART_ITEMS_MAP}
+            onQuantityChange={matrix.onQuantityChange}
+            onBulkAdd={matrix.onBulkAdd}
+            onBulkUpdate={matrix.onBulkUpdate}
+            // Locked on regardless of the page's bulkMode: every cell edit
+            // stages into pendingQtys, never auto-adding to cart — committing
+            // happens only via the explicit "Add to cart" button above (or
+            // the page-level "Add all to cart" when bulk mode is enabled).
+            bulkMode
+            pendingQtys={matrix.pendingQtys}
+            onPendingChange={onBulkQuantityChange}
+            disabled={matrix.disabled}
+          />
+        </div>
+      )}
+    </>
     );
   }
 

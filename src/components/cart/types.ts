@@ -16,6 +16,9 @@ export type ProductInfo = {
 export type ChildProduct = {
   id: string;
   variationOptions: Array<{ variationName: string; optionName: string }>;
+  /** Optional — only populated by callers that fetch per-child pricing (e.g. the listing page's matrix view). MatrixCartRow shows a per-cell price only when present. */
+  priceFormatted?: string;
+  originalPriceFormatted?: string;
 };
 
 export type MatrixGroup = {

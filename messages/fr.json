@@ -491,6 +491,8 @@
     "bulkBuyTag": "Achat en gros",
     "variationTag": "Variation",
     "bundleTag": "Bundle",
+    "showVariants": "Afficher les variantes",
+    "hideVariants": "Masquer les variantes",
     "detailsLabel": "Détails du produit",
     "breadcrumbHome": "Accueil",
     "skuLabel": "SKU",

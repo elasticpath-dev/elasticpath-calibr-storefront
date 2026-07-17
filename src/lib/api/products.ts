@@ -155,6 +155,9 @@ export async function parseExtensions(
 export type MatrixChildInfo = {
   id: string;
   variationOptions: Array<{ variationName: string; optionName: string }>;
+  /** Populated separately (see /api/products/matrix) — deriveMatrixChildren itself never calls any API. */
+  priceFormatted?: string;
+  originalPriceFormatted?: string;
 };
 
 /**
