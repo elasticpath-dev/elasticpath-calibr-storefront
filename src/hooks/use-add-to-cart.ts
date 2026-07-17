@@ -18,7 +18,7 @@ export function useAddToCart(
   const [added, setAdded] = useState(false);
 
   const add = useCallback(
-    async (quantity = 1) => {
+    async (quantity = 1): Promise<boolean> => {
       setIsPending(true);
       try {
         await addItem(
@@ -30,6 +30,7 @@ export function useAddToCart(
         );
         setAdded(true);
         setTimeout(() => setAdded(false), 2000);
+        return true;
       } catch (err: unknown) {
         const epErrors = (err as Record<string, unknown>)?.errors;
         if (Array.isArray(epErrors) && epErrors.length > 0) {
@@ -37,10 +38,11 @@ export function useAddToCart(
           const message = (first?.detail ?? first?.title) as string | undefined;
           if (message) {
             toast.error(message);
-            return;
+            return false;
           }
         }
         toast.error(t("addToCartFailed"));
+        return false;
       } finally {
         setIsPending(false);
       }

@@ -6,6 +6,8 @@ import { useTranslations } from "next-intl";
 import { ProductThumbnail } from "./ProductThumbnail";
 import { ProductName } from "./ProductName";
 import { Price } from "./Price";
+import { QuantitySelector } from "./QuantitySelector";
+import { AddToCart } from "./AddToCart";
 import { QuantityAddToCart } from "./QuantityAddToCart";
 import { QuickViewButton } from "./QuickViewButton";
 import type { ProductCardData } from "@/lib/api/products";
@@ -18,6 +20,15 @@ type ProductCardProps = {
   /** Promotion label shown as a badge — only rendered in flat variant */
   promoInfo?: string;
   stackedPrice?: boolean;
+  /**
+   * When true, replaces the per-card Add to Cart control with a
+   * quantity-only stepper reporting up to onBulkQuantityChange — adding to
+   * cart happens once, in bulk, via a parent "Add all to cart" action
+   * instead of per-card (see ProductGrid).
+   */
+  bulkMode?: boolean;
+  bulkQuantity?: number;
+  onBulkQuantityChange?: (productId: string, quantity: number) => void;
 };
 
 export function ProductCard({
@@ -27,8 +38,32 @@ export function ProductCard({
   variant = "default",
   promoInfo,
   stackedPrice = false,
+  bulkMode = false,
+  bulkQuantity = 0,
+  onBulkQuantityChange,
 }: ProductCardProps) {
   const t = useTranslations("product");
+
+  const addToCartControl = bulkMode ? (
+    <div className="flex items-center gap-2">
+      <QuantitySelector
+        value={bulkQuantity}
+        onChange={(qty) => onBulkQuantityChange?.(product.id, qty)}
+        min={0}
+      />
+      <AddToCart
+        productId={product.id}
+        quantity={bulkQuantity}
+        disabled={bulkQuantity === 0}
+        className="flex-1 justify-center h-9"
+        // Once this product has been added individually, drop it back to 0
+        // so it isn't also included the next time "Add all to cart" runs.
+        onAdded={() => onBulkQuantityChange?.(product.id, 0)}
+      />
+    </div>
+  ) : (
+    <QuantityAddToCart productId={product.id} compact />
+  );
 
   if (variant === "row") {
     const badges = [
@@ -97,7 +132,7 @@ export function ProductCard({
           {product.hasVariations || product.isBundle ? (
             <QuickViewButton product={product} lang={lang} />
           ) : (
-            <QuantityAddToCart productId={product.id} compact />
+            addToCartControl
           )}
         </div>
       </article>
@@ -145,7 +180,7 @@ export function ProductCard({
             {product.hasVariations ? (
               <QuickViewButton product={product} lang={lang} />
             ) : (
-              <QuantityAddToCart productId={product.id} compact />
+              addToCartControl
             )}
           </div>
         </div>
@@ -236,7 +271,7 @@ export function ProductCard({
               className="text-base"
               stacked={stackedPrice}
             />
-            <QuantityAddToCart productId={product.id} compact />
+            {addToCartControl}
           </div>
         )}
       </div>

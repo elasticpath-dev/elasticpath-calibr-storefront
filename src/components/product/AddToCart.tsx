@@ -15,6 +15,8 @@ type AddToCartProps = {
   productFields?: ProductField[];
   disabled?: boolean;
   onBeforeAdd?: () => boolean;
+  /** Called after a successful add — e.g. to reset a shared quantity value elsewhere. */
+  onAdded?: () => void;
   /** Override the default "Add to cart"/"Added" labels — e.g. for non-product add flows like memberships. */
   label?: string;
   addedLabel?: string;
@@ -29,15 +31,17 @@ export function AddToCart({
   productFields,
   disabled,
   onBeforeAdd,
+  onAdded,
   label,
   addedLabel,
 }: AddToCartProps) {
   const t = useTranslations("product");
   const { add, isPending, added } = useAddToCart(productId, customInputs, productFields);
 
-  function handleClick() {
+  async function handleClick() {
     if (onBeforeAdd && !onBeforeAdd()) return;
-    add(quantity);
+    const success = await add(quantity);
+    if (success) onAdded?.();
   }
 
   return (
