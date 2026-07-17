@@ -5,11 +5,10 @@ import type { BreadcrumbItem } from "@/lib/api/breadcrumb";
 type Props = {
   lang: string;
   items: BreadcrumbItem[];
-  productName: string;
   homeLabel: string;
 };
 
-export function ProductBreadcrumb({ lang, items, productName, homeLabel }: Props) {
+export function ProductBreadcrumb({ lang, items, homeLabel }: Props) {
   return (
     <nav aria-label="Breadcrumb" className="mb-6">
       <ol className="flex items-center gap-2 text-sm text-gray-500">
@@ -28,10 +27,6 @@ export function ProductBreadcrumb({ lang, items, productName, homeLabel }: Props
             </li>
           </Fragment>
         ))}
-        <li aria-hidden="true">›</li>
-        <li>
-          <span className="font-medium text-gray-900">{productName}</span>
-        </li>
       </ol>
     </nav>
   );

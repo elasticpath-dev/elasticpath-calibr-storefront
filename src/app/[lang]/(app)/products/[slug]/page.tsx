@@ -79,7 +79,6 @@ export default async function ProductDetailPage({ params }: Props) {
         <ProductBreadcrumb
           lang={lang}
           items={breadcrumbItems}
-          productName={product.name}
           homeLabel={t("breadcrumbHome")}
         />
 

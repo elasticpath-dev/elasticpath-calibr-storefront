@@ -14,7 +14,7 @@ import { SlidersHorizontal, X } from "lucide-react";
 import { useEpClient } from "@/components/ClientProvider";
 import { getSelectedCurrency } from "@/lib/currency";
 import { hasBulkBuyForCurrency } from "@/lib/bulk-buy";
-import { ProductCard } from "@/components/product/ProductCard";
+import { ProductGrid } from "@/components/product/ProductGrid";
 import { Pagination } from "@/components/ui/Pagination/Pagination";
 import { Button } from "@/components/ui/Button";
 import {
@@ -142,15 +142,7 @@ function CategoryInner({
 
           {!isLoading && hits.length > 0 && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                {hits.map((hit) => (
-                  <ProductCard
-                    key={hit.objectID as string}
-                    product={hitToCard(hit)}
-                    lang={lang}
-                  />
-                ))}
-              </div>
+              <ProductGrid products={hits.map(hitToCard)} lang={lang} />
               {nbPages > 1 && (
                 <div className="mt-10 flex justify-center">
                   <Pagination

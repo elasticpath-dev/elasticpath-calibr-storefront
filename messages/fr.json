@@ -704,6 +704,8 @@
     "noResultsForQuery": "Aucun résultat pour \"{query}\"",
     "noResults": "Aucun produit trouvé.",
     "noResultsHint": "Essayez d'autres mots-clés ou parcourez nos catégories.",
+    "viewList": "Liste",
+    "viewGrid": "Grille",
     "viewResults": "Voir les résultats",
     "viewAllResults": "Voir tous les résultats pour \"{query}\"",
     "metaTitle": "Tous les produits",
