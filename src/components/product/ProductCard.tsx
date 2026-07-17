@@ -108,17 +108,24 @@ export function ProductCard({
     ? matrix.group.children.filter((c) => (matrix.pendingQtys.get(c.id) ?? 0) > 0).length
     : 0;
 
+  const missingPrice = !product.priceFormatted;
+
+  // Inline control for the horizontal "row" variant — everything on one line.
   const addToCartControl = bulkMode ? (
-    <div className="flex items-center gap-2">
+    <div
+      className="flex items-center gap-2"
+      title={missingPrice ? t("missingPriceTooltip") : undefined}
+    >
       <QuantitySelector
         value={bulkQuantity}
         onChange={(qty) => onBulkQuantityChange?.(product.id, qty)}
         min={0}
+        disabled={missingPrice}
       />
       <AddToCart
         productId={product.id}
         quantity={bulkQuantity}
-        disabled={bulkQuantity === 0}
+        disabled={bulkQuantity === 0 || missingPrice}
         className="flex-1 justify-center h-9"
         // Once this product has been added individually, drop it back to 0
         // so it isn't also included the next time "Add all to cart" runs.
@@ -126,8 +133,42 @@ export function ProductCard({
       />
     </div>
   ) : (
-    <QuantityAddToCart productId={product.id} compact />
+    <QuantityAddToCart productId={product.id} compact missingPrice={missingPrice} />
   );
+
+  // Stacked control for the default/flat card variants: price + quantity
+  // selector share the first row, Add to Cart spans its own row below.
+  const renderStackedControl = (price: React.ReactNode) =>
+    bulkMode ? (
+      <div
+        className="flex flex-col gap-2"
+        title={missingPrice ? t("missingPriceTooltip") : undefined}
+      >
+        <div className="flex items-center justify-between gap-2">
+          {price}
+          <QuantitySelector
+            value={bulkQuantity}
+            onChange={(qty) => onBulkQuantityChange?.(product.id, qty)}
+            min={0}
+            disabled={missingPrice}
+          />
+        </div>
+        <AddToCart
+          productId={product.id}
+          quantity={bulkQuantity}
+          disabled={bulkQuantity === 0 || missingPrice}
+          className="w-full justify-center h-9"
+          onAdded={() => onBulkQuantityChange?.(product.id, 0)}
+        />
+      </div>
+    ) : (
+      <QuantityAddToCart
+        productId={product.id}
+        compact
+        missingPrice={missingPrice}
+        priceSlot={price}
+      />
+    );
 
   if (variant === "row") {
     const badges = [
@@ -295,12 +336,14 @@ export function ProductCard({
             />
           </Link>
 
-          <Price
-            formatted={product.priceFormatted}
-            originalFormatted={product.originalPriceFormatted}
-            className="text-sm"
-            stacked={stackedPrice}
-          />
+          {product.hasVariations && (
+            <Price
+              formatted={product.priceFormatted}
+              originalFormatted={product.originalPriceFormatted}
+              className="text-sm"
+              stacked={stackedPrice}
+            />
+          )}
 
           {promoInfo && (
             <span className="inline-flex items-center gap-1 self-start text-[10px] font-semibold text-success-600 bg-success-50 border border-success-200 rounded-full px-2 py-0.5 leading-none">
@@ -313,7 +356,14 @@ export function ProductCard({
             {product.hasVariations ? (
               <QuickViewButton product={product} lang={lang} />
             ) : (
-              addToCartControl
+              renderStackedControl(
+                <Price
+                  formatted={product.priceFormatted}
+                  originalFormatted={product.originalPriceFormatted}
+                  className="text-sm"
+                  stacked={stackedPrice}
+                />,
+              )
             )}
           </div>
         </div>
@@ -397,14 +447,15 @@ export function ProductCard({
             <QuickViewButton product={product} lang={lang} />
           </div>
         ) : (
-          <div className="flex flex-col gap-2 mt-auto pt-2">
-            <Price
-              formatted={product.priceFormatted}
-              originalFormatted={product.originalPriceFormatted}
-              className="text-base"
-              stacked={stackedPrice}
-            />
-            {addToCartControl}
+          <div className="mt-auto pt-2">
+            {renderStackedControl(
+              <Price
+                formatted={product.priceFormatted}
+                originalFormatted={product.originalPriceFormatted}
+                className="text-base"
+                stacked={stackedPrice}
+              />,
+            )}
           </div>
         )}
       </div>

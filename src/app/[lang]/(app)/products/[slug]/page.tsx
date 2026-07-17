@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { getTranslations, getMessages } from "next-intl/server";
 import { Header } from "@/components/header/Header";
-import { ProductThumbnail } from "@/components/product/ProductThumbnail";
+import { ProductImageGallery } from "@/components/product/ProductImageGallery";
 import { ProductName } from "@/components/product/ProductName";
 import { ProductDescription } from "@/components/product/ProductDescription";
 import { Price } from "@/components/product/Price";
@@ -16,6 +16,7 @@ import {
 } from "@/lib/api/products";
 import { getProductOffering } from "@/lib/api/subscriptions";
 import { getProductBreadcrumb } from "@/lib/api/breadcrumb";
+import { getTenantConfig } from "@/lib/tenant-config";
 import { ProductBreadcrumb } from "@/components/product/ProductBreadcrumb";
 import { ProductCarouselDisplay } from "@/components/product/ProductCarouselDisplay";
 import { SubscriptionProductActions } from "@/components/product/SubscriptionProductActions";
@@ -41,18 +42,20 @@ export default async function ProductDetailPage({ params }: Props) {
   const product = await getProductBySlug(slug).catch(() => null);
   if (!product) notFound();
 
-  const [t, messages, offering, relationshipCarousels, breadcrumbItems] = await Promise.all([
-    getTranslations("product"),
-    getMessages(),
-    getProductOffering(product.id).catch(() => null),
-    getProductRelationshipCarousels(
-      product.id,
-      product.customRelationshipSlugs ?? [],
-    ).catch(() => []),
-    product.breadCrumbNodes && product.breadCrumbs
-      ? getProductBreadcrumb(lang, product.breadCrumbNodes, product.breadCrumbs).catch(() => [])
-      : Promise.resolve([]),
-  ]);
+  const [t, messages, offering, relationshipCarousels, breadcrumbItems, { ui }] =
+    await Promise.all([
+      getTranslations("product"),
+      getMessages(),
+      getProductOffering(product.id).catch(() => null),
+      getProductRelationshipCarousels(
+        product.id,
+        product.customRelationshipSlugs ?? [],
+      ).catch(() => []),
+      product.breadCrumbNodes && product.breadCrumbs
+        ? getProductBreadcrumb(lang, product.breadCrumbNodes, product.breadCrumbs).catch(() => [])
+        : Promise.resolve([]),
+      getTenantConfig(),
+    ]);
 
   const relMsgs = (
     (messages as Record<string, unknown>).product as Record<string, unknown>
@@ -82,35 +85,21 @@ export default async function ProductDetailPage({ params }: Props) {
           homeLabel={t("breadcrumbHome")}
         />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
+        <div
+          className={
+            ui.fullWidth
+              ? // Full-width shell: cap the image column instead of letting it
+                // balloon to half of an ultra-wide viewport; details take the rest.
+                "grid grid-cols-1 lg:grid-cols-[minmax(0,560px)_1fr] gap-12 lg:gap-16"
+              : "grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16"
+          }
+        >
           {/* Left: Images */}
-          <div className="space-y-4">
-            <div className="rounded-2xl overflow-hidden border border-gray-100 bg-gray-50">
-              <ProductThumbnail
-                imageUrl={product.imageUrl}
-                name={product.name}
-                className="w-full aspect-square"
-                priority
-              />
-            </div>
-
-            {product.additionalImages &&
-              product.additionalImages.length > 0 && (
-                <div className="grid grid-cols-4 gap-3">
-                  {product.additionalImages.slice(0, 4).map((url, i) => (
-                    <div
-                      key={i}
-                      className="rounded-lg overflow-hidden border border-gray-100 bg-gray-50 aspect-square relative"
-                    >
-                      <ProductThumbnail
-                        imageUrl={url}
-                        name={`${product.name} view ${i + 1}`}
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
-          </div>
+          <ProductImageGallery
+            imageUrl={product.imageUrl}
+            additionalImages={product.additionalImages}
+            name={product.name}
+          />
 
           {/* Right: Details */}
           <div className="flex flex-col">

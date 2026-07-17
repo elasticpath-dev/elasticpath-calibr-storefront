@@ -23,6 +23,8 @@ type Props = {
   productCustomInputs?: Record<string, ProductCustomInput>;
   /** "physical" | "digital" — from ProductDetailData.commodityType. */
   commodityType?: string;
+  /** No price in the active price book — disables add to cart with a tooltip. */
+  missingPrice?: boolean;
 };
 
 export function VariantAddToCart({
@@ -37,6 +39,7 @@ export function VariantAddToCart({
   slotBelowSelectors,
   productCustomInputs,
   commodityType,
+  missingPrice = false,
 }: Props) {
   const router = useRouter();
   const [, startTransition] = useTransition();
@@ -188,6 +191,7 @@ export function VariantAddToCart({
         >
           <QuantityAddToCart
             productId={effectiveProductId}
+            missingPrice={missingPrice}
             customInputs={customInputs}
             productFields={
               productCustomInputs

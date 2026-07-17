@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { ProductCarouselDisplay } from "@/components/product/ProductCarouselDisplay";
+import { useTenantConfig } from "@/context/TenantConfigContext";
+import { useResponsiveSlides } from "@/hooks/use-responsive-slides";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import type { ProductCardData } from "@/lib/api/products";
 
@@ -58,6 +60,11 @@ export function ProductCarousel({
 }: ProductCarouselProps) {
   const [products, setProducts] = useState<ProductCardData[]>([]);
   const [loading, setLoading] = useState(false);
+  const { fullWidth } = useTenantConfig();
+
+  // Keep the loading skeleton's card count in sync with what
+  // ProductCarouselDisplay will actually render — same responsive hook.
+  const skeletonSlides = useResponsiveSlides(slidesToShow, fullWidth);
 
   const productIdsKey = selectedProducts.map((p) => p.id).join(",");
 
@@ -91,10 +98,10 @@ export function ProductCarousel({
       <div className={wrapperClass}>
         {title && <Skeleton className="h-7 w-48 mb-6" />}
         <div className="flex gap-4">
-          {Array.from({ length: slidesToShow }).map((_, i) => (
+          {Array.from({ length: skeletonSlides }).map((_, i) => (
             <div
               key={i}
-              style={{ flex: `0 0 calc(${100 / slidesToShow}% - 12px)` }}
+              style={{ flex: `0 0 calc(${100 / skeletonSlides}% - 12px)` }}
             >
               <Skeleton className="h-72 w-full rounded-xl" />
             </div>

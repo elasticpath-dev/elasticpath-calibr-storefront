@@ -493,6 +493,7 @@
     "bundleTag": "Bundle",
     "showVariants": "Show variants",
     "hideVariants": "Hide variants",
+    "missingPriceTooltip": "Missing price",
     "detailsLabel": "Product Details",
     "breadcrumbHome": "Home",
     "skuLabel": "SKU",

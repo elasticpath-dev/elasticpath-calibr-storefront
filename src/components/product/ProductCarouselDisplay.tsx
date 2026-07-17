@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard } from "./ProductCard";
+import { useTenantConfig } from "@/context/TenantConfigContext";
+import { useResponsiveSlides } from "@/hooks/use-responsive-slides";
 import type { ProductCardData } from "@/lib/api/products";
 
 export type ProductCarouselDisplayProps = {
@@ -26,6 +28,13 @@ export function ProductCarouselDisplay({
 }: ProductCarouselDisplayProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
+  const { fullWidth } = useTenantConfig();
+
+  // Responsive slide count (1/2/3-4/4-5/4-6 across sm→2xl, wider tiers in
+  // full-width mode) — see useResponsiveSlides. Deliberate non-default
+  // slidesToShow choices (e.g. a Plasmic author setting 2, 3, or 6) stay
+  // fixed at every screen size.
+  const effectiveSlides = useResponsiveSlides(slidesToShow, fullWidth);
 
   const getCardWidth = useCallback(() => {
     const el = scrollRef.current;
@@ -86,9 +95,9 @@ export function ProductCarouselDisplay({
 
   if (!products.length) return null;
 
-  const totalDots = Math.ceil(products.length / slidesToShow);
+  const totalDots = Math.ceil(products.length / effectiveSlides);
   const activeDot = Math.min(
-    Math.floor(activeIndex / slidesToShow),
+    Math.floor(activeIndex / effectiveSlides),
     totalDots - 1,
   );
 
@@ -117,7 +126,7 @@ export function ProductCarouselDisplay({
             <div
               key={product.id}
               style={{
-                flex: `0 0 calc(${100 / slidesToShow}% - 12px)`,
+                flex: `0 0 calc(${100 / effectiveSlides}% - 12px)`,
                 minWidth: 220,
                 scrollSnapAlign: "start",
               }}
@@ -125,7 +134,7 @@ export function ProductCarouselDisplay({
               <ProductCard
                 product={product}
                 lang={lang}
-                priority={index < slidesToShow}
+                priority={index < effectiveSlides}
               />
             </div>
           ))}
@@ -147,7 +156,7 @@ export function ProductCarouselDisplay({
             <button
               key={i}
               type="button"
-              onClick={() => scrollToIndex(i * slidesToShow)}
+              onClick={() => scrollToIndex(i * effectiveSlides)}
               aria-label={`Go to page ${i + 1}`}
               className="group flex items-center justify-center h-6 w-6 -mx-2"
             >

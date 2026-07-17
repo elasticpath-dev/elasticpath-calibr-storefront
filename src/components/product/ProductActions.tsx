@@ -69,6 +69,7 @@ export function ProductActions({
       slotBelowSelectors={slotBelowSelectors}
       productCustomInputs={productCustomInputs}
       commodityType={commodityType}
+      missingPrice={!initialPrice}
     />
   );
 }

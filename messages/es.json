@@ -493,6 +493,7 @@
     "bundleTag": "Paquete",
     "showVariants": "Mostrar variantes",
     "hideVariants": "Ocultar variantes",
+    "missingPriceTooltip": "Precio no disponible",
     "detailsLabel": "Detalles del producto",
     "breadcrumbHome": "Inicio",
     "skuLabel": "SKU",
