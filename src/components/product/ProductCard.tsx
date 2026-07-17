@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { ProductThumbnail } from "./ProductThumbnail";
 import { ProductName } from "./ProductName";
 import { Price } from "./Price";
-import { AddToCart } from "./AddToCart";
+import { QuantityAddToCart } from "./QuantityAddToCart";
 import { QuickViewButton } from "./QuickViewButton";
 import type { ProductCardData } from "@/lib/api/products";
 
@@ -97,7 +97,7 @@ export function ProductCard({
           {product.hasVariations || product.isBundle ? (
             <QuickViewButton product={product} lang={lang} />
           ) : (
-            <AddToCart productId={product.id} />
+            <QuantityAddToCart productId={product.id} compact />
           )}
         </div>
       </article>
@@ -107,13 +107,24 @@ export function ProductCard({
   if (variant === "flat") {
     return (
       <article className="group flex flex-col h-full rounded-xl border border-gray-100 bg-white overflow-hidden hover:shadow-md transition-shadow duration-200">
-        <Link href={`/${lang}/products/${product.slug}`} className="relative block">
-          <ProductThumbnail imageUrl={product.imageUrl} name={product.name} priority={priority} />
+        <Link
+          href={`/${lang}/products/${product.slug}`}
+          className="relative block"
+        >
+          <ProductThumbnail
+            imageUrl={product.imageUrl}
+            name={product.name}
+            priority={priority}
+          />
         </Link>
 
         <div className="p-3 flex flex-col gap-2 flex-1">
           <Link href={`/${lang}/products/${product.slug}`} className="block">
-            <ProductName name={product.name} as="h3" className="text-xs hover:underline line-clamp-2" />
+            <ProductName
+              name={product.name}
+              as="h3"
+              className="text-xs hover:underline line-clamp-2"
+            />
           </Link>
 
           <Price
@@ -134,7 +145,7 @@ export function ProductCard({
             {product.hasVariations ? (
               <QuickViewButton product={product} lang={lang} />
             ) : (
-              <AddToCart productId={product.id} variant="full" className="py-2 text-xs" />
+              <QuantityAddToCart productId={product.id} compact />
             )}
           </div>
         </div>
@@ -144,19 +155,43 @@ export function ProductCard({
 
   return (
     <article className="group flex flex-col h-full rounded-xl border border-gray-100 bg-white overflow-hidden hover:shadow-md transition-shadow duration-200">
-      <Link href={`/${lang}/products/${product.slug}`} className="relative block">
+      <Link
+        href={`/${lang}/products/${product.slug}`}
+        className="relative block"
+      >
         <ProductThumbnail
           imageUrl={product.imageUrl}
           name={product.name}
           priority={priority}
         />
         {[
-          product.hasBulkBuy && { key: "bulk", label: t("bulkBuyTag"), className: "bg-red-600" },
-          product.hasVariations && { key: "variation", label: t("variationTag"), className: "bg-red-600" },
-          product.isBundle && { key: "bundle", label: t("bundleTag"), className: "bg-red-600" },
-          product.commodityType === "digital" && { key: "digital", label: t("digitalTag"), className: "bg-indigo-600" },
+          product.hasBulkBuy && {
+            key: "bulk",
+            label: t("bulkBuyTag"),
+            className: "bg-red-600",
+          },
+          product.hasVariations && {
+            key: "variation",
+            label: t("variationTag"),
+            className: "bg-red-600",
+          },
+          product.isBundle && {
+            key: "bundle",
+            label: t("bundleTag"),
+            className: "bg-red-600",
+          },
+          product.commodityType === "digital" && {
+            key: "digital",
+            label: t("digitalTag"),
+            className: "bg-indigo-600",
+          },
         ]
-          .filter((badge): badge is { key: string; label: string; className: string } => !!badge)
+          .filter(
+            (
+              badge,
+            ): badge is { key: string; label: string; className: string } =>
+              !!badge,
+          )
           .map((badge, i) => (
             <span
               key={badge.key}
@@ -170,21 +205,40 @@ export function ProductCard({
 
       <div className="p-4 flex flex-col gap-2 flex-1">
         <Link href={`/${lang}/products/${product.slug}`} className="block">
-          <ProductName name={product.name} as="h3" className="text-sm hover:underline line-clamp-3" />
+          <ProductName
+            name={product.name}
+            as="h3"
+            className="text-sm hover:underline line-clamp-3"
+          />
         </Link>
 
         {product.description && (
-          <p className="text-xs text-gray-500 line-clamp-1">{product.description}</p>
+          <p className="text-xs text-gray-500 line-clamp-1">
+            {product.description}
+          </p>
         )}
 
-        <div className="flex items-center justify-between mt-auto pt-2">
-          <Price formatted={product.priceFormatted} originalFormatted={product.originalPriceFormatted} className="text-base" stacked={stackedPrice} />
-          {product.hasVariations || product.isBundle ? (
+        {product.hasVariations || product.isBundle ? (
+          <div className="flex items-center justify-between mt-auto pt-2">
+            <Price
+              formatted={product.priceFormatted}
+              originalFormatted={product.originalPriceFormatted}
+              className="text-base"
+              stacked={stackedPrice}
+            />
             <QuickViewButton product={product} lang={lang} />
-          ) : (
-            <AddToCart productId={product.id} />
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2 mt-auto pt-2">
+            <Price
+              formatted={product.priceFormatted}
+              originalFormatted={product.originalPriceFormatted}
+              className="text-base"
+              stacked={stackedPrice}
+            />
+            <QuantityAddToCart productId={product.id} compact />
+          </div>
+        )}
       </div>
     </article>
   );
