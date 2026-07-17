@@ -42,7 +42,7 @@ export default async function MembershipPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-white">
       <Header lang={lang} />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <main className="container-shell px-4 sm:px-6 lg:px-8 py-10">
         {beforeContent && (
           <div className="mb-8">
             <PlasmicContent

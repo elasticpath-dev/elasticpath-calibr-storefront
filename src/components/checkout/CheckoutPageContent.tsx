@@ -45,7 +45,7 @@ export function CheckoutPageContent({ lang }: Props) {
 
   if (items.length === 0) {
     return (
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+      <main className="container-shell px-4 sm:px-6 lg:px-8 py-20 text-center">
         <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-6">
           <ShoppingBag size={28} className="text-gray-400" />
         </div>
@@ -62,7 +62,7 @@ export function CheckoutPageContent({ lang }: Props) {
   }
 
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <main className="container-shell px-4 sm:px-6 lg:px-8 py-10">
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_400px] gap-12 items-start">
         <CheckoutForm
           onSubmit={submitCheckout}

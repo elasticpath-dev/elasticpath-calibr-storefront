@@ -94,7 +94,7 @@ export function QuickViewButton({ product, lang }: Props) {
     <>
       <button
         onClick={handleOpen}
-        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-brand-primary text-white hover:opacity-90 transition-opacity"
+        className="inline-flex items-center justify-center gap-2 h-9 px-3 rounded-lg text-xs font-medium bg-brand-primary text-white hover:opacity-90 transition-opacity"
       >
         <Eye size={14} />
         {t("quickView")}

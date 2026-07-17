@@ -56,12 +56,13 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { theme } = await getTenantConfig();
+  const { theme, ui } = await getTenantConfig();
   return (
     <html
       suppressHydrationWarning
       className={inter.variable}
       style={buildThemeVars(theme)}
+      data-full-width={ui.fullWidth ? "true" : undefined}
     >
       <body suppressHydrationWarning>
         {children}

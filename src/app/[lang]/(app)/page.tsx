@@ -39,7 +39,7 @@ export default async function HomePage({ params }: PageProps) {
 function HeroSection({ lang }: { lang: string }) {
   return (
     <section className="relative bg-gray-50 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-20">
+      <div className="container-shell px-4 sm:px-6 lg:px-8 py-10 sm:py-14 lg:py-20">
         <div className="max-w-2xl">
           <span className="inline-block px-3 py-1 text-xs font-semibold tracking-widest text-brand-secondary uppercase bg-brand-accent/20 rounded-full mb-6">
             New Collection 2026
@@ -86,7 +86,7 @@ async function FeaturedSection({
   products: Awaited<ReturnType<typeof getFeaturedProducts>>;
 }) {
   return (
-    <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
+    <section className="container-shell px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
       <div className="flex items-center justify-between mb-8">
         <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
           Featured Products

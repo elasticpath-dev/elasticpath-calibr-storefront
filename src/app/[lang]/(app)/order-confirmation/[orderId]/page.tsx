@@ -20,7 +20,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-white">
       <Header lang={lang} />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+      <main className="container-shell px-4 sm:px-6 lg:px-8 py-20">
         {/* Success icon */}
         <div className="flex flex-col items-center text-center">
           <div className="relative mb-6">

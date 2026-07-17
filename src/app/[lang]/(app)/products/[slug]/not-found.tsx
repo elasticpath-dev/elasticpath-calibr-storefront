@@ -11,7 +11,7 @@ export default async function ProductNotFound() {
   return (
     <div className="min-h-screen bg-white">
       <Header lang={locale} />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <main className="container-shell px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <p className="text-6xl font-bold text-gray-200 mb-6">404</p>
           <h1 className="text-2xl font-semibold text-gray-900 mb-3">

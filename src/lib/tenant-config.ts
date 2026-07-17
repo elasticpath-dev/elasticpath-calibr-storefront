@@ -65,6 +65,11 @@ export type TenantConfig = {
     /** True when the resolved endpoint is Elastic Path–hosted (SaaS) — shopping mode is fixed to B2C. */
     shoppingModeLocked: boolean;
     cartViewMode: "list" | "grid";
+    /** Use 100% of the viewport width for the whole shell (header, footer,
+     * content, cart, checkout) instead of the default centered max-width —
+     * wired through the --shell-max-width CSS vars (see globals.css /
+     * app/layout.tsx) plus wider product-grid column counts. */
+    fullWidth: boolean;
   };
   analytics: { posthogKey: string; posthogHost: string };
 };
@@ -97,6 +102,7 @@ export type ClientTenantConfig = {
   defaultShoppingMode: "b2c" | "b2b";
   shoppingModeLocked: boolean;
   cartViewMode: "list" | "grid";
+  fullWidth: boolean;
 };
 
 export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
@@ -120,6 +126,7 @@ export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
     defaultShoppingMode: config.ui.defaultShoppingMode,
     shoppingModeLocked: config.ui.shoppingModeLocked,
     cartViewMode: config.ui.cartViewMode,
+    fullWidth: config.ui.fullWidth,
   };
 }
 
@@ -257,6 +264,7 @@ function buildTenantConfigFromEnv(): TenantConfig {
       shoppingModeLocked,
       cartViewMode:
         (e.NEXT_PUBLIC_CART_VIEW_MODE as "list" | "grid" | undefined) ?? "list",
+      fullWidth: e.NEXT_PUBLIC_FULL_WIDTH === "true",
     },
     analytics: {
       posthogKey: e.NEXT_PUBLIC_POSTHOG_KEY ?? "",
@@ -368,6 +376,7 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
         : r.ui?.defaultShoppingMode ?? defaults.ui.defaultShoppingMode,
       shoppingModeLocked,
       cartViewMode: r.ui?.cartViewMode ?? defaults.ui.cartViewMode,
+      fullWidth: r.ui?.fullWidth ?? defaults.ui.fullWidth,
     },
     analytics: {
       posthogKey: r.analytics?.posthogKey ?? defaults.analytics.posthogKey,

@@ -84,7 +84,7 @@ export function ProductCarousel({
     load();
   }, [selectionMode, productIdsKey, nodeId]);
 
-  const wrapperClass = className ?? "max-w-7xl mx-auto px-4 sm:px-8 py-8";
+  const wrapperClass = className ?? "container-shell px-4 sm:px-8 py-8";
 
   if (loading) {
     return (

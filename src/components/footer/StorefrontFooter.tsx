@@ -65,7 +65,7 @@ export function StorefrontFooter({
     <footer
       className={`border-t border-gray-200 mt-16 bg-white text-gray-600${className ? ` ${className}` : ""}`}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+      <div className="container-shell px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
         <div
           className="grid grid-cols-1 sm:grid-cols-2 gap-10"
           style={{

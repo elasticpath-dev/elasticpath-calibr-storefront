@@ -173,7 +173,7 @@ function MegaMenu({ item, lang, onMouseEnter, onMouseLeave }: MegaMenuProps) {
       onMouseLeave={onMouseLeave}
       className="fixed left-0 right-0 top-16 z-40 bg-white border-t border-gray-100 shadow-xl animate-fade-in"
     >
-      <div className="max-w-7xl mx-auto px-8 py-8">
+      <div className="container-shell px-8 py-8">
         <div
           className="grid gap-8"
           style={{ gridTemplateColumns: `repeat(${colCount}, minmax(0, 1fr))` }}

@@ -12,7 +12,7 @@ export default async function PaymentReturnPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="flex-none border-b border-gray-100 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 flex items-center">
+        <div className="container-shell px-4 sm:px-6 lg:px-8 h-14 flex items-center">
           <Logo lang={lang} />
         </div>
       </header>

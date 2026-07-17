@@ -427,7 +427,7 @@ export function B2BCartContent({ lang }: Props) {
   const isEmpty = !isInitializing && !isLoading && !groupsLoading && items.length === 0;
 
   return (
-    <div className="max-w-[1240px] mx-auto px-4 py-[30px] pb-20">
+    <div className="container-shell-narrow px-4 py-[30px] pb-20">
       <CartPageHeader
         lang={lang}
         totalUnits={totalUnits}

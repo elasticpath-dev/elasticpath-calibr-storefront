@@ -294,7 +294,7 @@ export function CheckoutFlow({
 
   const pageHeader = (
     <header className="flex-none border-b border-gray-100 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-14 py-2 grid grid-cols-3 items-center">
+      <div className="container-shell px-4 sm:px-6 lg:px-8 min-h-14 py-2 grid grid-cols-3 items-center">
         <div className="flex items-center">
           {logo ?? (
             <Link
@@ -351,7 +351,7 @@ export function CheckoutFlow({
     return (
       <div className="min-h-screen bg-gray-50 flex flex-col">
         {pageHeader}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center">
+        <main className="container-shell px-4 sm:px-6 lg:px-8 py-20 text-center">
           <div className="mx-auto w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-6">
             <ShoppingBag size={28} className="text-gray-400" />
           </div>
@@ -450,7 +450,7 @@ export function CheckoutFlow({
 
   const step1 = (
     <form onSubmit={handleSubmit(handleContinueToPayment)} noValidate>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <main className="container-shell px-4 sm:px-6 lg:px-8 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
           <div className="lg:col-span-2 space-y-8">
             {!isAuthenticated && (
@@ -608,7 +608,7 @@ export function CheckoutFlow({
   );
 
   const step2 = (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <main className="container-shell px-4 sm:px-6 lg:px-8 py-10">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
         <div className="lg:col-span-2 space-y-5">
           {/* Shipping summary — compact flat row */}
@@ -885,7 +885,7 @@ export function CheckoutFlow({
 
   const pulse = "animate-pulse bg-gray-200 rounded-lg";
   const checkoutSkeleton = (
-    <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <main className="flex-1 container-shell w-full px-4 sm:px-6 lg:px-8 py-10">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start">
         <div className="lg:col-span-2 space-y-8">
           <div className="grid grid-cols-2 gap-4">

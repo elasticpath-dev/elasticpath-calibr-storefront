@@ -318,7 +318,7 @@ export function QuoteRequestFlow({
   /* ── Page header ── */
   const pageHeader = (
     <header className="flex-none border-b border-gray-100 bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 min-h-14 py-2 grid grid-cols-3 items-center">
+      <div className="container-shell px-4 sm:px-6 lg:px-8 min-h-14 py-2 grid grid-cols-3 items-center">
         <div className="flex items-center">
           {logo ?? (
             <a href={`/${lang}`} aria-label={t("returnToStore")} className="flex items-center gap-2">
@@ -420,7 +420,7 @@ export function QuoteRequestFlow({
   const step1 = (
     <div className="flex-1 min-h-0 flex flex-col">
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex gap-6 items-start">
+        <div className="container-shell px-4 sm:px-6 lg:px-8 py-8 flex gap-6 items-start">
           {/* Main column */}
           <div className="flex-1 min-w-0 flex flex-col gap-[18px]">
             <ItemsList />
@@ -654,7 +654,7 @@ export function QuoteRequestFlow({
   const step2 = (
     <div className="flex-1 min-h-0 flex flex-col">
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex gap-6 items-start">
+        <div className="container-shell px-4 sm:px-6 lg:px-8 py-8 flex gap-6 items-start">
 
           {/* Main column */}
           <div className="flex-1 min-w-0 flex flex-col gap-[18px]">

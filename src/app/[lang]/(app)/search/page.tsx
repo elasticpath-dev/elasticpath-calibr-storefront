@@ -28,7 +28,7 @@ export default async function SearchPage({ params, searchParams }: Props) {
   return (
     <div className="min-h-screen bg-white">
       <Header lang={lang} />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <main className="container-shell px-4 sm:px-6 lg:px-8 py-10">
         <Suspense>
           <SearchPageClient
           lang={lang}

@@ -16,7 +16,7 @@ export async function Header({ lang }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-30 w-full bg-white/95 backdrop-blur-sm border-b border-gray-100 supports-[backdrop-filter]:bg-white/80">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="container-shell px-4 sm:px-6 lg:px-8">
         <div className="flex items-center min-h-16 py-2 gap-4">
           {/* Mobile: hamburger */}
           <MobileNavBar lang={lang} />

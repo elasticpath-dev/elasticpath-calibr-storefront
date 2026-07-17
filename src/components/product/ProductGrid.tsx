@@ -8,6 +8,7 @@ import { ProductCard } from "./ProductCard";
 import { Button } from "@/components/ui/Button";
 import type { ChildProduct, MatrixGroup } from "@/components/cart/types";
 import { useCart } from "@/context/CartContext";
+import { useTenantConfig } from "@/context/TenantConfigContext";
 import {
   readViewModeCookie,
   writeViewModeCookie,
@@ -36,13 +37,16 @@ export function ProductGrid({ products, lang }: ProductGridProps) {
   const t = useTranslations("search");
   const tProduct = useTranslations("product");
   const { addItems, isLoading } = useCart();
+  const { fullWidth } = useTenantConfig();
   const [viewMode, setViewModeState] = useState<"list" | "grid">("list");
   const [bulkMode, setBulkMode] = useState(false);
-  const [pendingQtys, setPendingQtys] = useState<Map<string, number>>(new Map());
-  const [isAddingAll, setIsAddingAll] = useState(false);
-  const [matrixByParentId, setMatrixByParentId] = useState<Map<string, MatrixGroup>>(
+  const [pendingQtys, setPendingQtys] = useState<Map<string, number>>(
     new Map(),
   );
+  const [isAddingAll, setIsAddingAll] = useState(false);
+  const [matrixByParentId, setMatrixByParentId] = useState<
+    Map<string, MatrixGroup>
+  >(new Map());
   const fetchedParentIds = useRef<Set<string>>(new Set());
 
   // Sync from cookie after hydration — matches B2BCartContent's view-mode pattern.
@@ -87,7 +91,9 @@ export function ProductGrid({ products, lang }: ProductGridProps) {
         if (child.variationOptions.length > 0) {
           map.set(child.id, {
             parentId: group.parentId,
-            options: child.variationOptions.map((o) => o.optionName).join(" / "),
+            options: child.variationOptions
+              .map((o) => o.optionName)
+              .join(" / "),
           });
         }
       }
@@ -223,7 +229,9 @@ export function ProductGrid({ products, lang }: ProductGridProps) {
             type="button"
             size="xs"
             onClick={handleAddAllToCart}
-            disabled={!bulkMode || pendingCount === 0 || isAddingAll || isLoading}
+            disabled={
+              !bulkMode || pendingCount === 0 || isAddingAll || isLoading
+            }
           >
             {t("addAllToCart")}
             {bulkMode && pendingCount > 0 && (
@@ -267,7 +275,15 @@ export function ProductGrid({ products, lang }: ProductGridProps) {
       </div>
 
       {viewMode === "list" ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+        <div
+          className={[
+            "grid grid-cols-1 sm:grid-cols-2 gap-6",
+            // Full-width shells have room for more cards per row.
+            fullWidth
+              ? "lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5"
+              : "lg:grid-cols-3 xl:grid-cols-3",
+          ].join(" ")}
+        >
           {products.map((product, i) => (
             <ProductCard
               key={product.id}
@@ -297,7 +313,9 @@ export function ProductGrid({ products, lang }: ProductGridProps) {
                 bulkMode={bulkMode}
                 bulkQuantity={pendingQtys.get(product.id) ?? 0}
                 onBulkQuantityChange={handleBulkQuantityChange}
-                onRequestMatrix={product.hasVariations ? handleRequestMatrix : undefined}
+                onRequestMatrix={
+                  product.hasVariations ? handleRequestMatrix : undefined
+                }
                 matrix={
                   matrixGroup
                     ? {
