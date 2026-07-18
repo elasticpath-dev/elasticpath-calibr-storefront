@@ -42,14 +42,15 @@ export async function Header({ lang }: HeaderProps) {
     <NavBar lang={lang} navStyle={ui.navStyle} />
   );
 
-  const navBelow = ui.headerNavPosition === "below";
+  const navBelow =
+    ui.headerNavPosition === "below" || ui.headerNavPosition === "below-center";
 
   return (
     <header className="sticky top-0 z-30 w-full bg-white/95 backdrop-blur-sm border-b border-gray-100 supports-[backdrop-filter]:bg-white/80">
       <div className="container-shell px-4 sm:px-6 lg:px-8">
         <div className="flex items-center min-h-16 py-2 gap-4">
-          {/* Mobile: hamburger */}
-          <MobileNavBar lang={lang} />
+          {/* Mobile: hamburger — mirrors the Plasmic nav when it drives desktop */}
+          <MobileNavBar lang={lang} hasPlasmicNav={!!plasmicNavData} />
 
           {/* Logo */}
           <Logo lang={lang} />
@@ -88,9 +89,16 @@ export async function Header({ lang }: HeaderProps) {
           </div>
         </div>
 
-        {/* Desktop: nav on its own row below the logo row, left-aligned */}
+        {/* Desktop: nav on its own row below the logo row — left-aligned for
+            "below", centered for "below-center" */}
         {navBelow && (
-          <div className="hidden lg:flex justify-start border-t border-gray-100">
+          <div
+            className={`hidden lg:flex ${
+              ui.headerNavPosition === "below-center"
+                ? "justify-center"
+                : "justify-start"
+            }`}
+          >
             {navSlot}
           </div>
         )}

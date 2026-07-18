@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Menu, X, ChevronDown, ChevronLeft, Globe } from "lucide-react";
@@ -8,18 +8,45 @@ import { usePathname, useRouter } from "next/navigation";
 import { locales, localeNames, type Locale } from "@/lib/i18n/config";
 import type { NavItem } from "./types";
 import { useNavigation } from "@/context/NavigationContext";
+import {
+  getPlasmicNavState,
+  getServerPlasmicNavState,
+  subscribeToPlasmicNav,
+} from "./plasmic-nav-store";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 type MobileNavBarProps = {
   lang: string;
+  /** True when the tenant's Plasmic project has a "navigation" component
+   * driving the desktop nav — the drawer then mirrors those items. */
+  hasPlasmicNav?: boolean;
 };
 
 type DrillState =
   | { level: "top" }
   | { level: "mega"; item: NavItem };
 
-export function MobileNavBar({ lang }: MobileNavBarProps) {
-  const { navItems, isLoading, error } = useNavigation();
+export function MobileNavBar({ lang, hasPlasmicNav = false }: MobileNavBarProps) {
+  const catalogNav = useNavigation();
+  // The desktop nav slot is only CSS-hidden on mobile, so StorefrontNavigation
+  // still mounts and publishes its resolved items here. Stays "idle" when the
+  // Studio nav contains no StorefrontNavigation block — then we fall back to
+  // the catalog nav rather than showing an empty drawer.
+  const plasmicNav = useSyncExternalStore(
+    subscribeToPlasmicNav,
+    getPlasmicNavState,
+    getServerPlasmicNavState,
+  );
+  const usePlasmicItems = hasPlasmicNav && plasmicNav.status !== "idle";
+  const navItems = usePlasmicItems
+    ? plasmicNav.status === "ready"
+      ? plasmicNav.items
+      : []
+    : catalogNav.navItems;
+  const isLoading = usePlasmicItems
+    ? plasmicNav.status === "pending"
+    : catalogNav.isLoading;
+  const error = usePlasmicItems ? null : catalogNav.error;
   const [isOpen, setIsOpen] = useState(false);
   const [drill, setDrill] = useState<DrillState>({ level: "top" });
   const [mounted, setMounted] = useState(false);

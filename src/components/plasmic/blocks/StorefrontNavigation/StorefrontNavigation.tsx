@@ -6,6 +6,10 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { useTenantConfig } from "@/context/TenantConfigContext";
 import { locales } from "@/lib/i18n/config";
 import { NavBarView, type NavStyle } from "@/components/header/navigation/NavBarView";
+import {
+  publishPlasmicNavItems,
+  publishPlasmicNavPending,
+} from "@/components/header/navigation/plasmic-nav-store";
 import type {
   NavColumn,
   NavItem,
@@ -173,11 +177,16 @@ export function StorefrontNavigation({
     const cached = resolvedNavCache.get(itemsSignature);
     if (cached) {
       setNavItems(cached);
+      publishPlasmicNavItems(cached);
       return;
     }
+    publishPlasmicNavPending();
     let cancelled = false;
     resolveStudioItems(itemsSignature).then((resolved) => {
       if (!cancelled) setNavItems(resolved);
+      // Publish even if this instance unmounted — the mobile drawer (outside
+      // the Plasmic tree) consumes these via plasmic-nav-store.
+      publishPlasmicNavItems(resolved);
     });
     return () => {
       cancelled = true;

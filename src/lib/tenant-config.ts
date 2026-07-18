@@ -71,9 +71,10 @@ export type TenantConfig = {
      * app/layout.tsx) plus wider product-grid column counts. */
     fullWidth: boolean;
     /** Where the desktop top navigation renders: "inline" (centered between
-     * logo and action icons, the default) or "below" (its own full-width
-     * row under the logo row). */
-    headerNavPosition: "inline" | "below";
+     * logo and action icons, the default), "below" (its own full-width row
+     * under the logo row, left-aligned) or "below-center" (same row,
+     * centered). */
+    headerNavPosition: "inline" | "below" | "below-center";
     /** Desktop nav dropdown style: "mega" (multi-column mega menu, the
      * default) or "cascade" (drill-down panel — click a child to open its
      * children in a new column beside it). */
@@ -287,7 +288,11 @@ function buildTenantConfigFromEnv(): TenantConfig {
       cartViewMode:
         (e.NEXT_PUBLIC_CART_VIEW_MODE as "list" | "grid" | undefined) ?? "list",
       fullWidth: e.NEXT_PUBLIC_FULL_WIDTH === "true",
-      headerNavPosition: oneOf(e.NEXT_PUBLIC_HEADER_NAV_POSITION, ["inline", "below"], "inline"),
+      headerNavPosition: oneOf(
+        e.NEXT_PUBLIC_HEADER_NAV_POSITION,
+        ["inline", "below", "below-center"],
+        "inline",
+      ),
       navStyle: oneOf(e.NEXT_PUBLIC_NAV_STYLE, ["mega", "cascade"], "mega"),
     },
     analytics: {
@@ -403,7 +408,7 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
       fullWidth: r.ui?.fullWidth ?? defaults.ui.fullWidth,
       headerNavPosition: oneOf(
         r.ui?.headerNavPosition,
-        ["inline", "below"],
+        ["inline", "below", "below-center"],
         defaults.ui.headerNavPosition,
       ),
       navStyle: oneOf(r.ui?.navStyle, ["mega", "cascade"], defaults.ui.navStyle),
