@@ -36,6 +36,13 @@ import { ProductCarousel, type ProductCarouselProps } from "@/components/plasmic
 import { ProductPickerControl } from "@/components/plasmic/blocks/ProductCarousel/ProductPickerControl";
 import { NodePickerControl } from "@/components/plasmic/blocks/ProductCarousel/NodePickerControl";
 
+// Navigation
+import {
+  StorefrontNavigation,
+  type StudioNavItem,
+} from "@/components/plasmic/blocks/StorefrontNavigation/StorefrontNavigation";
+import { HierarchyPickerControl } from "@/components/plasmic/blocks/StorefrontNavigation/HierarchyPickerControl";
+
 // Shared default product used for canvas preview
 const DEMO_PRODUCT = {
   id: "demo-product",
@@ -514,5 +521,87 @@ export function registerPlasmicComponents(
     },
     importPath: "@/components/footer/StorefrontFooter",
     importName: "StorefrontFooter",
+  });
+
+  // ─── StorefrontNavigation ─────────────────────────────────────────────────
+  // Place inside a component named "navigation" to take over the desktop
+  // top nav (the Header falls back to the catalog-built nav when no such
+  // component exists). Dropdown style/position come from tenant config via
+  // componentProps — deliberately not Studio props.
+  loader.registerComponent(StorefrontNavigation, {
+    name: "StorefrontNavigation",
+    description:
+      "Top navigation bar. Items are static links or reference a catalog hierarchy/node whose children load automatically.",
+    classNameProp: "className",
+    props: {
+      // lang/navStyle are deliberately NOT Studio props — the component
+      // resolves the locale from the URL and the dropdown style from tenant
+      // config (a Studio-stored value would permanently override both).
+      items: {
+        type: "array",
+        itemType: {
+          type: "object",
+          nameFunc: (item: StudioNavItem) =>
+            item?.label || item?.itemType || "Item",
+          fields: {
+            itemType: {
+              type: "choice",
+              options: ["static", "hierarchy", "node"],
+              defaultValue: "static",
+              description:
+                "Static link, or a catalog hierarchy/node whose children become the dropdown",
+            },
+            label: {
+              type: "string",
+              description:
+                "Shown in the nav — required for static items; overrides the catalog name for hierarchy/node items",
+            },
+            href: {
+              type: "string",
+              description: "Site-relative link target, e.g. /category/tools",
+            },
+            children: {
+              type: "array",
+              itemType: {
+                type: "object",
+                nameFunc: (child: { label?: string }) => child?.label || "Link",
+                fields: {
+                  label: { type: "string" },
+                  href: { type: "string" },
+                  children: {
+                    type: "array",
+                    itemType: {
+                      type: "object",
+                      nameFunc: (leaf: { label?: string }) => leaf?.label || "Link",
+                      fields: {
+                        label: { type: "string" },
+                        href: { type: "string" },
+                      },
+                    },
+                  },
+                },
+              },
+              description: "Nested links under this item (static items only)",
+            },
+            hierarchyId: {
+              type: "custom",
+              control: HierarchyPickerControl,
+              description: "Catalog hierarchy whose children become the dropdown",
+            },
+            nodeId: {
+              type: "custom",
+              control: NodePickerControl,
+              description: "Catalog node whose children become the dropdown",
+            },
+          },
+        },
+        defaultValue: [
+          { itemType: "static", label: "Shop", href: "/category" },
+          { itemType: "static", label: "Featured", href: "/" },
+        ],
+      },
+    },
+    importPath: "@/components/plasmic/blocks/StorefrontNavigation/StorefrontNavigation",
+    importName: "StorefrontNavigation",
   });
 }

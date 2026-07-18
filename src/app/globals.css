@@ -88,3 +88,38 @@
     max-width: var(--shell-max-width-narrow);
   }
 }
+
+/* Plasmic page sections (outside @layer so Tailwind passes it through
+   verbatim): Studio lays out page content on a grid whose center tracks are
+   capped by the project's standard/wide width tokens (e.g. 800px/1280px).
+   In full-width mode widen both to the viewport so Studio-authored
+   heroes/carousels track the shell — the 16px --plsmc-viewport-gap is left
+   intact as edge padding. Scoped to the storefront root only (the Plasmic
+   Studio canvas at /plasmic-host has its own layout without
+   data-full-width, so authoring there is unaffected). */
+html[data-full-width="true"] [class*="ρd__all"] {
+  --plsmc-standard-width: 100%;
+  --plsmc-wide-width: 100%;
+}
+
+/* Both modes: match Plasmic's page gutter to the shell's horizontal padding
+   (px-4 / sm:px-6 / lg:px-8) so Studio content edges line up with the
+   header's. In the default centered mode Plasmic's wide sections already
+   share the header's 80rem box — only its 16px gutter differed from the
+   header's responsive padding. The `html` prefix outranks Plasmic's own
+   single-class token declaration regardless of stylesheet order. */
+html [class*="ρd__all"] {
+  --plsmc-viewport-gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  html [class*="ρd__all"] {
+    --plsmc-viewport-gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  html [class*="ρd__all"] {
+    --plsmc-viewport-gap: 2rem;
+  }
+}

@@ -70,6 +70,14 @@ export type TenantConfig = {
      * wired through the --shell-max-width CSS vars (see globals.css /
      * app/layout.tsx) plus wider product-grid column counts. */
     fullWidth: boolean;
+    /** Where the desktop top navigation renders: "inline" (centered between
+     * logo and action icons, the default) or "below" (its own full-width
+     * row under the logo row). */
+    headerNavPosition: "inline" | "below";
+    /** Desktop nav dropdown style: "mega" (multi-column mega menu, the
+     * default) or "cascade" (drill-down panel — click a child to open its
+     * children in a new column beside it). */
+    navStyle: "mega" | "cascade";
   };
   analytics: { posthogKey: string; posthogHost: string };
 };
@@ -103,6 +111,10 @@ export type ClientTenantConfig = {
   shoppingModeLocked: boolean;
   cartViewMode: "list" | "grid";
   fullWidth: boolean;
+  /** Needed client-side by StorefrontNavigation (Plasmic-driven nav):
+   * componentProps on PlasmicComponent only reach the Studio root, not
+   * nested code components, so the nav style can't be threaded as a prop. */
+  navStyle: "mega" | "cascade";
 };
 
 export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
@@ -127,6 +139,7 @@ export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
     shoppingModeLocked: config.ui.shoppingModeLocked,
     cartViewMode: config.ui.cartViewMode,
     fullWidth: config.ui.fullWidth,
+    navStyle: config.ui.navStyle,
   };
 }
 
@@ -143,6 +156,15 @@ async function getRequestHostname(): Promise<string> {
 function normalizeHex(v: string | undefined, fallback: string): string {
   if (!v) return fallback;
   return v.startsWith("#") ? v : `#${v}`;
+}
+
+/** Constrains an env/API-supplied value to an allowed set, else the fallback. */
+function oneOf<T extends string>(
+  v: unknown,
+  allowed: readonly T[],
+  fallback: T,
+): T {
+  return allowed.includes(v as T) ? (v as T) : fallback;
 }
 
 // The external tenant config API has been observed sending oidcProfileIds
@@ -265,6 +287,8 @@ function buildTenantConfigFromEnv(): TenantConfig {
       cartViewMode:
         (e.NEXT_PUBLIC_CART_VIEW_MODE as "list" | "grid" | undefined) ?? "list",
       fullWidth: e.NEXT_PUBLIC_FULL_WIDTH === "true",
+      headerNavPosition: oneOf(e.NEXT_PUBLIC_HEADER_NAV_POSITION, ["inline", "below"], "inline"),
+      navStyle: oneOf(e.NEXT_PUBLIC_NAV_STYLE, ["mega", "cascade"], "mega"),
     },
     analytics: {
       posthogKey: e.NEXT_PUBLIC_POSTHOG_KEY ?? "",
@@ -377,6 +401,12 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
       shoppingModeLocked,
       cartViewMode: r.ui?.cartViewMode ?? defaults.ui.cartViewMode,
       fullWidth: r.ui?.fullWidth ?? defaults.ui.fullWidth,
+      headerNavPosition: oneOf(
+        r.ui?.headerNavPosition,
+        ["inline", "below"],
+        defaults.ui.headerNavPosition,
+      ),
+      navStyle: oneOf(r.ui?.navStyle, ["mega", "cascade"], defaults.ui.navStyle),
     },
     analytics: {
       posthogKey: r.analytics?.posthogKey ?? defaults.analytics.posthogKey,

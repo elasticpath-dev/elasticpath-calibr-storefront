@@ -18,6 +18,14 @@ export type NavColumn = {
   groups: NavColumnGroup[];
 };
 
+/** A node in the plain nav tree — used by the cascade (drill-down) style. */
+export type NavTreeNode = {
+  key: string;
+  label: string;
+  href: string;
+  children?: NavTreeNode[];
+};
+
 /** A top-level nav item — may have a mega-menu */
 export type NavItem = {
   key: string;
@@ -34,4 +42,9 @@ export type NavItem = {
       imageBg?: string;
     };
   };
+  /**
+   * The same descendants as megaMenu but as a plain tree — consumed by the
+   * cascade nav style. Populated alongside megaMenu from the same data.
+   */
+  children?: NavTreeNode[];
 };

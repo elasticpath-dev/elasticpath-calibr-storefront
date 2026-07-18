@@ -40,7 +40,8 @@
     "about": "About",
     "contact": "Contact",
     "newArrivals": "New Arrivals",
-    "bestSellers": "Best Sellers"
+    "bestSellers": "Best Sellers",
+    "viewAll": "View all {label}"
   },
   "home": {
     "hero": {

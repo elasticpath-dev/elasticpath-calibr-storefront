@@ -24,6 +24,9 @@ const nextConfig: NextConfig = {
     // contentDispositionType: "attachment",
     // contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
+  experimental: {
+    reactDebugChannel: false,
+  },
   // Proxy PostHog through our own domain so ad blockers don't drop events.
   async rewrites() {
     return [

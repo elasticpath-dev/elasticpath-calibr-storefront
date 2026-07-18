@@ -40,7 +40,8 @@
     "about": "À propos",
     "contact": "Contact",
     "newArrivals": "Nouveautés",
-    "bestSellers": "Meilleures ventes"
+    "bestSellers": "Meilleures ventes",
+    "viewAll": "Voir tout {label}"
   },
   "home": {
     "hero": {

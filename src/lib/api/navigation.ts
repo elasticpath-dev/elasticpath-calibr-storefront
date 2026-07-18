@@ -16,7 +16,11 @@ import {
 } from "@/lib/create-elastic-path-client";
 import { getTenantConfig } from "@/lib/tenant-config";
 import { getResolvedCatalogId } from "@/lib/api/catalog";
-import type { NavItem, NavColumn } from "@/components/header/navigation/types";
+import type {
+  NavItem,
+  NavColumn,
+  NavTreeNode,
+} from "@/components/header/navigation/types";
 
 export type NavNodeData = {
   id: string;
@@ -98,8 +102,10 @@ async function fetchSiteNavigation(
   const offset = hideNavHierarchy ? 1 : 0;
 
   const topById = new Map<string, CrumbWithPath>();
-  const columnsByTop = new Map<string, Map<string, CrumbWithPath>>();
-  const linksByColumn = new Map<string, CrumbWithPath[]>();
+  // Full adjacency map (parent node id -> child nodes), every depth — the
+  // cascade style drills through the entire tree, so unlike the mega menu
+  // nothing is truncated here.
+  const childrenByParent = new Map<string, CrumbWithPath[]>();
 
   for (const node of nodes) {
     const breadcrumbs = node.meta?.breadcrumbs;
@@ -119,61 +125,76 @@ async function fetchSiteNavigation(
         .join("/"),
     });
 
+    const self = withPath(depth - 1);
     if (depth === 1 + offset) {
-      const top = withPath(offset);
-      topById.set(top.id, top);
-    } else if (depth === 2 + offset) {
-      const topId = crumbs[offset].id;
-      if (!columnsByTop.has(topId)) columnsByTop.set(topId, new Map());
-      const column = withPath(1 + offset);
-      columnsByTop.get(topId)!.set(column.id, column);
-    } else if (depth === 3 + offset) {
-      const columnId = crumbs[1 + offset].id;
-      if (!linksByColumn.has(columnId)) linksByColumn.set(columnId, []);
-      linksByColumn.get(columnId)!.push(withPath(2 + offset));
+      topById.set(self.id, self);
+    } else {
+      const parentId = crumbs[depth - 2].id;
+      if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
+      childrenByParent.get(parentId)!.push(self);
     }
-    // Deeper levels aren't rendered — the mega menu only supports 2 levels
-    // of nesting under a top-level item, matching the previous implementation.
   }
 
   const topItems = Array.from(topById.values()).slice(0, 5);
 
-  return topItems.map((top): NavItem => {
-    const topHref = `/category/${top.path}`;
-    const columnList = Array.from(columnsByTop.get(top.id)?.values() ?? []).slice(
-      0,
-      5,
-    );
+  return topItems.map((top): NavItem =>
+    assembleNavItem(top, childrenByParent),
+  );
+}
 
-    const columns: NavColumn[] = columnList.map((column) => {
-      const columnHref = `/category/${column.path}`;
-      const linkList = (linksByColumn.get(column.id) ?? []).slice(0, 8);
+// Shared by the main nav build and subtree derivation: turns one root crumb
+// plus the adjacency map into a NavItem carrying both dropdown shapes.
+// - megaMenu keeps the layout-driven caps (5 columns × 8 links + view-all),
+//   matching the previous implementation exactly.
+// - children is the FULL tree, uncapped in both node count and depth — the
+//   cascade style keeps drilling for as long as the catalog goes.
+function assembleNavItem(
+  root: CrumbWithPath,
+  childrenByParent: Map<string, CrumbWithPath[]>,
+): NavItem {
+  const toTree = (c: CrumbWithPath): NavTreeNode => {
+    const kids = childrenByParent.get(c.id);
+    return {
+      key: c.id,
+      label: c.name,
+      href: `/category/${c.path}`,
+      children: kids?.length ? kids.map(toTree) : undefined,
+    };
+  };
 
-      const items = [
-        ...linkList.map((link) => ({
-          key: link.id,
-          label: link.name,
-          href: `/category/${link.path}`,
-        })),
-        {
-          key: `view-all-${column.id}`,
-          label: `View all ${column.name}`,
-          href: columnHref,
-        },
-      ];
+  const columnList = (childrenByParent.get(root.id) ?? []).slice(0, 5);
 
-      return {
-        groups: [{ heading: column.name, headingHref: columnHref, items }],
-      };
-    });
+  const columns: NavColumn[] = columnList.map((column) => {
+    const columnHref = `/category/${column.path}`;
+    const linkList = (childrenByParent.get(column.id) ?? []).slice(0, 8);
+
+    const items = [
+      ...linkList.map((link) => ({
+        key: link.id,
+        label: link.name,
+        href: `/category/${link.path}`,
+      })),
+      {
+        key: `view-all-${column.id}`,
+        label: `View all ${column.name}`,
+        href: columnHref,
+      },
+    ];
 
     return {
-      key: top.id,
-      label: top.name,
-      href: topHref,
-      megaMenu: columns.length > 0 ? { columns } : undefined,
+      groups: [{ heading: column.name, headingHref: columnHref, items }],
     };
   });
+
+  const children = (childrenByParent.get(root.id) ?? []).map(toTree);
+
+  return {
+    key: root.id,
+    label: root.name,
+    href: `/category/${root.path}`,
+    megaMenu: columns.length > 0 ? { columns } : undefined,
+    children: children.length > 0 ? children : undefined,
+  };
 }
 
 // Keyed by resolved catalog release rather than hostname/account directly —
@@ -240,7 +261,10 @@ function getCachedNavItems(
       return fetchSiteNavigation(client, hideNavHierarchy);
     },
     [
-      "site-navigation",
+      // v3: `children` became the full unlimited-depth tree (v2 was capped
+      // at 3 levels) — revalidate:false entries never expire, so the key
+      // must change whenever the payload shape/content rules change.
+      "site-navigation-v3",
       catalogId ?? "",
       endpointUrl,
       storeId ?? "",
@@ -269,6 +293,123 @@ export async function buildSiteNavigation(): Promise<NavItem[]> {
     requestHeaders.environmentId,
     requestHeaders.storeId,
     features.hideNavHierarchy,
+  );
+}
+
+// Builds a NavItem subtree rooted at a hierarchy or node id from the flat
+// node list, using the same breadcrumb-bucketing idea as fetchSiteNavigation
+// but relative to the chosen root: a node whose breadcrumbs contain rootId
+// at index r is a descendant at depth (length-1)-r. Works for hierarchy
+// roots too — hierarchies aren't themselves nodes, but every descendant
+// carries the hierarchy as breadcrumbs[0], which is enough to reconstruct
+// the root's label/slug.
+function deriveNavSubtree(nodes: Node[], rootId: string): NavItem | null {
+  let root: CrumbWithPath | null = null;
+  const childrenByParent = new Map<string, CrumbWithPath[]>();
+
+  // Reversed for the same reason as fetchSiteNavigation: the API returns
+  // roots last / reverse creation order, and insertion order below drives
+  // display order.
+  for (const node of [...nodes].reverse()) {
+    const breadcrumbs = node.meta?.breadcrumbs;
+    if (!breadcrumbs?.length) continue;
+    const crumbs = breadcrumbs.map(toCrumb);
+    const rootIndex = crumbs.findIndex((c) => c.id === rootId);
+    if (rootIndex === -1) continue;
+
+    const withPath = (index: number): CrumbWithPath => ({
+      ...crumbs[index],
+      path: crumbs
+        .slice(0, index + 1)
+        .map((c) => c.slug)
+        .join("/"),
+    });
+
+    if (!root) root = withPath(rootIndex);
+
+    // Every descendant, unlimited depth — the adjacency map feeds
+    // assembleNavItem, which caps only the mega-menu shape, not the tree.
+    if (crumbs.length - 1 > rootIndex) {
+      const parentId = crumbs[crumbs.length - 2].id;
+      if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
+      childrenByParent.get(parentId)!.push(withPath(crumbs.length - 1));
+    }
+  }
+
+  if (!root) return null;
+  return assembleNavItem(root, childrenByParent);
+}
+
+// Cached per subtree root (small payloads — caching the raw ~6k-node list
+// itself would exceed data-cache entry limits). Shares the navigation tags,
+// so /api/navigation/clear-cache invalidates subtrees too.
+function getCachedNavSubtree(
+  catalogId: string | null,
+  endpointUrl: string,
+  clientId: string,
+  tokenCurrency: string,
+  multiLocation: boolean,
+  epContextTag: string | undefined,
+  environmentId: string | undefined,
+  storeId: string | undefined,
+  rootId: string,
+): Promise<NavItem | null> {
+  return unstable_cache(
+    async () => {
+      const client = createElasticPathClientFromConfig({
+        endpointUrl,
+        clientId,
+        currency: tokenCurrency,
+        tokenCurrency,
+        multiLocation,
+        epContextTag,
+        environmentId,
+        storeId,
+      });
+      const nodes = await fetchAllCatalogNodes(client);
+      return deriveNavSubtree(nodes, rootId);
+    },
+    [
+      "nav-subtree-v2",
+      catalogId ?? "",
+      endpointUrl,
+      storeId ?? "",
+      environmentId ?? "",
+      rootId,
+    ],
+    {
+      revalidate: false,
+      tags: [NAV_CACHE_TAG, navCacheTag(catalogId, endpointUrl, storeId, environmentId)],
+    },
+  )();
+}
+
+/**
+ * NavItem subtree rooted at a catalog hierarchy or node — used by
+ * Plasmic-driven navigation items that reference catalog content (see
+ * /api/navigation/subtree).
+ */
+export async function buildNavSubtree(opts: {
+  hierarchyId?: string;
+  nodeId?: string;
+}): Promise<NavItem | null> {
+  const rootId = opts.hierarchyId ?? opts.nodeId;
+  if (!rootId) return null;
+
+  const tenantConfig = await getTenantConfig();
+  const { epcc, inventory, requestHeaders, currency } = tenantConfig;
+  const catalogId = await getResolvedCatalogId();
+
+  return getCachedNavSubtree(
+    catalogId,
+    epcc.endpointUrl,
+    epcc.clientId,
+    currency.default,
+    inventory.multiLocation,
+    requestHeaders.epContextTag,
+    requestHeaders.environmentId,
+    requestHeaders.storeId,
+    rootId,
   );
 }
 

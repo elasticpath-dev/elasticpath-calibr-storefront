@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import NextLink from "next/link";
 import { useLocale } from "next-intl";
 import {
   ComponentRenderData,
@@ -64,6 +65,10 @@ export default function PlasmicContent({
       loader={loader}
       prefetchedData={prefetchedData ?? undefined}
       variation={variation}
+      // Studio-authored link elements render through next/link — without
+      // this they emit plain <a> tags and every click does a full page load
+      // instead of client-side navigation.
+      Link={NextLink}
       // This app loads its own fonts via next/font (see app/layout.tsx) —
       // without this, Plasmic additionally injects a render-blocking
       // <link> to fonts.googleapis.com for the same typeface.
