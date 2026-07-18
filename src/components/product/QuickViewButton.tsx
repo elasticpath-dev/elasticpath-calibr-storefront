@@ -10,6 +10,7 @@ import { Price } from "./Price";
 import { VariantAddToCart } from "./VariantAddToCart";
 import { BundleConfigurator } from "./BundleConfigurator";
 import { getProductBySlugAction, getProductByIdAction } from "@/lib/actions/product";
+import { cn } from "@/lib/utils";
 import type { ProductCardData, ProductDetailData } from "@/lib/api/products";
 import { SubscriptionProductActions } from "./SubscriptionProductActions";
 import type { ProductOffering } from "@/lib/api/subscriptions";
@@ -22,9 +23,11 @@ type ChildOverride = Pick<
 type Props = {
   product: ProductCardData;
   lang: string;
+  /** Extra classes for the trigger button (e.g. w-full for stacked card layouts). */
+  className?: string;
 };
 
-export function QuickViewButton({ product, lang }: Props) {
+export function QuickViewButton({ product, lang, className }: Props) {
   const t = useTranslations("product");
   const [isOpen, setIsOpen] = useState(false);
   const [detail, setDetail] = useState<ProductDetailData | null>(null);
@@ -94,7 +97,10 @@ export function QuickViewButton({ product, lang }: Props) {
     <>
       <button
         onClick={handleOpen}
-        className="inline-flex items-center justify-center gap-2 h-9 px-3 rounded-lg text-xs font-medium bg-brand-primary text-white hover:opacity-90 transition-opacity"
+        className={cn(
+          "inline-flex items-center justify-center gap-2 h-9 px-3 rounded-lg text-xs font-medium bg-brand-primary text-white hover:opacity-90 transition-opacity",
+          className,
+        )}
       >
         <Eye size={14} />
         {t("quickView")}

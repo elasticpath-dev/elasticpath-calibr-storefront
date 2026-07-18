@@ -11,6 +11,9 @@ type Props = {
   max?: number;
   disabled?: boolean;
   className?: string;
+  /** "sm" squeezes the stepper (28px controls) for tight spots like the
+   * product card's price row; "default" is the regular 36px control. */
+  size?: "default" | "sm";
 };
 
 export function QuantitySelector({
@@ -20,6 +23,7 @@ export function QuantitySelector({
   max = 9999999,
   disabled = false,
   className,
+  size = "default",
 }: Props) {
   const [draft, setDraft] = useState(String(value));
 
@@ -36,6 +40,12 @@ export function QuantitySelector({
     }
   };
 
+  const small = size === "sm";
+  const buttonClasses = cn(
+    "flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors",
+    small ? "w-7 h-7" : "w-9 h-9",
+  );
+
   return (
     <div
       className={cn(
@@ -48,9 +58,9 @@ export function QuantitySelector({
         onClick={() => onChange(Math.max(min, value - 1))}
         disabled={disabled || value <= min}
         aria-label="Decrease quantity"
-        className="flex items-center justify-center w-9 h-9 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+        className={buttonClasses}
       >
-        <Minus size={14} />
+        <Minus size={small ? 12 : 14} />
       </button>
       <input
         type="number"
@@ -65,16 +75,19 @@ export function QuantitySelector({
           if (e.key === "Enter") commit((e.target as HTMLInputElement).value);
         }}
         aria-label="Quantity"
-        className="w-12 h-9 text-center text-sm font-medium text-gray-900 bg-transparent border-x border-gray-200 focus:outline-none disabled:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        className={cn(
+          "text-center font-medium text-gray-900 bg-transparent border-x border-gray-200 focus:outline-none disabled:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
+          small ? "w-9 h-7 text-xs" : "w-12 h-9 text-sm",
+        )}
       />
       <button
         type="button"
         onClick={() => onChange(Math.min(max, value + 1))}
         disabled={disabled || value >= max}
         aria-label="Increase quantity"
-        className="flex items-center justify-center w-9 h-9 text-gray-500 hover:bg-gray-50 disabled:opacity-40 transition-colors"
+        className={buttonClasses}
       >
-        <Plus size={14} />
+        <Plus size={small ? 12 : 14} />
       </button>
     </div>
   );

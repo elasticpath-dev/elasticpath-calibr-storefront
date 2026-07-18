@@ -235,7 +235,7 @@ export function ProductGrid({ products, lang }: ProductGridProps) {
           >
             {t("addAllToCart")}
             {bulkMode && pendingCount > 0 && (
-              <span className="bg-white/20 text-white rounded-full px-1.5 text-[10px] font-bold leading-tight">
+              <span className="ml-1.5 bg-white/20 text-white rounded-full px-1.5 text-[10px] font-bold leading-tight">
                 {pendingCount}
               </span>
             )}

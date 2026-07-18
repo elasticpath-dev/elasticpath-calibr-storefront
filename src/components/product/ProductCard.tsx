@@ -144,13 +144,14 @@ export function ProductCard({
         className="flex flex-col gap-2"
         title={missingPrice ? t("missingPriceTooltip") : undefined}
       >
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 h-9">
           {price}
           <QuantitySelector
             value={bulkQuantity}
             onChange={(qty) => onBulkQuantityChange?.(product.id, qty)}
             min={0}
             disabled={missingPrice}
+            size="sm"
           />
         </div>
         <AddToCart
@@ -187,6 +188,24 @@ export function ProductCard({
 
     return (
       <>
+        {/* Floating pill badge(s) centered on the top edge — same treatment
+            as the subscription/free-gift badge on the full cart view. The
+            card border is left neutral (no per-type color). */}
+        <div className={badges.length > 0 ? "relative mt-3" : undefined}>
+        {badges.length > 0 && (
+          <div className="absolute -top-3 left-0 right-0 flex justify-center flex-wrap gap-1.5 z-10 pointer-events-none">
+            {badges.map((badge) => (
+              <span
+                key={badge.key}
+                className={`inline-flex items-center px-3 py-0.5 rounded-full text-[11px] font-semibold text-white shadow-sm ${
+                  badge.digital ? "bg-indigo-600" : "bg-red-600"
+                }`}
+              >
+                {badge.label}
+              </span>
+            ))}
+          </div>
+        )}
         <article className="flex items-center gap-4 rounded-xl border border-gray-100 bg-white p-3 hover:shadow-md transition-shadow duration-200">
         <Link href={`/${lang}/products/${product.slug}`} className="flex-none">
           <ProductThumbnail
@@ -205,22 +224,6 @@ export function ProductCard({
               className="text-sm hover:underline line-clamp-1"
             />
           </Link>
-          {badges.length > 0 && (
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              {badges.map((badge) => (
-                <span
-                  key={badge.key}
-                  className={`text-[10px] font-semibold rounded-full px-1.5 py-0.5 leading-none border ${
-                    badge.digital
-                      ? "text-indigo-700 bg-indigo-50 border-indigo-200"
-                      : "text-red-700 bg-red-50 border-red-200"
-                  }`}
-                >
-                  {badge.label}
-                </span>
-              ))}
-            </div>
-          )}
           {product.description && (
             <p className="hidden sm:block mt-1 text-xs text-gray-500 line-clamp-1">
               {product.description}
@@ -289,6 +292,7 @@ export function ProductCard({
           )}
         </div>
       </article>
+        </div>
 
       {product.hasVariations && matrix && showVariants && (
         <div className="mt-2">
@@ -336,7 +340,7 @@ export function ProductCard({
             />
           </Link>
 
-          {product.hasVariations && (
+          {(product.hasVariations || product.isBundle) && (
             <Price
               formatted={product.priceFormatted}
               originalFormatted={product.originalPriceFormatted}
@@ -353,8 +357,8 @@ export function ProductCard({
           )}
 
           <div className="mt-auto pt-1">
-            {product.hasVariations ? (
-              <QuickViewButton product={product} lang={lang} />
+            {product.hasVariations || product.isBundle ? (
+              <QuickViewButton product={product} lang={lang} className="w-full" />
             ) : (
               renderStackedControl(
                 <Price
@@ -437,14 +441,20 @@ export function ProductCard({
         )}
 
         {product.hasVariations || product.isBundle ? (
-          <div className="flex items-center justify-between mt-auto pt-2">
-            <Price
-              formatted={product.priceFormatted}
-              originalFormatted={product.originalPriceFormatted}
-              className="text-base"
-              stacked={stackedPrice}
-            />
-            <QuickViewButton product={product} lang={lang} />
+          // Mirrors the standard product's stacked control: price on its own
+          // row (no quantity selector), full-width Quick View row below.
+          <div className="mt-auto pt-2 flex flex-col gap-2">
+            {/* h-9 matches the quantity selector's height on standard cards,
+                so the price sits on the same line across neighboring cards. */}
+            <div className="flex items-center h-9">
+              <Price
+                formatted={product.priceFormatted}
+                originalFormatted={product.originalPriceFormatted}
+                className="text-base"
+                stacked={stackedPrice}
+              />
+            </div>
+            <QuickViewButton product={product} lang={lang} className="w-full" />
           </div>
         ) : (
           <div className="mt-auto pt-2">

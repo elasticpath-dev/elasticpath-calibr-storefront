@@ -103,7 +103,7 @@ export function MatrixCartRow({
   disabled,
 }: Props) {
   const t = useTranslations("cart");
-  const { parentName, parentSku, parentPriceFormatted, children } = matrixGroup;
+  const { parentName, parentSku, children } = matrixGroup;
   const matrix = buildMatrix(children);
 
   const [drafts, setDrafts] = useState<Map<string, string>>(new Map());
@@ -316,9 +316,6 @@ export function MatrixCartRow({
         {parentSku && (
           <span className="font-mono text-[11px] text-ink-600">{parentSku}</span>
         )}
-        {parentPriceFormatted && (
-          <span className="text-[12px] text-ink-600">· {parentPriceFormatted}{t("perUnit")}</span>
-        )}
         <div className="flex-1" />
         {totalUnits > 0 && (
           <span className="text-[12px] text-ink-600 mr-1">{t("units", { count: totalUnits })}</span>
@@ -501,7 +498,7 @@ export function MatrixCartRow({
           {/* Footer totals row */}
           <div className="flex items-center bg-ink-50">
             <div className="flex-none w-[140px] px-4 py-[11px] text-[12px] font-bold text-ink-600">
-              {parentPriceFormatted ?? t("perSize")}
+              {t("perSize")}
             </div>
             {colTotals.map((ct, i) => (
               <div

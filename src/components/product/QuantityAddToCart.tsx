@@ -44,13 +44,18 @@ export function QuantityAddToCart({
       value={quantity}
       onChange={setQuantity}
       disabled={missingPrice}
+      // Squeezed stepper next to the price on stacked cards; regular size
+      // in the inline (grid/row view) layout below.
+      size={priceSlot ? "sm" : "default"}
     />
   );
 
   const row = priceSlot ? (
     // Price + quantity share the first row; Add to Cart gets its own row.
+    // h-9 keeps the row at the regular control height so prices stay on the
+    // same line as neighboring cards (incl. Quick View cards).
     <div className="flex flex-col gap-2">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 h-9">
         {priceSlot}
         {selector}
       </div>
