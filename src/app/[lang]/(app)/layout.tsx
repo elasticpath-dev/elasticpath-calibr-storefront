@@ -30,16 +30,16 @@ export default async function AppLayout({
       <ClientProvider>
         <PreferencesProvider>
           <AuthProvider>
-            <NavigationProvider>
             <CatalogProvider>
+            <NavigationProvider>
             <CartProvider>
             {children}
             <FooterSection lang={lang} />
             <PromotionSuggestionsModal lang={lang} />
             <Toaster position="bottom-right" richColors />
             </CartProvider>
-            </CatalogProvider>
             </NavigationProvider>
+            </CatalogProvider>
           </AuthProvider>
         </PreferencesProvider>
       </ClientProvider>

@@ -2,16 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { clearNavigationCache } from "@/lib/api/navigation";
 
 /**
- * Manually purges the in-memory nav cache (see buildNavCacheKey in
- * navigation.ts) — e.g. after publishing a catalog change, so shoppers don't
- * wait on a stale tree until the server process restarts. Call with a
- * bearer token matching NAV_CACHE_REVALIDATE_SECRET.
+ * Manually purges the navigation cache (unstable_cache, keyed by catalog_id)
+ * — e.g. after publishing a catalog change, so shoppers don't wait on a stale
+ * tree. Call with a bearer token matching NAV_CACHE_REVALIDATE_SECRET.
  *
  * Body is optional:
- * - Omit it (or send `{}`) to clear the entire cache.
- * - Send `{ catalogId, endpointUrl, storeId, environmentId }` (the same
- *   values used to build the entry — see buildSiteNavigation) to clear just
- *   that one cache key instead.
+ * - `{ catalogId }` clears just that catalog's navigation (and its subtrees).
+ * - Omit it (or send `{}`) to clear the entire navigation cache.
  */
 export async function POST(req: NextRequest) {
   const secret = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
@@ -20,17 +17,11 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const endpointUrl = body?.endpointUrl;
+  const catalogId = typeof body?.catalogId === "string" ? body.catalogId : null;
 
-  if (endpointUrl && typeof endpointUrl === "string") {
-    clearNavigationCache({
-      catalogId: typeof body.catalogId === "string" ? body.catalogId : null,
-      endpointUrl,
-      storeId: typeof body.storeId === "string" ? body.storeId : undefined,
-      environmentId:
-        typeof body.environmentId === "string" ? body.environmentId : undefined,
-    });
-    return NextResponse.json({ cleared: true, scope: "key" });
+  if (catalogId) {
+    clearNavigationCache(catalogId);
+    return NextResponse.json({ cleared: true, scope: "catalog", catalogId });
   }
 
   clearNavigationCache();

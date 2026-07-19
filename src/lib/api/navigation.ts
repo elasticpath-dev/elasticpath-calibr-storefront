@@ -198,49 +198,29 @@ function assembleNavItem(
   };
 }
 
-// Keyed by resolved catalog release rather than hostname/account directly —
-// getResolvedCatalogId() already varies per shopper context (B2B catalog
-// rules scope which release an account sees), so two accounts landing on
-// different catalog_ids naturally get separate cache entries, while
-// everyone sharing the same resolved catalog shares one. endpointUrl +
-// storeId + environmentId are included since one running server process can
-// serve multiple tenants (see tokenCache in create-elastic-path-client.ts
-// for the same pattern). Backed by Next's Data Cache (unstable_cache)
-// instead of a plain in-memory Map: on Vercel that's shared across
-// serverless instances, whereas a Map only survives within one warm
-// instance's memory and gets wiped whenever it's recycled. No automatic
-// expiry (revalidate: false) — cleared only via clearNavigationCache()/the
+// Navigation is keyed by the resolved catalog_id alone. A catalog_id is
+// globally unique, so it already implies the endpoint / store / environment —
+// two accounts on the same catalog share one entry; different catalogs get
+// separate entries. Backed by Next's Data Cache (unstable_cache) so it's
+// shared across serverless instances (unlike an in-memory Map). No automatic
+// expiry (revalidate: false) — cleared only via clearNavigationCache() / the
 // /api/navigation/clear-cache route.
 const NAV_CACHE_TAG = "navigation";
 
-function navCacheTag(
-  catalogId: string | null,
-  endpointUrl: string,
-  storeId: string | undefined,
-  environmentId: string | undefined,
-): string {
-  return [NAV_CACHE_TAG, catalogId ?? "", endpointUrl, storeId ?? "", environmentId ?? ""].join(
-    ":",
-  );
+function navCacheTag(catalogId: string | null): string {
+  return `${NAV_CACHE_TAG}:${catalogId ?? ""}`;
 }
 
-// unstable_cache disallows cookies()/headers() inside the wrapped function,
-// so the client used here is built from plain config via
-// createElasticPathClientFromConfig rather than the cookie-aware
-// createElasticPathClient(). clientId/tokenCurrency/multiLocation/
-// epContextTag are captured via closure rather than passed as cache-key
-// arguments: for a given catalogId+endpointUrl+storeId+environmentId (the
-// key the caller asked for), those values are already fully determined by
-// the same tenant/context resolution that produced catalogId, so they can't
-// actually vary independently of it. Re-wrapping with unstable_cache on
-// every call (rather than once at module scope) is intentional — its cache
-// storage is keyed by keyParts, not by this wrapper's identity, so repeated
-// calls with the same key still hit the same Data Cache entry.
-// The account-management token from the shopper's cookie. The catalog a
-// shopper resolves to is account-scoped (B2B catalog rules), so the node
-// fetch that builds the nav MUST carry this token — otherwise it resolves the
-// default catalog and every account sees the same nav. Read cookie-aware here
-// (outside unstable_cache, which forbids cookies()) and passed into the build.
+// The build params (endpointUrl, clientId, etc.) are captured via closure, not
+// put in the cache key — for a given catalog_id they're already determined by
+// the tenant/context. unstable_cache forbids cookies() inside the wrapped
+// function, so the client is built from plain config via
+// createElasticPathClientFromConfig.
+//
+// The account-management token from the shopper's cookie is likewise passed
+// via closure: the catalog a shopper resolves to is account-scoped, so the
+// node fetch MUST carry this token to return the right catalog's nodes — but
+// it stays out of the key so accounts sharing a catalog share the entry.
 async function getAmToken(): Promise<string | undefined> {
   try {
     return (await cookies()).get("ep_am_token")?.value;
@@ -279,19 +259,14 @@ function getCachedNavItems(
       return fetchSiteNavigation(client, hideNavHierarchy);
     },
     [
-      // v3: `children` became the full unlimited-depth tree (v2 was capped
-      // at 3 levels) — revalidate:false entries never expire, so the key
-      // must change whenever the payload shape/content rules change.
-      "site-navigation-v3",
+      // Keyed by catalog_id alone (v4). revalidate:false entries never expire,
+      // so the version must change whenever the payload shape/content changes.
+      "site-navigation-v4",
       catalogId ?? "",
-      endpointUrl,
-      storeId ?? "",
-      environmentId ?? "",
-      String(hideNavHierarchy),
     ],
     {
       revalidate: false,
-      tags: [NAV_CACHE_TAG, navCacheTag(catalogId, endpointUrl, storeId, environmentId)],
+      tags: [NAV_CACHE_TAG, navCacheTag(catalogId)],
     },
   )();
 }
@@ -396,16 +371,14 @@ function getCachedNavSubtree(
       return deriveNavSubtree(nodes, rootId);
     },
     [
-      "nav-subtree-v2",
+      // Keyed by catalog_id + subtree root (v3).
+      "nav-subtree-v3",
       catalogId ?? "",
-      endpointUrl,
-      storeId ?? "",
-      environmentId ?? "",
       rootId,
     ],
     {
       revalidate: false,
-      tags: [NAV_CACHE_TAG, navCacheTag(catalogId, endpointUrl, storeId, environmentId)],
+      tags: [NAV_CACHE_TAG, navCacheTag(catalogId)],
     },
   )();
 }
@@ -443,27 +416,17 @@ export async function buildNavSubtree(opts: {
   );
 }
 
-export type NavCacheKeyParts = {
-  catalogId?: string | null;
-  endpointUrl: string;
-  storeId?: string;
-  environmentId?: string;
-};
-
 /**
- * Manual invalidation — see /api/navigation/clear-cache. Pass the same
- * catalogId/endpointUrl/storeId/environmentId used to build a cache entry to
- * clear just that entry; omit entirely to clear everything.
+ * Manual invalidation — see /api/navigation/clear-cache. Pass a catalogId to
+ * clear that catalog's navigation (and its subtrees); omit it to clear all
+ * navigation cache.
  */
-export function clearNavigationCache(key?: NavCacheKeyParts): void {
-  if (!key) {
-    revalidateTag(NAV_CACHE_TAG, { expire: 0 });
+export function clearNavigationCache(catalogId?: string | null): void {
+  if (catalogId) {
+    revalidateTag(navCacheTag(catalogId), { expire: 0 });
     return;
   }
-  revalidateTag(
-    navCacheTag(key.catalogId ?? null, key.endpointUrl, key.storeId, key.environmentId),
-    { expire: 0 },
-  );
+  revalidateTag(NAV_CACHE_TAG, { expire: 0 });
 }
 
 export async function getHierarchyBySlug(
