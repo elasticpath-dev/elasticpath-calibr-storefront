@@ -116,7 +116,81 @@ export type ProductDetailData = {
   extensions?: ProductExtensionGroup[];
   breadCrumbNodes?: string[];
   breadCrumbs?: Record<string, string[]>;
+  /** Pricebook "alternative_prices" from product meta, as-parsed (unfiltered).
+   * Display selection/labeling is applied via resolveAlternativePriceRows. */
+  alternativePrices?: AlternativePrice[];
 };
+
+export type AlternativePrice = {
+  /** EP pricebook id — matched against the tenant's configured list. */
+  pricebookId?: string;
+  /** The pricebook's own name (meta `name`) — used as the fallback label. */
+  name: string;
+  /** display_price formatted value (without_tax preferred, else with_tax). */
+  formatted: string;
+};
+
+/** A resolved, ready-to-render alternative price row. */
+export type AlternativePriceRow = { label: string; formatted: string };
+
+function parseAlternativePrices(raw: unknown): AlternativePrice[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const out = raw
+    .map((entry): AlternativePrice | null => {
+      const e = entry as Record<string, unknown> | null;
+      const dp = e?.display_price as
+        | { without_tax?: { formatted?: string }; with_tax?: { formatted?: string } }
+        | undefined;
+      const formatted = dp?.without_tax?.formatted ?? dp?.with_tax?.formatted;
+      if (!formatted) return null;
+      return {
+        pricebookId: typeof e?.pricebook_id === "string" ? e.pricebook_id : undefined,
+        name: typeof e?.name === "string" ? e.name : "",
+        formatted,
+      };
+    })
+    .filter((x): x is AlternativePrice => x !== null);
+  return out.length > 0 ? out : undefined;
+}
+
+/**
+ * Applies the tenant's alternative-price configuration to a product's parsed
+ * alternative prices, yielding the rows to render on the PDP:
+ * - feature off → nothing.
+ * - configured pricebooks → only those, in config order, using config labels
+ *   (a configured id with no matching price is skipped).
+ * - no configured pricebooks → every alternative price, labeled by meta name.
+ * Any alternative price equal to the product's main price is dropped (no point
+ * showing the same figure twice). Returns [] when nothing remains.
+ */
+export function resolveAlternativePriceRows(
+  alternativePrices: AlternativePrice[] | undefined,
+  config: {
+    showAlternativePrices: boolean;
+    alternativePriceBooks: Array<{ pricebookId: string; label: string }>;
+  },
+  mainPriceFormatted?: string,
+): AlternativePriceRow[] {
+  if (!config.showAlternativePrices || !alternativePrices?.length) return [];
+
+  const isMainPrice = (formatted: string) =>
+    !!mainPriceFormatted && formatted.trim() === mainPriceFormatted.trim();
+
+  if (config.alternativePriceBooks.length > 0) {
+    return config.alternativePriceBooks
+      .map(({ pricebookId, label }) => {
+        const match = alternativePrices.find((p) => p.pricebookId === pricebookId);
+        return match && !isMainPrice(match.formatted)
+          ? { label, formatted: match.formatted }
+          : null;
+      })
+      .filter((r): r is AlternativePriceRow => r !== null);
+  }
+
+  return alternativePrices
+    .filter((p) => p.name && !isMainPrice(p.formatted))
+    .map((p) => ({ label: p.name, formatted: p.formatted }));
+}
 
 function toTitleCase(slug: string): string {
   return slug.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
@@ -425,6 +499,9 @@ async function formatProductDetail(
       const raw = product.meta?.bread_crumbs as Record<string, string[]> | undefined;
       return raw && Object.keys(raw).length > 0 ? raw : undefined;
     })(),
+    alternativePrices: parseAlternativePrices(
+      (product.meta as Record<string, unknown> | undefined)?.alternative_prices,
+    ),
   };
 }
 

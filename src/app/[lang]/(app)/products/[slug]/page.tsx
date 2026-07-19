@@ -13,7 +13,9 @@ import { Download } from "lucide-react";
 import {
   getProductBySlug,
   getProductRelationshipCarousels,
+  resolveAlternativePriceRows,
 } from "@/lib/api/products";
+import { AlternativePrices } from "@/components/product/AlternativePrices";
 import { getProductOffering } from "@/lib/api/subscriptions";
 import { getProductBreadcrumb } from "@/lib/api/breadcrumb";
 import { getTenantConfig } from "@/lib/tenant-config";
@@ -42,7 +44,14 @@ export default async function ProductDetailPage({ params }: Props) {
   const product = await getProductBySlug(slug).catch(() => null);
   if (!product) notFound();
 
-  const [t, messages, offering, relationshipCarousels, breadcrumbItems, { ui }] =
+  const [
+    t,
+    messages,
+    offering,
+    relationshipCarousels,
+    breadcrumbItems,
+    { ui, features },
+  ] =
     await Promise.all([
       getTranslations("product"),
       getMessages(),
@@ -56,6 +65,12 @@ export default async function ProductDetailPage({ params }: Props) {
         : Promise.resolve([]),
       getTenantConfig(),
     ]);
+
+  const alternativePriceRows = resolveAlternativePriceRows(
+    product.alternativePrices,
+    features,
+    product.priceFormatted,
+  );
 
   const relMsgs = (
     (messages as Record<string, unknown>).product as Record<string, unknown>
@@ -216,6 +231,15 @@ export default async function ProductDetailPage({ params }: Props) {
                   />
                 )}
               </>
+            )}
+
+            {alternativePriceRows.length > 0 && (
+              <div className="mt-8">
+                <AlternativePrices
+                  items={alternativePriceRows}
+                  heading={t("pricingLabel")}
+                />
+              </div>
             )}
 
             {product.description && (

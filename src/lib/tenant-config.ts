@@ -53,6 +53,14 @@ export type TenantConfig = {
      * navigation.ts, which derives this from the same /catalog/nodes call
      * (no extra API request). */
     hideNavHierarchy: boolean;
+    /** Show pricebook "alternative_prices" (from product meta) on the PDP. */
+    showAlternativePrices: boolean;
+    /** Which alternative pricebooks to surface and their display labels, in
+     * order. Parsed from NEXT_PUBLIC_ALTERNATIVE_PRICE_BOOKS in the form
+     * "pricebookId1|Retail Price,pricebookId2|Members Price". When empty and
+     * showAlternativePrices is on, every alternative price is shown using its
+     * own meta `name` as the label. */
+    alternativePriceBooks: Array<{ pricebookId: string; label: string }>;
   };
   payments: {
     stripePublishableKey: string;
@@ -168,6 +176,51 @@ function oneOf<T extends string>(
   return allowed.includes(v as T) ? (v as T) : fallback;
 }
 
+/** Parses "pricebookId1|Retail Price,pricebookId2|Members Price" into an
+ * ordered list. Entries missing an id or label are dropped. */
+function parseAlternativePriceBooks(
+  raw: string | undefined,
+): Array<{ pricebookId: string; label: string }> {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const sep = entry.indexOf("|");
+      if (sep === -1) return null;
+      const pricebookId = entry.slice(0, sep).trim();
+      const label = entry.slice(sep + 1).trim();
+      if (!pricebookId || !label) return null;
+      return { pricebookId, label };
+    })
+    .filter((pb): pb is { pricebookId: string; label: string } => pb !== null);
+}
+
+/** Normalizes the tenant endpoint's alternative-price-book shape
+ * ([{ id, label }]) onto the internal { pricebookId, label } shape. Tolerates
+ * either key name; entries missing an id or label are dropped. Falls back to
+ * the env-derived list when the response has none. */
+function normalizeAlternativePriceBooks(
+  v: unknown,
+  fallback: Array<{ pricebookId: string; label: string }>,
+): Array<{ pricebookId: string; label: string }> {
+  if (!Array.isArray(v)) return fallback;
+  const out = v
+    .map((entry) => {
+      const e = entry as Record<string, unknown> | null;
+      const pricebookId = e?.id ?? e?.pricebookId;
+      const label = e?.label;
+      if (typeof pricebookId !== "string" || typeof label !== "string") return null;
+      const id = pricebookId.trim();
+      const l = label.trim();
+      if (!id || !l) return null;
+      return { pricebookId: id, label: l };
+    })
+    .filter((pb): pb is { pricebookId: string; label: string } => pb !== null);
+  return out.length > 0 ? out : fallback;
+}
+
 // The external tenant config API has been observed sending oidcProfileIds
 // as a single raw string (not wrapped in an array) rather than the
 // documented string[] shape — normalize both so a lone/comma-separated
@@ -270,6 +323,11 @@ function buildTenantConfigFromEnv(): TenantConfig {
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean),
       hideNavHierarchy: e.NEXT_PUBLIC_HIDE_NAV_HIERARCHY === "true",
+      showAlternativePrices:
+        e.NEXT_PUBLIC_SHOW_ALTERNATIVE_PRICES === "true",
+      alternativePriceBooks: parseAlternativePriceBooks(
+        e.NEXT_PUBLIC_ALTERNATIVE_PRICE_BOOKS,
+      ),
     },
     payments: {
       stripePublishableKey: e.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
@@ -388,6 +446,13 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
         : defaults.features.extensionsExcluded,
       hideNavHierarchy:
         r.features?.hideNavHierarchy ?? defaults.features.hideNavHierarchy,
+      showAlternativePrices:
+        r.features?.showAlternativePrices ??
+        defaults.features.showAlternativePrices,
+      alternativePriceBooks: normalizeAlternativePriceBooks(
+        r.features?.alternativePriceBooks,
+        defaults.features.alternativePriceBooks,
+      ),
     },
     payments: {
       stripePublishableKey:
