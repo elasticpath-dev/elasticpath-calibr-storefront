@@ -1,4 +1,5 @@
 import { unstable_cache, revalidateTag } from "next/cache";
+import { cookies } from "next/headers";
 import {
   getByContextAllHierarchies,
   getByContextAllNodes,
@@ -235,6 +236,19 @@ function navCacheTag(
 // every call (rather than once at module scope) is intentional — its cache
 // storage is keyed by keyParts, not by this wrapper's identity, so repeated
 // calls with the same key still hit the same Data Cache entry.
+// The account-management token from the shopper's cookie. The catalog a
+// shopper resolves to is account-scoped (B2B catalog rules), so the node
+// fetch that builds the nav MUST carry this token — otherwise it resolves the
+// default catalog and every account sees the same nav. Read cookie-aware here
+// (outside unstable_cache, which forbids cookies()) and passed into the build.
+async function getAmToken(): Promise<string | undefined> {
+  try {
+    return (await cookies()).get("ep_am_token")?.value;
+  } catch {
+    return undefined;
+  }
+}
+
 function getCachedNavItems(
   catalogId: string | null,
   endpointUrl: string,
@@ -245,19 +259,23 @@ function getCachedNavItems(
   environmentId: string | undefined,
   storeId: string | undefined,
   hideNavHierarchy: boolean,
+  amToken: string | undefined,
 ): Promise<NavItem[]> {
   return unstable_cache(
     async () => {
-      const client = createElasticPathClientFromConfig({
-        endpointUrl,
-        clientId,
-        currency: tokenCurrency,
-        tokenCurrency,
-        multiLocation,
-        epContextTag,
-        environmentId,
-        storeId,
-      });
+      const client = createElasticPathClientFromConfig(
+        {
+          endpointUrl,
+          clientId,
+          currency: tokenCurrency,
+          tokenCurrency,
+          multiLocation,
+          epContextTag,
+          environmentId,
+          storeId,
+        },
+        amToken,
+      );
       return fetchSiteNavigation(client, hideNavHierarchy);
     },
     [
@@ -281,7 +299,10 @@ function getCachedNavItems(
 export async function buildSiteNavigation(): Promise<NavItem[]> {
   const tenantConfig = await getTenantConfig();
   const { features, epcc, inventory, requestHeaders, currency } = tenantConfig;
-  const catalogId = await getResolvedCatalogId();
+  const [catalogId, amToken] = await Promise.all([
+    getResolvedCatalogId(),
+    getAmToken(),
+  ]);
 
   return getCachedNavItems(
     catalogId,
@@ -293,6 +314,7 @@ export async function buildSiteNavigation(): Promise<NavItem[]> {
     requestHeaders.environmentId,
     requestHeaders.storeId,
     features.hideNavHierarchy,
+    amToken,
   );
 }
 
@@ -353,19 +375,23 @@ function getCachedNavSubtree(
   environmentId: string | undefined,
   storeId: string | undefined,
   rootId: string,
+  amToken: string | undefined,
 ): Promise<NavItem | null> {
   return unstable_cache(
     async () => {
-      const client = createElasticPathClientFromConfig({
-        endpointUrl,
-        clientId,
-        currency: tokenCurrency,
-        tokenCurrency,
-        multiLocation,
-        epContextTag,
-        environmentId,
-        storeId,
-      });
+      const client = createElasticPathClientFromConfig(
+        {
+          endpointUrl,
+          clientId,
+          currency: tokenCurrency,
+          tokenCurrency,
+          multiLocation,
+          epContextTag,
+          environmentId,
+          storeId,
+        },
+        amToken,
+      );
       const nodes = await fetchAllCatalogNodes(client);
       return deriveNavSubtree(nodes, rootId);
     },
@@ -398,7 +424,10 @@ export async function buildNavSubtree(opts: {
 
   const tenantConfig = await getTenantConfig();
   const { epcc, inventory, requestHeaders, currency } = tenantConfig;
-  const catalogId = await getResolvedCatalogId();
+  const [catalogId, amToken] = await Promise.all([
+    getResolvedCatalogId(),
+    getAmToken(),
+  ]);
 
   return getCachedNavSubtree(
     catalogId,
@@ -410,6 +439,7 @@ export async function buildNavSubtree(opts: {
     requestHeaders.environmentId,
     requestHeaders.storeId,
     rootId,
+    amToken,
   );
 }
 
