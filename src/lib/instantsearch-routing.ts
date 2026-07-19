@@ -14,6 +14,12 @@ export const CATEGORY_HIERARCHICAL_ATTRIBUTES = [
   "meta.search.categories.lvl0",
   "meta.search.categories.lvl1",
   "meta.search.categories.lvl2",
+  "meta.search.categories.lvl3",
+  "meta.search.categories.lvl4",
+  "meta.search.categories.lvl5",
+  "meta.search.categories.lvl6",
+  "meta.search.categories.lvl7",
+  "meta.search.categories.lvl8",
 ];
 
 const RESERVED = new Set(["q", "page"]);

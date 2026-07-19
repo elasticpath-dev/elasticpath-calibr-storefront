@@ -12,6 +12,8 @@ type Props = {
   currencyCode?: string;
   filterItems?: string;
   hideNavHierarchy?: boolean;
+  /** Category-page current node name — expands the category tree to it. */
+  currentCategoryName?: string;
 };
 
 export function FilterSidebar({
@@ -20,6 +22,7 @@ export function FilterSidebar({
   currencyCode,
   filterItems,
   hideNavHierarchy = false,
+  currentCategoryName,
 }: Props) {
   const t = useTranslations("search");
   return (
@@ -28,7 +31,12 @@ export function FilterSidebar({
         <span className="text-sm font-semibold text-gray-900">{t("filters")}</span>
         <ClearFiltersButton />
       </div>
-      {showCategories && <CategoryFilter hideNavHierarchy={hideNavHierarchy} />}
+      {showCategories && (
+        <CategoryFilter
+          hideNavHierarchy={hideNavHierarchy}
+          currentCategoryName={currentCategoryName}
+        />
+      )}
       {showPriceRange && <PriceRangeFilter currencyCode={currencyCode} />}
       <ProductSpecification filterItems={filterItems} />
     </div>

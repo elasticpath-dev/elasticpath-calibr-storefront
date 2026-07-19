@@ -119,7 +119,11 @@ function CategoryInner({
 
       <div className="flex gap-8">
         <aside className="hidden lg:block w-56 flex-shrink-0">
-          <FilterSidebar filterItems={filterItems} hideNavHierarchy={hideNavHierarchy} />
+          <FilterSidebar
+            filterItems={filterItems}
+            hideNavHierarchy={hideNavHierarchy}
+            currentCategoryName={categoryName}
+          />
         </aside>
 
         <div className="flex-1 min-w-0">
@@ -182,7 +186,11 @@ function CategoryInner({
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <FilterSidebar filterItems={filterItems} hideNavHierarchy={hideNavHierarchy} />
+            <FilterSidebar
+              filterItems={filterItems}
+              hideNavHierarchy={hideNavHierarchy}
+              currentCategoryName={categoryName}
+            />
             <div className="mt-auto pt-6">
               <Button
                 className="w-full"

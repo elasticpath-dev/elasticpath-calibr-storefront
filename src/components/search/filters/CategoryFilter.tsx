@@ -1,72 +1,165 @@
 "use client";
 
-import { type ReactNode } from "react";
-import { useHierarchicalMenu } from "react-instantsearch";
+import { type ReactNode, useMemo } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useHits, useInstantSearch } from "react-instantsearch";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
-import { CATEGORY_HIERARCHICAL_ATTRIBUTES } from "@/lib/instantsearch-routing";
 import { FilterSection } from "./FilterSection";
+
+// How the index stores lvlN category values ("Root > Child > Grandchild").
+const SEPARATOR = " > ";
+const CATEGORY_FACET_PREFIX = "meta.search.categories.lvl";
+// Search page: show the hierarchy root plus its first level of categories
+// (2 path segments). Category pages show the full scoped subtree.
+const SEARCH_MAX_SEGMENTS = 2;
+
+type TreeNode = {
+  path: string;
+  label: string;
+  count: number;
+  children: TreeNode[];
+};
+
+/**
+ * Builds a nested category tree from the SCOPED main-query facet counts
+ * (results._rawResults[0].facets). The main search response already computes
+ * every category level (facet_by includes them), so the whole category filter
+ * — on both search and category pages — comes from that one response with NO
+ * additional facet queries. `maxSegments` caps depth: the (unscoped) search
+ * page only shows the top level, category pages show everything in scope.
+ */
+function buildScopedTree(
+  facets: Record<string, Record<string, number>> | undefined,
+  maxSegments: number,
+): TreeNode[] {
+  if (!facets) return [];
+  const byPath = new Map<string, TreeNode>();
+  for (const [attr, values] of Object.entries(facets)) {
+    if (!attr.startsWith(CATEGORY_FACET_PREFIX)) continue;
+    for (const [path, count] of Object.entries(values)) {
+      if (path.split(SEPARATOR).length > maxSegments) continue;
+      if (!byPath.has(path)) {
+        byPath.set(path, {
+          path,
+          label: path.split(SEPARATOR).pop() ?? path,
+          count,
+          children: [],
+        });
+      }
+    }
+  }
+
+  const roots: TreeNode[] = [];
+  for (const node of byPath.values()) {
+    const idx = node.path.lastIndexOf(SEPARATOR);
+    const parent = idx === -1 ? undefined : byPath.get(node.path.slice(0, idx));
+    if (parent) parent.children.push(node);
+    else roots.push(node);
+  }
+
+  const sortRec = (list: TreeNode[]) => {
+    list.sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+    list.forEach((n) => sortRec(n.children));
+  };
+  sortRec(roots);
+  return roots;
+}
+
+/** Kebab-case fallback for a category slug (spaces → hyphens, case kept),
+ * matching how the catalog slugifies node names. */
+function slugify(name: string): string {
+  return name.trim().replace(/\s+/g, "-");
+}
 
 type Props = {
   title?: string;
   hideNavHierarchy?: boolean;
+  /** Set on category pages: highlights the current node and shows the full
+   * scoped subtree. Unset on the search page, which shows only the top level. */
+  currentCategoryName?: string;
 };
 
-export function CategoryFilter({ title, hideNavHierarchy = false }: Props) {
+export function CategoryFilter({
+  title,
+  hideNavHierarchy = false,
+  currentCategoryName,
+}: Props) {
   const t = useTranslations("search");
-  const { items, refine, canToggleShowMore, isShowingMore, toggleShowMore } =
-    useHierarchicalMenu({
-      attributes: CATEGORY_HIERARCHICAL_ATTRIBUTES,
-      limit: 8,
-      showMore: true,
-      showMoreLimit: 30,
-      sortBy: ["count:desc"],
-    });
+  const pathname = usePathname();
+  const lang = pathname?.split("/")[1] || "en";
+  const { results } = useInstantSearch();
+  const { items: hits } = useHits<Record<string, unknown>>();
 
-  // The tree is always built from the full lvl0/lvl1/lvl2 chain (see
-  // CATEGORY_HIERARCHICAL_ATTRIBUTES) — when the hierarchy root is hidden
-  // from the top nav, hide it here too by rendering its children as the
-  // top level instead of the root itself.
-  const topItems = hideNavHierarchy
-    ? items.flatMap((item) => item.data ?? [])
-    : items;
+  const maxSegments = currentCategoryName ? Infinity : SEARCH_MAX_SEGMENTS;
 
-  if (!topItems.length) return null;
+  const roots = useMemo(() => {
+    const facets = (results as unknown as {
+      _rawResults?: Array<{ facets?: Record<string, Record<string, number>> }>;
+    })?._rawResults?.[0]?.facets;
+    return buildScopedTree(facets, maxSegments);
+  }, [results, maxSegments]);
 
-  function renderItems(list: typeof items, depth = 0): ReactNode {
-    return list.map((item) => (
-      <div key={item.value}>
-        <button
-          onClick={() => refine(item.value)}
-          className={cn(
-            "w-full flex items-center justify-between rounded-md px-2 py-1.5 text-sm transition-colors text-left",
-            item.isRefined
-              ? "font-semibold text-brand-primary bg-brand-primary/5"
-              : "text-gray-700 hover:bg-gray-50",
-            depth > 0 && "pl-5",
+  // Category name → slug from the current results' node paths, so rows link to
+  // the matching category page without any extra lookup.
+  const nameToSlug = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const hit of hits) {
+      const nodes = (hit as { meta?: { search?: { nodes?: unknown } } })?.meta
+        ?.search?.nodes;
+      if (!Array.isArray(nodes)) continue;
+      for (const node of nodes) {
+        const n = node as { name?: string; slug?: string };
+        if (n?.name && n?.slug) map.set(n.name, n.slug);
+      }
+    }
+    return map;
+  }, [hits]);
+
+  const hrefFor = (node: TreeNode): string => {
+    const slugs = node.path
+      .split(SEPARATOR)
+      .map((name) => nameToSlug.get(name) ?? slugify(name));
+    return `/${lang}/category/${slugs.join("/")}`;
+  };
+
+  function renderTree(list: TreeNode[], depth = 0): ReactNode {
+    return list.map((node) => {
+      const isCurrent = node.label === currentCategoryName;
+      return (
+        <div key={node.path}>
+          <Link
+            href={hrefFor(node)}
+            style={{ paddingLeft: 8 + depth * 14 }}
+            className={cn(
+              "w-full flex items-center justify-between rounded-md pr-2 py-1.5 text-sm transition-colors text-left",
+              isCurrent
+                ? "font-semibold text-brand-primary bg-brand-primary/5"
+                : "text-gray-700 hover:bg-gray-50",
+            )}
+          >
+            <span className="truncate">{node.label}</span>
+            <span className="ml-2 text-xs text-gray-400 flex-shrink-0">
+              {node.count}
+            </span>
+          </Link>
+          {node.children.length > 0 && (
+            <div className="mt-0.5">{renderTree(node.children, depth + 1)}</div>
           )}
-        >
-          <span className="truncate">{item.label}</span>
-          <span className="ml-2 text-xs text-gray-400 flex-shrink-0">{item.count}</span>
-        </button>
-        {item.data && item.data.length > 0 && (
-          <div className="mt-0.5">{renderItems(item.data, depth + 1)}</div>
-        )}
-      </div>
-    ));
+        </div>
+      );
+    });
   }
+
+  // Hide the hierarchy root the same way the top nav does: promote its
+  // children to the top level.
+  const topNodes = hideNavHierarchy ? roots.flatMap((r) => r.children) : roots;
+  if (!topNodes.length) return null;
 
   return (
     <FilterSection title={title ?? t("categories")}>
-      {renderItems(topItems)}
-      {canToggleShowMore && (
-        <button
-          onClick={toggleShowMore}
-          className="mt-2 text-xs font-medium text-brand-primary hover:underline px-2"
-        >
-          {isShowingMore ? t("showLess") : t("showMore")}
-        </button>
-      )}
+      {renderTree(topNodes)}
     </FilterSection>
   );
 }
