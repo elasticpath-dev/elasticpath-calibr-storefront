@@ -44,6 +44,7 @@ function hitToCard(hit: Record<string, unknown>): ProductCardData {
   return {
     id: (hit.objectID as string) ?? (hit.id as string) ?? "",
     name: attrs.name ?? "",
+    sku: attrs.sku as string | undefined,
     slug: attrs.slug ?? "",
     description: attrs.description as string | undefined,
     priceFormatted: dp.with_tax?.formatted ?? dp.without_tax?.formatted ?? "",

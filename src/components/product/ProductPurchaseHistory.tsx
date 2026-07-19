@@ -62,18 +62,18 @@ function bucketFor(iso: string, unit: Unit): { key: string; date: Date } | null 
 }
 
 type Props = {
-  productId: string;
+  sku: string;
   lang: string;
 };
 
 /**
  * Signed-in shoppers' purchase history for this product. A "View purchase
  * history" trigger opens a drawer where the shopper picks a window (7 days →
- * 1 year); the component fetches their orders filtered by product_id + date,
+ * 1 year); the component fetches their orders filtered by product_sku + date,
  * then aggregates into day/week/month buckets showing units and orders per
- * bucket. Renders nothing when signed out.
+ * bucket. Renders nothing when signed out or the product has no SKU.
  */
-export function ProductPurchaseHistory({ productId, lang }: Props) {
+export function ProductPurchaseHistory({ sku, lang }: Props) {
   const t = useTranslations("product");
   const { isAuthenticated } = useAuth();
   const [mounted, setMounted] = useState(false);
@@ -94,7 +94,7 @@ export function ProductPurchaseHistory({ productId, lang }: Props) {
   }, [open]);
 
   useEffect(() => {
-    if (!open || !isAuthenticated) return;
+    if (!open || !isAuthenticated || !sku) return;
     let cancelled = false;
     setBuckets(null);
 
@@ -102,7 +102,7 @@ export function ProductPurchaseHistory({ productId, lang }: Props) {
     getCustomerOrders({
       client: createEpClient(),
       query: {
-        filter: `eq(product_id,${productId}):ge(created_at,${since})`,
+        filter: `eq(product_sku,${sku}):ge(created_at,${since})`,
         include: ["items"],
         "page[limit]": 100,
       },
@@ -120,7 +120,7 @@ export function ProductPurchaseHistory({ productId, lang }: Props) {
           const itemRefs: any[] = order.relationships?.items?.data ?? [];
           const units = itemRefs.reduce((sum, ref) => {
             const it = itemById.get(ref.id);
-            return it && it.product_id === productId ? sum + (it.quantity ?? 0) : sum;
+            return it && it.sku === sku ? sum + (it.quantity ?? 0) : sum;
           }, 0);
           if (units <= 0) continue;
 
@@ -151,9 +151,9 @@ export function ProductPurchaseHistory({ productId, lang }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [open, isAuthenticated, productId, period.days, period.unit]);
+  }, [open, isAuthenticated, sku, period.days, period.unit]);
 
-  if (!isAuthenticated) return null;
+  if (!isAuthenticated || !sku) return null;
 
   const bucketLabel = (b: Bucket): string => {
     const day = String(b.date.getDate()).padStart(2, "0");

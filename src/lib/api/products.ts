@@ -23,6 +23,7 @@ export type ProductCardData = {
   id: string;
   slug: string;
   name: string;
+  sku?: string;
   priceFormatted: string;
   originalPriceFormatted?: string;
   imageUrl?: string;
@@ -301,6 +302,7 @@ function formatProduct(
     id: product.id ?? "",
     slug: product.attributes?.slug ?? product.id ?? "",
     name: product.attributes?.name ?? "",
+    sku: product.attributes?.sku,
     description: product.attributes?.description,
     priceFormatted: price,
     originalPriceFormatted: originalPrice,

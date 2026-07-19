@@ -224,6 +224,11 @@ export function ProductCard({
               className="text-sm hover:underline line-clamp-1"
             />
           </Link>
+          {product.sku && (
+            <p className="mt-0.5 text-xs text-gray-400 font-mono">
+              {t("skuLabel")}: {product.sku}
+            </p>
+          )}
           {product.description && (
             <p className="hidden sm:block mt-1 text-xs text-gray-500 line-clamp-1">
               {product.description}
@@ -340,6 +345,12 @@ export function ProductCard({
             />
           </Link>
 
+          {product.sku && (
+            <p className="-mt-1 text-[11px] text-gray-400 font-mono">
+              {t("skuLabel")}: {product.sku}
+            </p>
+          )}
+
           {(product.hasVariations || product.isBundle) && (
             <Price
               formatted={product.priceFormatted}
@@ -433,6 +444,12 @@ export function ProductCard({
             className="text-sm hover:underline line-clamp-3"
           />
         </Link>
+
+        {product.sku && (
+          <p className="-mt-1 text-[11px] text-gray-400 font-mono">
+            {t("skuLabel")}: {product.sku}
+          </p>
+        )}
 
         {product.description && (
           <p className="text-xs text-gray-500 line-clamp-1">

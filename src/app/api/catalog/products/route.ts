@@ -23,6 +23,7 @@ function formatCard(product: Product, included: IncludedResponse | undefined, cu
     id: product.id ?? "",
     slug: product.attributes?.slug ?? product.id ?? "",
     name: product.attributes?.name ?? "",
+    sku: product.attributes?.sku,
     description: product.attributes?.description,
     priceFormatted: price,
     originalPriceFormatted: originalPrice,

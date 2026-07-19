@@ -243,8 +243,8 @@ export default async function ProductDetailPage({ params }: Props) {
               </div>
             )}
 
-            {features.purchaseHistoryEnabled && (
-              <ProductPurchaseHistory productId={product.id} lang={lang} />
+            {features.purchaseHistoryEnabled && product.sku && (
+              <ProductPurchaseHistory sku={product.sku} lang={lang} />
             )}
 
             {product.description && (
