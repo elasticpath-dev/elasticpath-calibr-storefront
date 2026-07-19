@@ -8,6 +8,7 @@ import { Price } from "@/components/product/Price";
 export type HitResult = {
   id: string;
   name: string;
+  sku: string | undefined;
   slug: string;
   price: string;
   originalPrice: string | undefined;
@@ -23,6 +24,7 @@ export function hitToResult(hit: Record<string, unknown>): HitResult {
   return {
     id: (hit.objectID as string) ?? (hit.id as string) ?? "",
     name: attrs.name ?? "",
+    sku: attrs.sku as string | undefined,
     slug: attrs.slug ?? "",
     price: dp.with_tax?.formatted ?? dp.without_tax?.formatted ?? "",
     originalPrice:
@@ -105,6 +107,11 @@ export function SearchResultsList({
                 <p className="text-sm font-medium text-gray-900 truncate">
                   {result.name}
                 </p>
+                {result.sku && (
+                  <p className="text-[11px] text-gray-400 font-mono truncate">
+                    {result.sku}
+                  </p>
+                )}
                 <Price
                   formatted={result.price}
                   originalFormatted={result.originalPrice}
