@@ -92,13 +92,15 @@ export async function Header({ lang }: HeaderProps) {
         </div>
 
         {/* Desktop: nav on its own row below the logo row — left-aligned for
-            "below", centered for "below-center" */}
+            "below", centered for "below-center". In left-aligned mode, pull
+            the row left by the nav items' own px-3.5 padding so the first
+            item's text lines up flush with the logo (no left inset). */}
         {navBelow && (
           <div
             className={`hidden lg:flex ${
               ui.headerNavPosition === "below-center"
                 ? "justify-center"
-                : "justify-start"
+                : "justify-start -ml-3.5"
             }`}
           >
             {navSlot}
