@@ -16,6 +16,7 @@ import {
   resolveAlternativePriceRows,
 } from "@/lib/api/products";
 import { AlternativePrices } from "@/components/product/AlternativePrices";
+import { ProductPurchaseHistory } from "@/components/product/ProductPurchaseHistory";
 import { getProductOffering } from "@/lib/api/subscriptions";
 import { getProductBreadcrumb } from "@/lib/api/breadcrumb";
 import { getTenantConfig } from "@/lib/tenant-config";
@@ -240,6 +241,10 @@ export default async function ProductDetailPage({ params }: Props) {
                   heading={t("pricingLabel")}
                 />
               </div>
+            )}
+
+            {features.purchaseHistoryEnabled && (
+              <ProductPurchaseHistory productId={product.id} lang={lang} />
             )}
 
             {product.description && (

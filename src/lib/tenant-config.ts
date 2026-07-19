@@ -57,6 +57,10 @@ export type TenantConfig = {
     showAlternativePrices: boolean;
     /** Enable the Bulk / Quick Order page and its header entry point. */
     bulkOrderEnabled: boolean;
+    /** Show a per-product purchase history on the PDP for signed-in shoppers:
+     * a "View purchase history" trigger opens a drawer where they pick a
+     * window (7 days – 1 year) and see units/orders bucketed by day/week/month. */
+    purchaseHistoryEnabled: boolean;
     /** Which alternative pricebooks to surface and their display labels, in
      * order. Parsed from NEXT_PUBLIC_ALTERNATIVE_PRICE_BOOKS in the form
      * "pricebookId1|Retail Price,pricebookId2|Members Price". When empty and
@@ -328,6 +332,8 @@ function buildTenantConfigFromEnv(): TenantConfig {
       showAlternativePrices:
         e.NEXT_PUBLIC_SHOW_ALTERNATIVE_PRICES === "true",
       bulkOrderEnabled: e.NEXT_PUBLIC_BULK_ORDER_ENABLED === "true",
+      purchaseHistoryEnabled:
+        e.NEXT_PUBLIC_PURCHASE_HISTORY_ENABLED === "true",
       alternativePriceBooks: parseAlternativePriceBooks(
         e.NEXT_PUBLIC_ALTERNATIVE_PRICE_BOOKS,
       ),
@@ -454,6 +460,9 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
         defaults.features.showAlternativePrices,
       bulkOrderEnabled:
         r.features?.bulkOrderEnabled ?? defaults.features.bulkOrderEnabled,
+      purchaseHistoryEnabled:
+        r.features?.purchaseHistoryEnabled ??
+        defaults.features.purchaseHistoryEnabled,
       alternativePriceBooks: normalizeAlternativePriceBooks(
         r.features?.alternativePriceBooks,
         defaults.features.alternativePriceBooks,
