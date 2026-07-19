@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
-import { Skeleton } from "@/components/ui/Skeleton";
 import { useTenantConfig } from "@/context/TenantConfigContext";
 import { locales } from "@/lib/i18n/config";
 import { NavBarView, type NavStyle } from "@/components/header/navigation/NavBarView";
@@ -193,23 +192,11 @@ export function StorefrontNavigation({
     };
   }, [itemsSignature]);
 
-  if (navItems === null) {
-    return (
-      <nav aria-label="Main navigation" className={`hidden lg:block ${className ?? ""}`}>
-        <ul className="flex items-center gap-2 px-3.5 py-2">
-          {[72, 96, 84, 64, 88].map((width, i) => (
-            <li key={i}>
-              <Skeleton height={16} width={width} />
-            </li>
-          ))}
-        </ul>
-      </nav>
-    );
-  }
-
+  // No loading skeleton — render an empty nav until the items resolve (then
+  // fill in), avoiding the skeleton→content flicker.
   return (
     <div className={className}>
-      <NavBarView items={navItems} lang={effectiveLang} navStyle={effectiveNavStyle} />
+      <NavBarView items={navItems ?? []} lang={effectiveLang} navStyle={effectiveNavStyle} />
     </div>
   );
 }
