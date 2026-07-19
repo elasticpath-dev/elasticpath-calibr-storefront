@@ -44,6 +44,13 @@ export type ProductField = {
   value: string;
 };
 
+/** A per-SKU failure returned by the bulk add-to-cart endpoint. */
+export type BulkOrderError = {
+  sku?: string;
+  title?: string;
+  detail?: string;
+};
+
 export type PromotionSuggestion = {
   promotion_id: string;
   code: string;
@@ -142,6 +149,11 @@ type CartContextValue = {
   addItems: (
     items: Array<{ productId: string; quantity: number; customInputs?: Record<string, string> }>,
   ) => Promise<PromotionSuggestion[] | undefined>;
+  /** Adds items by SKU in one call (bulk / quick order). Returns how many
+   * were added plus any per-SKU errors the API reported (e.g. unknown SKU). */
+  addItemsBySku: (
+    items: Array<{ sku: string; quantity: number }>,
+  ) => Promise<{ addedCount: number; errors: BulkOrderError[] }>;
   addBundleItem: (
     productId: string,
     selectedOptions: Record<string, Record<string, number>>,
@@ -854,6 +866,46 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [epClient, cartId, loadItems],
   );
 
+  const addItemsBySku = useCallback(
+    async (
+      items: Array<{ sku: string; quantity: number }>,
+    ): Promise<{ addedCount: number; errors: BulkOrderError[] }> => {
+      const clean = items.filter((i) => i.sku && i.quantity > 0);
+      if (!epClient || !cartId || clean.length === 0) {
+        return { addedCount: 0, errors: [] };
+      }
+      setIsLoading(true);
+      try {
+        const res = await manageCarts({
+          client: epClient,
+          path: { cartID: cartId },
+          body: {
+            data: clean.map(({ sku, quantity }) => ({
+              type: "cart_item",
+              sku,
+              quantity,
+            })),
+          } as any,
+        });
+        const body = res.data as any;
+        // The bulk endpoint returns HTTP 200 with successfully-added items in
+        // `data` and any rejected SKUs in `errors` (each with meta.sku).
+        const rawErrors = (body?.errors ?? res.error?.errors ?? []) as any[];
+        const errors: BulkOrderError[] = rawErrors.map((e) => ({
+          sku: e?.meta?.sku,
+          title: e?.title,
+          detail: e?.detail,
+        }));
+        const addedCount = Array.isArray(body?.data) ? body.data.length : 0;
+        await loadItems();
+        return { addedCount, errors };
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [epClient, cartId, loadItems],
+  );
+
   const addBundleItem = useCallback(
     async (
       productId: string,
@@ -1196,6 +1248,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         isInitializing,
         addItem,
         addItems,
+        addItemsBySku,
         addBundleItem,
         removeItem,
         updateQuantity,

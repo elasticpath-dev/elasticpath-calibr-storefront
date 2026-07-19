@@ -55,6 +55,8 @@ export type TenantConfig = {
     hideNavHierarchy: boolean;
     /** Show pricebook "alternative_prices" (from product meta) on the PDP. */
     showAlternativePrices: boolean;
+    /** Enable the Bulk / Quick Order page and its header entry point. */
+    bulkOrderEnabled: boolean;
     /** Which alternative pricebooks to surface and their display labels, in
      * order. Parsed from NEXT_PUBLIC_ALTERNATIVE_PRICE_BOOKS in the form
      * "pricebookId1|Retail Price,pricebookId2|Members Price". When empty and
@@ -325,6 +327,7 @@ function buildTenantConfigFromEnv(): TenantConfig {
       hideNavHierarchy: e.NEXT_PUBLIC_HIDE_NAV_HIERARCHY === "true",
       showAlternativePrices:
         e.NEXT_PUBLIC_SHOW_ALTERNATIVE_PRICES === "true",
+      bulkOrderEnabled: e.NEXT_PUBLIC_BULK_ORDER_ENABLED === "true",
       alternativePriceBooks: parseAlternativePriceBooks(
         e.NEXT_PUBLIC_ALTERNATIVE_PRICE_BOOKS,
       ),
@@ -449,6 +452,8 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
       showAlternativePrices:
         r.features?.showAlternativePrices ??
         defaults.features.showAlternativePrices,
+      bulkOrderEnabled:
+        r.features?.bulkOrderEnabled ?? defaults.features.bulkOrderEnabled,
       alternativePriceBooks: normalizeAlternativePriceBooks(
         r.features?.alternativePriceBooks,
         defaults.features.alternativePriceBooks,
