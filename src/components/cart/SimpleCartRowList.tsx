@@ -9,7 +9,7 @@ import type { CartItemDiscount, ProductField } from "@/context/CartContext";
 import { PromoTooltip } from "./PromoTooltip";
 import { CartEditableFields } from "./CartEditableFields";
 import { useTenantConfig } from "@/context/TenantConfigContext";
-import { editableProductFieldKeys } from "@/lib/cart-editable";
+import { editableArrayKeys } from "@/lib/cart-editable";
 
 type Props = {
   cartItemId: string;
@@ -61,7 +61,7 @@ export function SimpleCartRowList({
   const t = useTranslations("cart");
   const { cartEditableInputs } = useTenantConfig();
   // Don't show a product field read-only when it's also inline-editable below.
-  const editableKeys = editableProductFieldKeys(cartEditableInputs);
+  const editableKeys = editableArrayKeys(cartEditableInputs, "product_fields");
   const readOnlyFields = productFields?.filter((f) => !editableKeys.has(f.key));
   const [draft, setDraft] = useState(String(quantity));
 

@@ -7,19 +7,23 @@ export const DEFAULT_PLASMIC_HOST =
   "https://codegen.euwest.storefront.elasticpath.com";
 
 /**
- * A cart line-item field used to group the full cart view. Parsed from
- * NEXT_PUBLIC_CART_GROUP_BY (see parseCartGroupBy):
+ * A cart line-item field selector, parsed from NEXT_PUBLIC_CART_GROUP_BY /
+ * NEXT_PUBLIC_CART_EDITABLE_INPUTS:
  * - "po_number" / "fulfilment.delivery_date" → a custom_inputs value (dot path)
- * - `product_fields[key="purchase_order"]`   → a product_fields entry by key
+ * - `product_fields[key="purchase_order"]`   → an entry (matched by `key`) of
+ *   an array in custom_inputs. The array name is generic — any array works,
+ *   e.g. `attributes[key="delivery_date"]` — not just product_fields.
  */
 export type CartGroupField =
   | { type: "custom_input"; path: string[]; raw: string }
-  | { type: "product_field"; key: string; raw: string };
+  | { type: "array_lookup"; arrayName: string; key: string; raw: string };
 
-const PRODUCT_FIELD_SELECTOR = /^product_fields\[key\s*=\s*["']?([^"'\]]+)["']?\]$/;
+// <arrayName>[key="<value>"] — arrayName may be a dot path to the array.
+const ARRAY_LOOKUP_SELECTOR =
+  /^([A-Za-z_][\w.]*)\s*\[\s*key\s*=\s*["']?([^"'\]]+)["']?\s*\]$/;
 
 /** Parses "po_number,fulfilment.delivery_date,product_fields[key=\"po\"]" into
- * an ordered list of cart-group fields. Blank/invalid entries are dropped. */
+ * an ordered list of cart-field selectors. Blank/invalid entries are dropped. */
 export function parseCartGroupBy(raw: string | undefined): CartGroupField[] {
   if (!raw) return [];
   return raw
@@ -27,10 +31,13 @@ export function parseCartGroupBy(raw: string | undefined): CartGroupField[] {
     .map((entry) => entry.trim())
     .filter(Boolean)
     .map((entry): CartGroupField | null => {
-      const productField = entry.match(PRODUCT_FIELD_SELECTOR);
-      if (productField) {
-        const key = productField[1].trim();
-        return key ? { type: "product_field", key, raw: entry } : null;
+      const lookup = entry.match(ARRAY_LOOKUP_SELECTOR);
+      if (lookup) {
+        const arrayName = lookup[1].trim();
+        const key = lookup[2].trim();
+        return arrayName && key
+          ? { type: "array_lookup", arrayName, key, raw: entry }
+          : null;
       }
       const path = entry.split(".").map((p) => p.trim()).filter(Boolean);
       return path.length > 0 ? { type: "custom_input", path, raw: entry } : null;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
-import { ShoppingBag, LayoutList, LayoutGrid, Layers } from "lucide-react";
+import { ShoppingBag, LayoutList, LayoutGrid, Layers, ChevronRight, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
@@ -31,19 +31,45 @@ import {
   type CartGroupValue,
 } from "@/lib/cart-grouping";
 
-/** Plain title row above a cart group's items (see the grouped itemsColumn). */
-function CartGroupHeader({ values }: { values: CartGroupValue[] }) {
+/** Stable React key for a line group (matrix keyed by parent, else cart item). */
+function lineGroupKey(group: LineGroup): string {
+  return group.kind === "matrix" ? group.matrixGroup.parentId : group.cartItemId;
+}
+
+/** Greyed, collapsible title bar above a cart group's items (see the grouped
+ * itemsColumn). Clicking it expands/collapses the group. */
+function CartGroupHeader({
+  values,
+  expanded,
+  onToggle,
+  itemsLabel,
+}: {
+  values: CartGroupValue[];
+  expanded: boolean;
+  onToggle: () => void;
+  itemsLabel: string;
+}) {
   return (
-    <div className="flex items-center gap-x-5 gap-y-0.5 flex-wrap">
-      {values.map((v, i) => (
-        <span key={i} className="inline-flex items-center gap-1.5 text-[13px]">
-          <span className="text-ink-500 font-medium uppercase tracking-wide text-[11px]">
-            {v.label}
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={expanded}
+      className="w-full flex items-center gap-3 rounded-[10px] bg-ink-50 border border-ink-200 px-4 py-2.5 text-left hover:bg-ink-100 transition-colors"
+    >
+      <ChevronDown
+        size={16}
+        className={`flex-none text-ink-500 transition-transform ${expanded ? "" : "-rotate-90"}`}
+      />
+      <span className="flex-1 flex items-center gap-x-5 gap-y-1 flex-wrap min-w-0">
+        {values.map((v, i) => (
+          <span key={i} className="inline-flex items-center gap-1.5 text-[13px]">
+            <span className="text-ink-500 font-medium">{v.label}:</span>
+            <span className="text-ink-900 font-semibold">{v.value || "—"}</span>
           </span>
-          <span className="text-ink-900 font-semibold">{v.value || "—"}</span>
-        </span>
-      ))}
-    </div>
+        ))}
+      </span>
+      <span className="flex-none text-[12px] text-ink-500">{itemsLabel}</span>
+    </button>
   );
 }
 
@@ -99,6 +125,17 @@ export function B2BCartContent({ lang }: Props) {
   const [bulkMode, setBulkMode] = useState(false);
   const [pendingQtys, setPendingQtys] = useState<Map<string, number>>(new Map());
   const [simplePendingQtys, setSimplePendingQtys] = useState<Map<string, number>>(new Map());
+  // Collapsed cart groups (by group key). Groups are expanded by default.
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+
+  const toggleGroup = useCallback((key: string) => {
+    setCollapsedGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
 
   // Sync from cookie after hydration
   useEffect(() => {
@@ -581,20 +618,61 @@ export function B2BCartContent({ lang }: Props) {
     ],
   );
 
-  const itemsColumn =
+    const itemsColumn =
     showGroupHeaders && groupedLineGroups ? (
       <div className="flex flex-col gap-7">
-        {groupedLineGroups.map((bucket) => (
-          // A single light left rail ties the header to its items — no extra
-          // boxes on top of the item cards' own borders.
-          <div
-            key={bucket.key || "__ungrouped__"}
-            className="pl-4 border-l-2 border-ink-200 flex flex-col gap-3"
-          >
-            <CartGroupHeader values={bucket.values} />
-            {bucket.lineGroups.map(renderRow)}
+        {groupedLineGroups.map((bucket) => {
+          const groupKey = bucket.key || "__ungrouped__";
+          const expanded = !collapsedGroups.has(groupKey);
+          return (
+          <div key={groupKey} className="flex flex-col">
+            <CartGroupHeader
+              values={bucket.values}
+              expanded={expanded}
+              onToggle={() => toggleGroup(groupKey)}
+              itemsLabel={t("products", { count: bucket.lineGroups.length })}
+            />
+            {expanded && (
+            // Tree connector: a rail drops from the header, and a bold elbow
+            // with an arrowhead branches into each item card (in the left
+            // gutter created by pl-12). The rail is full-height for each row
+            // except the last, which stops at the elbow → a └. Vertical center
+            // is offset by +6px to hit the card's centre past pt-3.
+            <div>
+              {bucket.lineGroups.map((group, i) => {
+                const isLast = i === bucket.lineGroups.length - 1;
+                const center = "calc(50% + 6px)";
+                return (
+                  <div key={lineGroupKey(group)} className="relative pl-12 pt-3">
+                    {/* vertical rail */}
+                    <span
+                      aria-hidden
+                      className="absolute left-5 w-0.5 bg-ink-300"
+                      style={{ top: 0, ...(isLast ? { height: center } : { bottom: 0 }) }}
+                    />
+                    {/* horizontal elbow */}
+                    <span
+                      aria-hidden
+                      className="absolute left-5 h-0.5 w-4 bg-ink-300"
+                      style={{ top: center, transform: "translateY(-50%)" }}
+                    />
+                    {/* arrowhead into the card */}
+                    <ChevronRight
+                      aria-hidden
+                      size={18}
+                      strokeWidth={3}
+                      className="absolute left-[30px] text-ink-300"
+                      style={{ top: center, transform: "translateY(-50%)" }}
+                    />
+                    {renderRow(group)}
+                  </div>
+                );
+              })}
+            </div>
+            )}
           </div>
-        ))}
+          );
+        })}
       </div>
     ) : (
       <div className="flex flex-col gap-4">{groups.map(renderRow)}</div>
