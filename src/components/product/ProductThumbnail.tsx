@@ -6,6 +6,11 @@ type ProductThumbnailProps = {
   name: string;
   className?: string;
   priority?: boolean;
+  /**
+   * How the image fills its square. "contain" (default) shows the whole image
+   * (letterboxed on the neutral background); "cover" crops it edge-to-edge.
+   */
+  objectFit?: "contain" | "cover";
 };
 
 export function ProductThumbnail({
@@ -13,6 +18,7 @@ export function ProductThumbnail({
   name,
   className,
   priority = false,
+  objectFit = "contain",
 }: ProductThumbnailProps) {
   return (
     <div
@@ -27,7 +33,10 @@ export function ProductThumbnail({
           alt={name}
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          className="object-cover group-hover:scale-105 transition-transform duration-300"
+          className={cn(
+            "group-hover:scale-105 transition-transform duration-300",
+            objectFit === "cover" ? "object-cover" : "object-contain",
+          )}
           priority={priority}
         />
       ) : (
