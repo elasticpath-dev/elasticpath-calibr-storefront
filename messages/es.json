@@ -750,6 +750,7 @@
     "priceAvailableRange": "Rango: {min} – {max}",
     "noResultsForQuery": "Sin resultados para \"{query}\"",
     "noResults": "No se encontraron productos.",
+    "signInToSearch": "Inicia sesión para explorar y buscar productos.",
     "noResultsHint": "Prueba con otras palabras clave o explora nuestras categorías.",
     "viewList": "Lista",
     "viewGrid": "Cuadrícula",

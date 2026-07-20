@@ -36,6 +36,11 @@ type AuthContextValue = {
   credentials: AccountMemberCredentials | null;
   selectedAccount: AccountMemberCredential | null;
   isAuthenticated: boolean;
+  /** Whether a shopper session exists — like isAuthenticated, but during
+   * SSR / before localStorage hydration it falls back to the server-read
+   * ep_am_token cookie (initialSignedIn), so gating (marketing mode) doesn't
+   * incorrectly treat a signed-in shopper as anonymous on the first render. */
+  hasSession: boolean;
   isLoading: boolean;
   error: string | null;
   login: (email: string, password: string) => Promise<void>;
@@ -61,7 +66,16 @@ function isCredentialsExpired(credentials: AccountMemberCredentials): boolean {
   return Date.now() >= new Date(account.expires).getTime() - 60_000;
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
+export function AuthProvider({
+  children,
+  initialSignedIn = false,
+}: {
+  children: ReactNode;
+  /** Server-read ep_am_token cookie presence — seeds hasSession during SSR /
+   * before localStorage hydration so marketing-mode gating is correct on the
+   * first render for signed-in shoppers. */
+  initialSignedIn?: boolean;
+}) {
   const {
     passwordProfileId,
     epccEndpointUrl,
@@ -224,13 +238,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const clearError = useCallback(() => setError(null), []);
 
   const selectedAccount = getSelectedAccount(credentials);
+  const isAuthenticated = selectedAccount !== null;
+  // Before localStorage hydration (SSR + first client render) trust the
+  // server-read cookie; afterwards use the real auth state.
+  const hasSession = isLoading ? initialSignedIn : isAuthenticated;
 
   return (
     <AuthContext.Provider
       value={{
         credentials,
         selectedAccount,
-        isAuthenticated: selectedAccount !== null,
+        isAuthenticated,
+        hasSession,
         isLoading,
         error,
         login,

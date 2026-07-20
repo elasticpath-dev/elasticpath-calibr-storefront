@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { CartProvider } from "@/context/CartContext";
@@ -23,6 +24,7 @@ export default async function AppLayout({
     params,
     getServerCurrency(),
   ]);
+  const initialSignedIn = !!(await cookies()).get("ep_am_token")?.value;
 
   return (
     <NextIntlClientProvider messages={messages}>
@@ -30,7 +32,7 @@ export default async function AppLayout({
       {/* AuthProvider wraps ClientProvider so the EP SDK client (which
           auto-authenticates and creates _store_ep_credentials / the cart
           cookie) can be withheld in marketing mode until sign-in. */}
-      <AuthProvider>
+      <AuthProvider initialSignedIn={initialSignedIn}>
         <ClientProvider>
           <PreferencesProvider>
             <CatalogProvider>

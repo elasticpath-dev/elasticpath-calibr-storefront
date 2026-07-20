@@ -750,6 +750,7 @@
     "priceAvailableRange": "Plage : {min} – {max}",
     "noResultsForQuery": "Aucun résultat pour \"{query}\"",
     "noResults": "Aucun produit trouvé.",
+    "signInToSearch": "Veuillez vous connecter pour parcourir et rechercher des produits.",
     "noResultsHint": "Essayez d'autres mots-clés ou parcourez nos catégories.",
     "viewList": "Liste",
     "viewGrid": "Grille",

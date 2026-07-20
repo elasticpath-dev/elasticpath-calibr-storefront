@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { CartProvider } from "@/context/CartContext";
@@ -18,11 +19,12 @@ export default async function CheckoutLayout({
     getMessages(),
     getServerCurrency(),
   ]);
+  const initialSignedIn = !!(await cookies()).get("ep_am_token")?.value;
 
   return (
     <NextIntlClientProvider messages={messages}>
       <CurrencyProvider initialCurrency={currency}>
-        <AuthProvider>
+        <AuthProvider initialSignedIn={initialSignedIn}>
           <ClientProvider>
             <PreferencesProvider>
               <CatalogProvider>

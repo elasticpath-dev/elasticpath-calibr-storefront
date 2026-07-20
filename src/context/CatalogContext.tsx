@@ -33,13 +33,14 @@ function writeCatalogCookie(id: string | null) {
 }
 
 export function CatalogProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated, credentials, isLoading: authLoading } = useAuth();
+  const { isAuthenticated, hasSession, credentials, isLoading: authLoading } =
+    useAuth();
   const { marketingMode } = useTenantConfig();
   const [catalogId, setCatalogId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Marketing mode: don't resolve a catalog (an EP call) until signed in.
-  const holdApis = marketingMode && !isAuthenticated;
+  const holdApis = marketingMode && !hasSession;
 
   // Which catalog a shopper resolves to depends on account-scoped catalog
   // rules, so it's resolved once here and cached in a cookie, re-fetched only

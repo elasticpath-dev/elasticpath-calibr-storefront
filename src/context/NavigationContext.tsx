@@ -22,14 +22,14 @@ const NavigationContext = createContext<NavigationContextValue | null>(null);
 
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const { catalogId, isLoading: catalogLoading } = useCatalog();
-  const { isAuthenticated } = useAuth();
+  const { hasSession } = useAuth();
   const { marketingMode } = useTenantConfig();
   const [navItems, setNavItems] = useState<NavItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Marketing mode: no navigation fetch (an EP call) until signed in.
-  const holdApis = marketingMode && !isAuthenticated;
+  const holdApis = marketingMode && !hasSession;
 
   // Navigation is keyed by the resolved catalog, so it's fetched once per
   // catalog and re-fetched only when the catalog changes (login/logout/account

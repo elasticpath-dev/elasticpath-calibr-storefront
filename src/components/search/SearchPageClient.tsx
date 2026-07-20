@@ -235,8 +235,12 @@ export function SearchPageClient({
   hideNavHierarchy = false,
 }: SearchPageClientProps) {
   const epClient = useEpClient();
+  const tSearch = useTranslations("search");
 
   const searchClient = useMemo(() => {
+    // No EP client while APIs are held (marketing mode, signed out) — skip the
+    // adapter, which requires a client, and show a sign-in notice below.
+    if (!epClient) return null;
     const adapter = new CatalogSearchInstantSearchAdapter({
       client: epClient as any,
       include: ["main_image"],
@@ -250,6 +254,14 @@ export function SearchPageClient({
   }, [epClient, filterItems]);
 
   const routing = useMemo(() => createSearchRouting(), []);
+
+  if (!searchClient) {
+    return (
+      <p className="py-20 text-center text-sm text-gray-500">
+        {tSearch("signInToSearch")}
+      </p>
+    );
+  }
 
   return (
     <InstantSearch

@@ -512,10 +512,10 @@ function toCartSummary(
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, hasSession } = useAuth();
   const { marketingMode } = useTenantConfig();
   // Marketing mode: don't create/load a cart (EP calls) until signed in.
-  const holdApis = marketingMode && !isAuthenticated;
+  const holdApis = marketingMode && !hasSession;
   const [epClient, setEpClient] = useState<Client | null>(null);
   const [cartId, setCartId] = useState<string | null>(null);
   const [items, setItems] = useState<CartLineItem[]>([]);

@@ -20,13 +20,15 @@ export function ClientProvider({ children }: { children: ReactNode }) {
     storeId,
     marketingMode,
   } = useTenantConfig();
-  const { isAuthenticated } = useAuth();
+  const { hasSession } = useAuth();
 
   // In marketing mode, don't create the EP SDK client until sign-in — creating
   // it auto-authenticates (writing _store_ep_credentials) and initialises a
   // cart cookie. Held → null client; the controls that use it are hidden until
-  // sign-in anyway.
-  const holdApis = marketingMode && !isAuthenticated;
+  // sign-in anyway. Uses hasSession (cookie-seeded during SSR) so a signed-in
+  // shopper isn't treated as anonymous on the first render (which would make
+  // client-dependent pages like /search crash server-side).
+  const holdApis = marketingMode && !hasSession;
 
   configureEpClient({
     endpointUrl: epccEndpointUrl,

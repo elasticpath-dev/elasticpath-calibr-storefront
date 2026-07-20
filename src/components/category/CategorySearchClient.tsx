@@ -224,10 +224,13 @@ export function CategorySearchClient({
   hideNavHierarchy = false,
 }: Props) {
   const epClient = useEpClient();
+  const tSearch = useTranslations("search");
 
   const slugKey = slugs.join(",");
 
   const searchClient = useMemo(() => {
+    // No EP client while APIs are held (marketing mode, signed out).
+    if (!epClient) return null;
     const nodeSlugFilter = slugs
       .map((s) => `meta.search.nodes.slug:=[\`${s}\`]`)
       .join(" && ");
@@ -246,6 +249,14 @@ export function CategorySearchClient({
     return adapter.searchClient;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [epClient, slugKey, filterItems]);
+
+  if (!searchClient) {
+    return (
+      <p className="py-20 text-center text-sm text-gray-500">
+        {tSearch("signInToSearch")}
+      </p>
+    );
+  }
 
   return (
     <InstantSearch
