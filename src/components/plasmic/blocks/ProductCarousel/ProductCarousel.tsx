@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 import { ProductCarouselDisplay } from "@/components/product/ProductCarouselDisplay";
 import { useTenantConfig } from "@/context/TenantConfigContext";
 import { useResponsiveSlides } from "@/hooks/use-responsive-slides";
@@ -91,21 +92,28 @@ export function ProductCarousel({
     load();
   }, [selectionMode, productIdsKey, nodeId]);
 
-  const wrapperClass = className ?? "container-shell px-4 sm:px-8 py-8";
+  // Plasmic passes its own `className` for the component's outer box, so keep
+  // that on the outer element and constrain the carousel content with an inner
+  // shell that matches the header's gutters (respects full-width mode via
+  // container-shell) — otherwise the carousel would run edge-to-edge while the
+  // header content is inset.
+  const innerClass = "w-full container-shell px-4 sm:px-6 lg:px-8 py-8";
 
   if (loading) {
     return (
-      <div className={wrapperClass}>
-        {title && <Skeleton className="h-7 w-48 mb-6" />}
-        <div className="flex gap-4">
-          {Array.from({ length: skeletonSlides }).map((_, i) => (
-            <div
-              key={i}
-              style={{ flex: `0 0 calc(${100 / skeletonSlides}% - 12px)` }}
-            >
-              <Skeleton className="h-72 w-full rounded-xl" />
-            </div>
-          ))}
+      <div className={cn("w-full", className)}>
+        <div className={innerClass}>
+          {title && <Skeleton className="h-7 w-48 mb-6" />}
+          <div className="flex gap-4">
+            {Array.from({ length: skeletonSlides }).map((_, i) => (
+              <div
+                key={i}
+                style={{ flex: `0 0 calc(${100 / skeletonSlides}% - 12px)` }}
+              >
+                <Skeleton className="h-72 w-full rounded-xl" />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -114,19 +122,21 @@ export function ProductCarousel({
   if (!products.length) return null;
 
   return (
-    <div className={wrapperClass}>
-      {title && (
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6">{title}</h2>
-      )}
-      <ProductCarouselDisplay
-        products={products}
-        lang={lang}
-        slidesToShow={slidesToShow}
-        autoplay={autoplay}
-        autoplayInterval={autoplayInterval}
-        showDots={showDots}
-        infinite={infinite}
-      />
+    <div className={cn("w-full", className)}>
+      <div className={innerClass}>
+        {title && (
+          <h2 className="text-2xl font-semibold text-gray-900 mb-6">{title}</h2>
+        )}
+        <ProductCarouselDisplay
+          products={products}
+          lang={lang}
+          slidesToShow={slidesToShow}
+          autoplay={autoplay}
+          autoplayInterval={autoplayInterval}
+          showDots={showDots}
+          infinite={infinite}
+        />
+      </div>
     </div>
   );
 }
