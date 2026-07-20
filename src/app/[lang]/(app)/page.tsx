@@ -4,6 +4,7 @@ import { getFeaturedProducts } from "@/lib/api/products";
 import { getPlasmicConfig } from "@/lib/plasmic-config";
 import { getPlasmicComponentData } from "@/components/plasmic/plasmic-data";
 import PlasmicContent from "@/components/plasmic/PlasmicContent";
+import { shouldHoldEpApis } from "@/lib/marketing-mode";
 import Link from "next/link";
 
 type PageProps = {
@@ -14,8 +15,11 @@ export default async function HomePage({ params }: PageProps) {
   const { lang } = await params;
 
   const plasmicConfig = await getPlasmicConfig();
+  // Marketing mode (signed out): skip featured products so no Elastic Path
+  // call (or access token) happens — the Plasmic homepage renders instead.
+  const hold = await shouldHoldEpApis();
   const [products, plasmicData] = await Promise.all([
-    getFeaturedProducts(25),
+    hold ? Promise.resolve([]) : getFeaturedProducts(25),
     plasmicConfig.enabled ? getPlasmicComponentData("homepage") : null,
   ]);
 

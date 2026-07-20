@@ -26,15 +26,17 @@ export default function PlasmicContent({
 }: PlasmicContentProps) {
   const { cms, epContextTag } = useTenantConfig();
   const { catalogId, isLoading: catalogLoading } = useCatalog();
-  const { selectedAccount } = useAuth();
+  const { selectedAccount, isAuthenticated } = useAuth();
   const language = useLocale();
   const loader = getClientPlasmicLoader(cms);
   const [variation, setVariation] = useState<Record<string, string>>({});
   const accountName = selectedAccount?.account_name ?? "";
+  const isLoggedIn = isAuthenticated ? "true" : "false";
 
   // These are exposed as targeting traits so content editors can set up
   // Plasmic Audiences/Splits keyed on catalog (account-specific catalog
-  // rules), language, signed-in account, or context tag for personalization.
+  // rules), language, signed-in account, sign-in state, or context tag for
+  // personalization.
   useEffect(() => {
     if (!loader || catalogLoading) return;
     let cancelled = false;
@@ -45,6 +47,7 @@ export default function PlasmicContent({
           language,
           accountName,
           epContextTag: epContextTag ?? "",
+          isLoggedIn,
         },
       })
       .then((result) => {
@@ -54,7 +57,7 @@ export default function PlasmicContent({
     return () => {
       cancelled = true;
     };
-  }, [loader, catalogLoading, catalogId, language, accountName, epContextTag]);
+  }, [loader, catalogLoading, catalogId, language, accountName, epContextTag, isLoggedIn]);
 
   if (!loader) {
     return null;

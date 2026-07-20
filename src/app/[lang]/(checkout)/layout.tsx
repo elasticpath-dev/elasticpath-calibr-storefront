@@ -22,15 +22,15 @@ export default async function CheckoutLayout({
   return (
     <NextIntlClientProvider messages={messages}>
       <CurrencyProvider initialCurrency={currency}>
-        <ClientProvider>
-          <PreferencesProvider>
-            <AuthProvider>
+        <AuthProvider>
+          <ClientProvider>
+            <PreferencesProvider>
               <CatalogProvider>
                 <CartProvider>{children}</CartProvider>
               </CatalogProvider>
-            </AuthProvider>
-          </PreferencesProvider>
-        </ClientProvider>
+            </PreferencesProvider>
+          </ClientProvider>
+        </AuthProvider>
       </CurrencyProvider>
       <Toaster position="top-right" />
     </NextIntlClientProvider>

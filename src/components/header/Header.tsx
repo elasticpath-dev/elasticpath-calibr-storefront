@@ -4,6 +4,7 @@ import { MobileNavBar } from "./navigation/MobileNavBar";
 import { SearchButton } from "./search/SearchButton";
 import { HeaderSearchBar } from "./search/HeaderSearchBar";
 import { BulkOrderButton } from "./BulkOrderButton";
+import { MarketingGate } from "./MarketingGate";
 import { CartButton } from "./cart/CartButton";
 import { AccountButton } from "./AccountButton";
 import { SettingsButton } from "./SettingsButton";
@@ -67,27 +68,33 @@ export async function Header({ lang }: HeaderProps) {
             aria-hidden="true"
           />
 
-          {/* Right: search + account + cart + settings */}
+          {/* Right: search + account + cart + settings. In marketing mode
+              (signed out) everything except the account/sign-in entry is
+              hidden — those controls all require Elastic Path. */}
           <div className="flex items-center gap-1">
-            {features.searchEnabled &&
-              (navBelow ? (
-                <>
-                  {/* Below mode: inline search bar with live results next to
-                      the account button (desktop); icon stays for mobile */}
-                  <div className="hidden lg:block mr-2">
-                    <HeaderSearchBar lang={lang} />
-                  </div>
-                  <span className="lg:hidden">
-                    <SearchButton lang={lang} />
-                  </span>
-                </>
-              ) : (
-                <SearchButton lang={lang} />
-              ))}
-            {features.bulkOrderEnabled && <BulkOrderButton lang={lang} />}
+            <MarketingGate>
+              {features.searchEnabled &&
+                (navBelow ? (
+                  <>
+                    {/* Below mode: inline search bar with live results next to
+                        the account button (desktop); icon stays for mobile */}
+                    <div className="hidden lg:block mr-2">
+                      <HeaderSearchBar lang={lang} />
+                    </div>
+                    <span className="lg:hidden">
+                      <SearchButton lang={lang} />
+                    </span>
+                  </>
+                ) : (
+                  <SearchButton lang={lang} />
+                ))}
+              {features.bulkOrderEnabled && <BulkOrderButton lang={lang} />}
+            </MarketingGate>
             <AccountButton />
-            <CartButton />
-            <SettingsButton />
+            <MarketingGate>
+              <CartButton />
+              <SettingsButton />
+            </MarketingGate>
           </div>
         </div>
 

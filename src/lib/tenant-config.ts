@@ -101,6 +101,11 @@ export type TenantConfig = {
     showAlternativePrices: boolean;
     /** Enable the Bulk / Quick Order page and its header entry point. */
     bulkOrderEnabled: boolean;
+    /** Non-transactional "marketing" storefront: until a shopper signs in, no
+     * calls are made to the Elastic Path endpoint (no access token, catalog,
+     * cart or navigation) — only Plasmic content renders. Signing in lifts the
+     * hold and the storefront behaves normally. */
+    marketingMode: boolean;
     /** Show a per-product purchase history on the PDP for signed-in shoppers:
      * a "View purchase history" trigger opens a drawer where they pick a
      * window (7 days – 1 year) and see units/orders bucketed by day/week/month. */
@@ -165,6 +170,9 @@ export type ClientTenantConfig = {
   multiLocation: boolean;
   storeName: string;
   brandInk900: string;
+  /** Non-transactional marketing mode — see TenantConfig.features.marketingMode.
+   * On the client, "hold EP APIs until signed in" = marketingMode && !isAuthenticated. */
+  marketingMode: boolean;
   cms: { projectId: string; apiToken: string; preview: boolean; host: string };
   currency: { default: string; available: string[] };
   epContextTag?: string;
@@ -195,6 +203,7 @@ export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
     passwordProfileId: config.auth.passwordProfileId,
     oidcProfileIds: config.auth.oidcProfileIds,
     multiLocation: config.inventory.multiLocation,
+    marketingMode: config.features.marketingMode,
     storeName: config.site.name,
     brandInk900: config.theme.ink900,
     currency: config.currency,
@@ -388,6 +397,7 @@ function buildTenantConfigFromEnv(): TenantConfig {
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean),
       hideNavHierarchy: e.NEXT_PUBLIC_HIDE_NAV_HIERARCHY === "true",
+      marketingMode: e.NEXT_PUBLIC_MARKETING_MODE === "true",
       showAlternativePrices:
         e.NEXT_PUBLIC_SHOW_ALTERNATIVE_PRICES === "true",
       bulkOrderEnabled: e.NEXT_PUBLIC_BULK_ORDER_ENABLED === "true",
@@ -517,6 +527,7 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
         : defaults.features.extensionsExcluded,
       hideNavHierarchy:
         r.features?.hideNavHierarchy ?? defaults.features.hideNavHierarchy,
+      marketingMode: r.features?.marketingMode ?? defaults.features.marketingMode,
       showAlternativePrices:
         r.features?.showAlternativePrices ??
         defaults.features.showAlternativePrices,

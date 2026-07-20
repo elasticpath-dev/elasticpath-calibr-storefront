@@ -27,9 +27,12 @@ export default async function AppLayout({
   return (
     <NextIntlClientProvider messages={messages}>
       <CurrencyProvider initialCurrency={currency}>
-      <ClientProvider>
-        <PreferencesProvider>
-          <AuthProvider>
+      {/* AuthProvider wraps ClientProvider so the EP SDK client (which
+          auto-authenticates and creates _store_ep_credentials / the cart
+          cookie) can be withheld in marketing mode until sign-in. */}
+      <AuthProvider>
+        <ClientProvider>
+          <PreferencesProvider>
             <CatalogProvider>
             <NavigationProvider>
             <CartProvider>
@@ -40,9 +43,9 @@ export default async function AppLayout({
             </CartProvider>
             </NavigationProvider>
             </CatalogProvider>
-          </AuthProvider>
-        </PreferencesProvider>
-      </ClientProvider>
+          </PreferencesProvider>
+        </ClientProvider>
+      </AuthProvider>
       </CurrencyProvider>
     </NextIntlClientProvider>
   );

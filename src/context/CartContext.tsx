@@ -30,6 +30,7 @@ import type { Client } from "@hey-api/client-fetch";
 import { createEpClient } from "@/lib/api/ep-client";
 import { SHIPPING_CUSTOM_ITEM_SKU_PREFIX } from "@/lib/cart-constants";
 import { useAuth } from "@/context/AuthContext";
+import { useTenantConfig } from "@/context/TenantConfigContext";
 
 export type AppliedPromoCode = {
   id: string;
@@ -512,6 +513,9 @@ function toCartSummary(
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated } = useAuth();
+  const { marketingMode } = useTenantConfig();
+  // Marketing mode: don't create/load a cart (EP calls) until signed in.
+  const holdApis = marketingMode && !isAuthenticated;
   const [epClient, setEpClient] = useState<Client | null>(null);
   const [cartId, setCartId] = useState<string | null>(null);
   const [items, setItems] = useState<CartLineItem[]>([]);
@@ -583,8 +587,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const prevIsAuthRef = useRef<boolean | null>(null);
   const mergedInSessionRef = useRef(false);
 
-  // Initialise EP client + load active cart once on mount
+  // Initialise EP client + load active cart. Deferred while APIs are held
+  // (marketing mode, signed out) — runs once the hold lifts (i.e. on sign-in).
   useEffect(() => {
+    if (holdApis) {
+      setIsInitializing(false);
+      return;
+    }
     const client = createEpClient();
     setEpClient(client);
 
@@ -618,7 +627,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         console.error(err);
         setIsInitializing(false);
       });
-  }, []);
+  }, [holdApis]);
 
   // On login: load account carts and merge the guest cart if needed.
   // On logout: clear cart list and create a fresh guest cart.

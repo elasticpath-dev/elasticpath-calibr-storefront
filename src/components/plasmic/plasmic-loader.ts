@@ -48,6 +48,12 @@ export function getClientPlasmicLoader(cms: {
       type: "text",
       label: "EP Context Tag",
     });
+    // "true" / "false" — lets authors target signed-in vs anonymous shoppers
+    // (e.g. show different content to registered users). See PlasmicContent.
+    loader.registerTrait("isLoggedIn", {
+      type: "text",
+      label: "Logged In",
+    });
     loaderCache.set(cacheKey, loader);
   }
   return loader;

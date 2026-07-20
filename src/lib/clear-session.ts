@@ -13,6 +13,7 @@ export function clearSession() {
   const prefixesToRemove = ["ep-shipment-names-", "ep-shipment-estimates-"];
   const exactKeysToRemove = [
     "_store_ep_cart",
+    "_store_ep_credentials", // SDK client access-token store
     "ep_account_member_credentials",
     "elasticpath_cart",
   ];
@@ -28,8 +29,8 @@ export function clearSession() {
   }
 
   // ── Cookies ──────────────────────────────────────────────────────────────────
-  // Expire any stale cart cookies that may exist from earlier versions
   expireCookie("ep_cart_id");
   expireCookie("elasticpath_cart");
   expireCookie("ep_am_token");
+  expireCookie("ep_catalog_id"); // resolved catalog cache — must reset on logout
 }

@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTenantConfig } from "@/context/TenantConfigContext";
 
 // Kept as a literal (not imported from the server-only catalog module, which
 // pulls in next/headers) — mirrors how AM_TOKEN_COOKIE is duplicated.
@@ -33,8 +34,12 @@ function writeCatalogCookie(id: string | null) {
 
 export function CatalogProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, credentials, isLoading: authLoading } = useAuth();
+  const { marketingMode } = useTenantConfig();
   const [catalogId, setCatalogId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Marketing mode: don't resolve a catalog (an EP call) until signed in.
+  const holdApis = marketingMode && !isAuthenticated;
 
   // Which catalog a shopper resolves to depends on account-scoped catalog
   // rules, so it's resolved once here and cached in a cookie, re-fetched only
@@ -43,6 +48,13 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   // replaced before navigation (which reads it) picks it up.
   useEffect(() => {
     if (authLoading) return; // wait for auth hydration so we don't fetch twice on load
+    if (holdApis) {
+      // Held (marketing mode, signed out): no EP call, clear any stale cookie.
+      writeCatalogCookie(null);
+      setCatalogId(null);
+      setIsLoading(false);
+      return;
+    }
     let cancelled = false;
     setIsLoading(true);
     fetch("/api/catalog-id")
@@ -62,7 +74,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isAuthenticated, credentials?.selected]);
+  }, [authLoading, isAuthenticated, credentials?.selected, holdApis]);
 
   return (
     <CatalogContext.Provider value={{ catalogId, isLoading }}>
