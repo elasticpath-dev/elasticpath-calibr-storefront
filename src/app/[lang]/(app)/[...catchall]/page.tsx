@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
 import { Header } from "@/components/header/Header";
 import { getPlasmicConfig } from "@/lib/plasmic-config";
 import { getPlasmicComponentData } from "@/components/plasmic/plasmic-data";
@@ -43,16 +42,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function CatchAllPage({ params }: PageProps) {
+  // Root-level Plasmic catch-all: header/footer always render; main is blank
+  // when no Plasmic page matches (never a 404).
   const { lang, catchall } = await params;
-  const { enabled, component, data } = await resolvePlasmicPage(catchall);
+  const { component, data } = await resolvePlasmicPage(catchall);
 
-  // Plasmic is on but there's no page for this URL → a genuine 404. When Plasmic
-  // is off entirely, the storefront still frames the URL with header/footer and
-  // a blank main (per spec) rather than erroring.
-  if (enabled && !component) {
-    notFound();
-  }
-
+  // Whether or not a Plasmic page exists for this URL, the storefront frames it
+  // with the header/footer; main is the Plasmic content if found, otherwise
+  // blank (no 404).
   return (
     <div className="min-h-screen bg-white">
       <Header lang={lang} />
