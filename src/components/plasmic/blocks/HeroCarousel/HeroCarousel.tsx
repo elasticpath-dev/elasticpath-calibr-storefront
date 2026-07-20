@@ -5,10 +5,10 @@ import {
   useCallback,
   useEffect,
   useState,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export type HeroCarouselProps = {
   /** Slot — the author drops one element per slide (image, section, etc.). */
@@ -25,11 +25,31 @@ export type HeroCarouselProps = {
   className?: string;
 };
 
+// Layout is driven by inline styles (not Tailwind classes) so the carousel
+// renders correctly in the Plasmic Studio canvas too, where the storefront's
+// Tailwind stylesheet isn't loaded.
+const arrowStyle: CSSProperties = {
+  position: "absolute",
+  top: "50%",
+  transform: "translateY(-50%)",
+  zIndex: 10,
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: 40,
+  height: 40,
+  borderRadius: "9999px",
+  border: "none",
+  cursor: "pointer",
+  background: "rgba(255,255,255,0.9)",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+  color: "#374151",
+};
+
 /**
  * Full-width hero carousel for Plasmic. Each direct child of the `slides` slot
- * is one slide; the author adds as many as they like in Studio. Supports
- * autoplay, prev/next arrows and pagination dots. One slide is shown at a
- * time, sliding horizontally.
+ * is one slide; one shows at a time, sliding horizontally. Supports autoplay,
+ * prev/next arrows and pagination dots.
  */
 export function HeroCarousel({
   slides,
@@ -44,7 +64,6 @@ export function HeroCarousel({
   const count = items.length;
   const [index, setIndex] = useState(0);
 
-  // Keep the index valid if slides are added/removed in Studio.
   useEffect(() => {
     if (count > 0 && index >= count) setIndex(0);
   }, [count, index]);
@@ -72,14 +91,20 @@ export function HeroCarousel({
     return () => clearInterval(id);
   }, [autoplay, autoplayInterval, count, loop]);
 
-  // Empty — show an authoring placeholder (renders nothing meaningful live).
   if (count === 0) {
     return (
       <div
-        className={cn(
-          "flex items-center justify-center min-h-[240px] rounded-xl border border-dashed border-gray-300 text-sm text-gray-400",
-          className,
-        )}
+        className={className}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: 240,
+          border: "1px dashed #c2c8d0",
+          borderRadius: 12,
+          color: "#8c95a3",
+          fontSize: 14,
+        }}
       >
         Add slides to the hero carousel
       </div>
@@ -87,13 +112,20 @@ export function HeroCarousel({
   }
 
   return (
-    <div className={cn("relative overflow-hidden", className)}>
+    <div className={className} style={{ position: "relative", overflow: "hidden" }}>
       <div
-        className="flex transition-transform duration-500 ease-out"
-        style={{ transform: `translateX(-${index * 100}%)` }}
+        style={{
+          display: "flex",
+          transition: "transform 500ms ease",
+          transform: `translateX(-${index * 100}%)`,
+        }}
       >
         {items.map((slide, i) => (
-          <div key={i} className="w-full flex-none" aria-hidden={i !== index}>
+          <div
+            key={i}
+            aria-hidden={i !== index}
+            style={{ flex: "0 0 100%", width: "100%", minWidth: 0 }}
+          >
             {slide}
           </div>
         ))}
@@ -105,7 +137,7 @@ export function HeroCarousel({
             type="button"
             onClick={() => go(index - 1)}
             aria-label="Previous slide"
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white/90 shadow-md text-gray-700 hover:text-gray-900 hover:bg-white transition-colors"
+            style={{ ...arrowStyle, left: 16 }}
           >
             <ChevronLeft size={20} />
           </button>
@@ -113,7 +145,7 @@ export function HeroCarousel({
             type="button"
             onClick={() => go(index + 1)}
             aria-label="Next slide"
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white/90 shadow-md text-gray-700 hover:text-gray-900 hover:bg-white transition-colors"
+            style={{ ...arrowStyle, right: 16 }}
           >
             <ChevronRight size={20} />
           </button>
@@ -121,7 +153,18 @@ export function HeroCarousel({
       )}
 
       {showDots && count > 1 && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10 flex items-center gap-2">
+        <div
+          style={{
+            position: "absolute",
+            bottom: 16,
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 10,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
           {items.map((_, i) => (
             <button
               key={i}
@@ -129,10 +172,17 @@ export function HeroCarousel({
               onClick={() => setIndex(i)}
               aria-label={`Go to slide ${i + 1}`}
               aria-current={i === index}
-              className={cn(
-                "h-2 rounded-full transition-all duration-300",
-                i === index ? "w-6 bg-white" : "w-2 bg-white/60 hover:bg-white/80",
-              )}
+              style={{
+                height: 8,
+                width: i === index ? 24 : 8,
+                borderRadius: 9999,
+                border: "none",
+                cursor: "pointer",
+                padding: 0,
+                transition: "width 300ms ease, background 300ms ease",
+                background:
+                  i === index ? "#ffffff" : "rgba(255,255,255,0.6)",
+              }}
             />
           ))}
         </div>
