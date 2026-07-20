@@ -2,13 +2,33 @@
 
 import {
   Children,
+  isValidElement,
   useCallback,
   useEffect,
   useState,
   type CSSProperties,
+  type ReactElement,
   type ReactNode,
 } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+
+/**
+ * Resolves the slot content into one array entry per slide. Plasmic wraps a
+ * multi-child slot in a single `display:contents` element, so a naive
+ * Children.toArray sees one wrapper (→ all sections stacked in one "slide").
+ * Unwrap single-wrapper layers until multiple siblings surface.
+ */
+function toSlides(node: ReactNode): ReactNode[] {
+  let arr = Children.toArray(node);
+  while (arr.length === 1 && isValidElement(arr[0])) {
+    const inner = Children.toArray(
+      (arr[0] as ReactElement<{ children?: ReactNode }>).props?.children,
+    );
+    if (inner.length <= 1) break;
+    arr = inner;
+  }
+  return arr;
+}
 
 export type HeroCarouselProps = {
   /** Slot — the author drops one element per slide (image, section, etc.). */
@@ -60,7 +80,7 @@ export function HeroCarousel({
   loop = true,
   className,
 }: HeroCarouselProps) {
-  const items = Children.toArray(slides);
+  const items = toSlides(slides);
   const count = items.length;
   const [index, setIndex] = useState(0);
 
