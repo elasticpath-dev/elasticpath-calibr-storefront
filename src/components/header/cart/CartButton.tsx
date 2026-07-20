@@ -153,7 +153,7 @@ export function CartButton() {
                             alt={item.name}
                             fill
                             sizes="80px"
-                            className="object-cover"
+                            className="object-contain"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">

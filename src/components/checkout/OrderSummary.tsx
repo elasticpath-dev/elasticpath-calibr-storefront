@@ -50,7 +50,7 @@ export function OrderSummary({ items, cartTotal, cartTotalAmount, cartSubtotal, 
                   alt={item.name}
                   fill
                   sizes="64px"
-                  className="object-cover"
+                  className="object-contain"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center">

@@ -69,7 +69,7 @@ export function UnassignedItems({
               <DotGrip />
               <span className="w-9 h-9 rounded-lg border border-gray-100 bg-white flex items-center justify-center flex-shrink-0 overflow-hidden relative text-gray-300">
                 {item.imageHref ? (
-                  <Image src={item.imageHref} alt={item.name ?? ""} fill sizes="36px" className="object-cover" />
+                  <Image src={item.imageHref} alt={item.name ?? ""} fill sizes="36px" className="object-contain" />
                 ) : (
                   <Package size={14} />
                 )}

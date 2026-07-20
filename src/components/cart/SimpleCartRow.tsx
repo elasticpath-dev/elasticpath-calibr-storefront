@@ -176,7 +176,7 @@ export function SimpleCartRow({
         {/* Thumbnail */}
         <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-ink-100 border border-ink-200 flex-none">
           {imageUrl ? (
-            <Image src={imageUrl} alt={name} fill sizes="48px" className="object-cover" />
+            <Image src={imageUrl} alt={name} fill sizes="48px" className="object-contain" />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <ShoppingBag size={18} className="text-ink-300" />

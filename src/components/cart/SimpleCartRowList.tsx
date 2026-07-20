@@ -96,7 +96,7 @@ export function SimpleCartRowList({
       {/* Image */}
       <div className="relative w-[100px] h-[100px] flex-none rounded-[12px] overflow-hidden bg-ink-100 border border-ink-200 self-start">
         {imageUrl ? (
-          <Image src={imageUrl} alt={name} fill sizes="100px" className="object-cover" />
+          <Image src={imageUrl} alt={name} fill sizes="100px" className="object-contain" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <ShoppingBag size={28} className="text-ink-300" />

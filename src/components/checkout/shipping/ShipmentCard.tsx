@@ -229,7 +229,7 @@ export function ShipmentCard({
               <DotGrip />
               <span className="w-11 h-11 rounded-lg border border-gray-200 bg-white flex items-center justify-center flex-shrink-0 overflow-hidden relative text-gray-300">
                 {item.imageHref ? (
-                  <Image src={item.imageHref} alt={item.name ?? ""} fill sizes="44px" className="object-cover" />
+                  <Image src={item.imageHref} alt={item.name ?? ""} fill sizes="44px" className="object-contain" />
                 ) : (
                   <Package size={18} />
                 )}

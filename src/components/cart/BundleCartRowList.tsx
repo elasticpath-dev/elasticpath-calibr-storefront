@@ -57,7 +57,7 @@ export function BundleCartRowList({
       {/* Image */}
       <div className="relative w-[100px] h-[100px] flex-none rounded-[12px] overflow-hidden bg-gradient-to-br from-success-100 to-warning-100 border border-ink-200 self-start flex items-center justify-center">
         {imageUrl ? (
-          <Image src={imageUrl} alt={name} fill sizes="100px" className="object-cover" />
+          <Image src={imageUrl} alt={name} fill sizes="100px" className="object-contain" />
         ) : (
           <Package size={28} className="text-[rgba(14,21,33,0.3)]" />
         )}

@@ -54,7 +54,7 @@ export function BundleCartRow({
         <span className="flex-none w-[46px] h-[46px] rounded-[11px] bg-gradient-to-br from-success-100 to-warning-300 flex items-center justify-center text-[rgba(14,21,33,0.42)]">
           {imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={imageUrl} alt={name} className="w-full h-full object-cover rounded-[11px]" />
+            <img src={imageUrl} alt={name} className="w-full h-full object-contain rounded-[11px]" />
           ) : (
             <Package size={24} />
           )}

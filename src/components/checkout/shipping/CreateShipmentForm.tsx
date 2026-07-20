@@ -261,7 +261,7 @@ export function CreateShipmentForm({
                         alt={item.name ?? ""}
                         fill
                         sizes="40px"
-                        className="object-cover"
+                        className="object-contain"
                       />
                     ) : (
                       <Package size={16} className="text-gray-300" />
