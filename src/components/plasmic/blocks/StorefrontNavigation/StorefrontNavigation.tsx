@@ -79,7 +79,9 @@ function staticItemToNavItem(item: StudioNavItem, index: number): NavItem {
   return {
     key,
     label: item.label ?? "",
-    href: item.href ?? "/",
+    // Empty (not "/") when the author left href blank, so the dropdown's
+    // "View all" link can be hidden for items that aren't meant to link out.
+    href: item.href ?? "",
     megaMenu: columns.length > 0 ? { columns } : undefined,
     children: children.length > 0 ? children : undefined,
   };

@@ -74,14 +74,16 @@ export function CascadeMenu({
               key={`${parent.key}-${level}`}
               className="w-64 flex-none max-h-[70vh] overflow-y-auto border-r border-gray-100 py-3"
             >
-              <Link
-                href={`/${lang}${parent.href}`}
-                role="menuitem"
-                onClick={onNavigate}
-                className="block px-4 py-2 text-xs font-medium text-brand-secondary hover:underline underline-offset-2"
-              >
-                {t("viewAll", { label: parent.label })}
-              </Link>
+              {parent.href && (
+                <Link
+                  href={`/${lang}${parent.href}`}
+                  role="menuitem"
+                  onClick={onNavigate}
+                  className="block px-4 py-2 text-xs font-medium text-brand-secondary hover:underline underline-offset-2"
+                >
+                  {t("viewAll", { label: parent.label })}
+                </Link>
+              )}
 
               <ul>
                 {nodes.map((node) => {

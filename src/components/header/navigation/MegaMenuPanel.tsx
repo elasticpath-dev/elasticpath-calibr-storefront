@@ -107,14 +107,16 @@ export function MegaMenuPanel({
           )}
         </div>
 
-        <div className="mt-6 pt-5 border-t border-gray-100 flex justify-end">
-          <Link
-            href={`/${lang}${item.href}`}
-            className="text-sm font-medium text-brand-secondary hover:underline underline-offset-2"
-          >
-            View all {item.label} →
-          </Link>
-        </div>
+        {item.href && (
+          <div className="mt-6 pt-5 border-t border-gray-100 flex justify-end">
+            <Link
+              href={`/${lang}${item.href}`}
+              className="text-sm font-medium text-brand-secondary hover:underline underline-offset-2"
+            >
+              View all {item.label} →
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );

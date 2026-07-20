@@ -36,6 +36,9 @@ import { ProductCarousel, type ProductCarouselProps } from "@/components/plasmic
 import { ProductPickerControl } from "@/components/plasmic/blocks/ProductCarousel/ProductPickerControl";
 import { NodePickerControl } from "@/components/plasmic/blocks/ProductCarousel/NodePickerControl";
 
+// Content — hero carousel (author-composed slides)
+import { HeroCarousel, type HeroCarouselProps } from "@/components/plasmic/blocks/HeroCarousel/HeroCarousel";
+
 // Navigation
 import {
   StorefrontNavigation,
@@ -415,6 +418,51 @@ export function registerPlasmicComponents(
     },
     importPath: "@/components/plasmic/blocks/ProductCarousel/ProductCarousel",
     importName: "ProductCarousel",
+  });
+
+  // ─── HeroCarousel ─────────────────────────────────────────────────────────
+  loader.registerComponent(HeroCarousel, {
+    name: "HeroCarousel",
+    description:
+      "Full-width hero carousel. Add one section (image, banner, etc.) per slide; supports autoplay, prev/next arrows and pagination dots.",
+    props: {
+      slides: {
+        type: "slot",
+        description: "One element per slide — add as many as you like.",
+      },
+      autoplay: {
+        type: "boolean",
+        defaultValue: false,
+        description: "Automatically advance through the slides",
+      },
+      autoplayInterval: {
+        type: "number",
+        defaultValue: 5000,
+        description: "Autoplay interval in milliseconds",
+        hidden: (props: HeroCarouselProps) => !props.autoplay,
+      },
+      showArrows: {
+        type: "boolean",
+        defaultValue: true,
+        description: "Show the previous/next arrow buttons",
+      },
+      showDots: {
+        type: "boolean",
+        defaultValue: true,
+        description: "Show pagination dots",
+      },
+      loop: {
+        type: "boolean",
+        defaultValue: true,
+        description: "Wrap from the last slide back to the first",
+      },
+      className: {
+        type: "class",
+        description: "CSS class applied to the carousel wrapper",
+      },
+    },
+    importPath: "@/components/plasmic/blocks/HeroCarousel/HeroCarousel",
+    importName: "HeroCarousel",
   });
 
   // ─── StorefrontFooter ─────────────────────────────────────────────────────

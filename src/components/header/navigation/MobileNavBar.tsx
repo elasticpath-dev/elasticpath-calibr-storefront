@@ -272,14 +272,17 @@ function MegaPanel({
 
   return (
     <div className="flex-1 overflow-y-auto">
-      {/* View all link */}
-      <Link
-        href={`/${lang}${item.href}`}
-        onClick={onClose}
-        className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100 text-sm font-semibold text-brand-secondary hover:bg-gray-50"
-      >
-        View all {item.label}
-      </Link>
+      {/* View all link — hidden when the item has no href (e.g. a Plasmic
+          top-level item with a blank href) */}
+      {item.href && (
+        <Link
+          href={`/${lang}${item.href}`}
+          onClick={onClose}
+          className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100 text-sm font-semibold text-brand-secondary hover:bg-gray-50"
+        >
+          View all {item.label}
+        </Link>
+      )}
 
       {/* Columns rendered as sections */}
       {megaMenu.columns.map((col, ci) => (
