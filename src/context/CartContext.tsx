@@ -161,6 +161,13 @@ type CartContextValue = {
   ) => Promise<PromotionSuggestion[] | undefined>;
   removeItem: (cartItemId: string) => Promise<void>;
   updateQuantity: (cartItemId: string, quantity: number) => Promise<void>;
+  /** Replaces a line item's custom_inputs (used for inline-editable cart
+   * fields). Pass the full merged object plus the item's current quantity. */
+  updateItemCustomInputs: (
+    cartItemId: string,
+    customInputs: Record<string, unknown>,
+    quantity: number,
+  ) => Promise<void>;
   bulkUpdateItems: (items: Array<{ cartItemId: string; quantity: number }>) => Promise<void>;
   clearCart: () => Promise<void>;
   switchCart: (newCartId: string) => Promise<void>;
@@ -996,6 +1003,33 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [epClient, cartId, removeItem, loadItems, setPromotionSuggestions],
   );
 
+  const updateItemCustomInputs = useCallback(
+    async (
+      cartItemId: string,
+      customInputs: Record<string, unknown>,
+      quantity: number,
+    ) => {
+      if (!epClient || !cartId) return;
+      setIsLoading(true);
+      try {
+        // Send quantity alongside so the update doesn't reset it; custom_inputs
+        // is replaced wholesale, hence callers pass the full merged object.
+        const res = await updateACartItem({
+          client: epClient,
+          path: { cartID: cartId, cartitemID: cartItemId },
+          body: {
+            data: { type: "cart_item", quantity, custom_inputs: customInputs },
+          } as any,
+        });
+        if (res.error) throw res.error;
+        await loadItems();
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [epClient, cartId, loadItems],
+  );
+
   const bulkUpdateItems = useCallback(
     async (items: Array<{ cartItemId: string; quantity: number }>) => {
       if (!epClient || !cartId || items.length === 0) return;
@@ -1252,6 +1286,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         addBundleItem,
         removeItem,
         updateQuantity,
+        updateItemCustomInputs,
         bulkUpdateItems,
         clearCart,
         switchCart,

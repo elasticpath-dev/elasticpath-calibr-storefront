@@ -6,6 +6,38 @@ import { cache } from "react";
 export const DEFAULT_PLASMIC_HOST =
   "https://codegen.euwest.storefront.elasticpath.com";
 
+/**
+ * A cart line-item field used to group the full cart view. Parsed from
+ * NEXT_PUBLIC_CART_GROUP_BY (see parseCartGroupBy):
+ * - "po_number" / "fulfilment.delivery_date" → a custom_inputs value (dot path)
+ * - `product_fields[key="purchase_order"]`   → a product_fields entry by key
+ */
+export type CartGroupField =
+  | { type: "custom_input"; path: string[]; raw: string }
+  | { type: "product_field"; key: string; raw: string };
+
+const PRODUCT_FIELD_SELECTOR = /^product_fields\[key\s*=\s*["']?([^"'\]]+)["']?\]$/;
+
+/** Parses "po_number,fulfilment.delivery_date,product_fields[key=\"po\"]" into
+ * an ordered list of cart-group fields. Blank/invalid entries are dropped. */
+export function parseCartGroupBy(raw: string | undefined): CartGroupField[] {
+  if (!raw) return [];
+  return raw
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry): CartGroupField | null => {
+      const productField = entry.match(PRODUCT_FIELD_SELECTOR);
+      if (productField) {
+        const key = productField[1].trim();
+        return key ? { type: "product_field", key, raw: entry } : null;
+      }
+      const path = entry.split(".").map((p) => p.trim()).filter(Boolean);
+      return path.length > 0 ? { type: "custom_input", path, raw: entry } : null;
+    })
+    .filter((f): f is CartGroupField => f !== null);
+}
+
 export type ThemeConfig = {
   brandPrimary: string;
   brandSecondary: string;
@@ -98,6 +130,14 @@ export type TenantConfig = {
      * default) or "cascade" (drill-down panel — click a child to open its
      * children in a new column beside it). */
     navStyle: "mega" | "cascade";
+    /** Cart line-item fields to group the full cart view by (list and grid).
+     * When set, items are grouped by the unique combination of these fields'
+     * values. Parsed from NEXT_PUBLIC_CART_GROUP_BY. Empty = no grouping. */
+    cartGroupBy: CartGroupField[];
+    /** Cart line-item custom inputs the shopper can edit inline on the full
+     * cart view — each renders an input box (empty when unset). Same selector
+     * syntax as cartGroupBy. Parsed from NEXT_PUBLIC_CART_EDITABLE_INPUTS. */
+    cartEditableInputs: CartGroupField[];
   };
   analytics: { posthogKey: string; posthogHost: string };
 };
@@ -135,6 +175,10 @@ export type ClientTenantConfig = {
    * componentProps on PlasmicComponent only reach the Studio root, not
    * nested code components, so the nav style can't be threaded as a prop. */
   navStyle: "mega" | "cascade";
+  /** Cart line-item fields the full cart view groups by (list + grid). */
+  cartGroupBy: CartGroupField[];
+  /** Cart line-item custom inputs the shopper can edit inline on the cart. */
+  cartEditableInputs: CartGroupField[];
 };
 
 export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
@@ -160,6 +204,8 @@ export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
     cartViewMode: config.ui.cartViewMode,
     fullWidth: config.ui.fullWidth,
     navStyle: config.ui.navStyle,
+    cartGroupBy: config.ui.cartGroupBy,
+    cartEditableInputs: config.ui.cartEditableInputs,
   };
 }
 
@@ -367,6 +413,8 @@ function buildTenantConfigFromEnv(): TenantConfig {
         "inline",
       ),
       navStyle: oneOf(e.NEXT_PUBLIC_NAV_STYLE, ["mega", "cascade"], "mega"),
+      cartGroupBy: parseCartGroupBy(e.NEXT_PUBLIC_CART_GROUP_BY),
+      cartEditableInputs: parseCartGroupBy(e.NEXT_PUBLIC_CART_EDITABLE_INPUTS),
     },
     analytics: {
       posthogKey: e.NEXT_PUBLIC_POSTHOG_KEY ?? "",
@@ -498,6 +546,20 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
         defaults.ui.headerNavPosition,
       ),
       navStyle: oneOf(r.ui?.navStyle, ["mega", "cascade"], defaults.ui.navStyle),
+      // The endpoint may send either the raw "a,b,c" string or an already
+      // structured array — accept both, else fall back to the env default.
+      cartGroupBy:
+        typeof r.ui?.cartGroupBy === "string"
+          ? parseCartGroupBy(r.ui.cartGroupBy)
+          : Array.isArray(r.ui?.cartGroupBy)
+            ? (r.ui.cartGroupBy as CartGroupField[])
+            : defaults.ui.cartGroupBy,
+      cartEditableInputs:
+        typeof r.ui?.cartEditableInputs === "string"
+          ? parseCartGroupBy(r.ui.cartEditableInputs)
+          : Array.isArray(r.ui?.cartEditableInputs)
+            ? (r.ui.cartEditableInputs as CartGroupField[])
+            : defaults.ui.cartEditableInputs,
     },
     analytics: {
       posthogKey: r.analytics?.posthogKey ?? defaults.analytics.posthogKey,

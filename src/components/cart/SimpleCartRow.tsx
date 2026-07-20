@@ -8,6 +8,9 @@ import { useTranslations } from "next-intl";
 import type { CartItemDiscount, ProductField } from "@/context/CartContext";
 import { Button } from "@/components/ui/Button";
 import { PromoTooltip } from "./PromoTooltip";
+import { CartEditableFields } from "./CartEditableFields";
+import { useTenantConfig } from "@/context/TenantConfigContext";
+import { editableProductFieldKeys } from "@/lib/cart-editable";
 
 type Props = {
   cartItemId: string;
@@ -27,6 +30,7 @@ type Props = {
   subscriptionFrequency?: string;
   isFreeGift?: boolean;
   productFields?: ProductField[];
+  customInputs?: Record<string, unknown>;
   onQuantityChange: (cartItemId: string, qty: number) => void;
   onRemove: (cartItemId: string) => void;
   disabled?: boolean;
@@ -53,6 +57,7 @@ export function SimpleCartRow({
   subscriptionFrequency,
   isFreeGift,
   productFields,
+  customInputs,
   onQuantityChange,
   onRemove,
   disabled,
@@ -61,6 +66,10 @@ export function SimpleCartRow({
   onPendingChange,
 }: Props) {
   const t = useTranslations("cart");
+  const { cartEditableInputs } = useTenantConfig();
+  // Don't show a product field read-only when it's also inline-editable below.
+  const editableKeys = editableProductFieldKeys(cartEditableInputs);
+  const readOnlyFields = productFields?.filter((f) => !editableKeys.has(f.key));
   const [draft, setDraft] = useState(String(quantity));
 
   const isPending = bulkMode && pendingQty !== undefined && pendingQty !== quantity;
@@ -143,15 +152,25 @@ export function SimpleCartRow({
         />
       ))}
 
-      {productFields && productFields.length > 0 && (
+      {readOnlyFields && readOnlyFields.length > 0 && (
         <div className="px-[18px] py-2 border-b border-ink-100 flex flex-col gap-0.5">
-          {productFields.map((f) => (
+          {readOnlyFields.map((f) => (
             <span key={f.key} className="text-[12px] text-ink-600">
               <span className="font-medium text-ink-700">{f.label}:</span> {f.value}
             </span>
           ))}
         </div>
       )}
+
+      {/* Inline-editable custom inputs (ui.cartEditableInputs) */}
+      <div className="px-[18px] pb-1 empty:hidden">
+        <CartEditableFields
+          cartItemId={cartItemId}
+          quantity={quantity}
+          customInputs={customInputs}
+          disabled={disabled}
+        />
+      </div>
 
       <div className="flex items-center gap-4 px-[18px] py-3.5 flex-wrap">
         {/* Thumbnail */}

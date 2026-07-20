@@ -471,6 +471,8 @@
     "clearMatrix": "Effacer",
     "bulkMode": "Mode groupé",
     "updateAll": "Tout mettre à jour",
+    "editableUpdate": "Mettre à jour",
+    "editableCancel": "Annuler",
     "noVariants": "Aucune variante trouvée pour ce produit.",
     "subtotal": "Sous-total",
     "discount": "Remise",

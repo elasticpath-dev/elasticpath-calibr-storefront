@@ -7,6 +7,9 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import type { CartItemDiscount, ProductField } from "@/context/CartContext";
 import { PromoTooltip } from "./PromoTooltip";
+import { CartEditableFields } from "./CartEditableFields";
+import { useTenantConfig } from "@/context/TenantConfigContext";
+import { editableProductFieldKeys } from "@/lib/cart-editable";
 
 type Props = {
   cartItemId: string;
@@ -26,6 +29,7 @@ type Props = {
   subscriptionFrequency?: string;
   isFreeGift?: boolean;
   productFields?: ProductField[];
+  customInputs?: Record<string, unknown>;
   onQuantityChange: (cartItemId: string, qty: number) => void;
   onRemove: (cartItemId: string) => void;
   disabled?: boolean;
@@ -49,11 +53,16 @@ export function SimpleCartRowList({
   subscriptionFrequency,
   isFreeGift,
   productFields,
+  customInputs,
   onQuantityChange,
   onRemove,
   disabled,
 }: Props) {
   const t = useTranslations("cart");
+  const { cartEditableInputs } = useTenantConfig();
+  // Don't show a product field read-only when it's also inline-editable below.
+  const editableKeys = editableProductFieldKeys(cartEditableInputs);
+  const readOnlyFields = productFields?.filter((f) => !editableKeys.has(f.key));
   const [draft, setDraft] = useState(String(quantity));
 
   useEffect(() => {
@@ -149,16 +158,24 @@ export function SimpleCartRowList({
           />
         ))}
 
-        {/* Custom input fields */}
-        {productFields && productFields.length > 0 && (
+        {/* Custom input fields (read-only; editable ones are filtered out) */}
+        {readOnlyFields && readOnlyFields.length > 0 && (
           <div className="flex flex-col gap-0.5">
-            {productFields.map((f) => (
+            {readOnlyFields.map((f) => (
               <span key={f.key} className="text-[12px] text-ink-600">
                 <span className="font-medium text-ink-700">{f.label}:</span> {f.value}
               </span>
             ))}
           </div>
         )}
+
+        {/* Inline-editable custom inputs (ui.cartEditableInputs) */}
+        <CartEditableFields
+          cartItemId={cartItemId}
+          quantity={quantity}
+          customInputs={customInputs}
+          disabled={disabled}
+        />
 
         {/* Quantity + line total */}
         <div className="mt-auto pt-3 flex items-center justify-between gap-4 flex-wrap">

@@ -43,6 +43,7 @@ export type LineGroup =
       lineTotal: string;
       imageUrl?: string;
       bundleComponents: BundleComponentItem[];
+      customInputs?: Record<string, unknown>;
     }
   | {
       kind: "matrix";
@@ -67,6 +68,7 @@ export type LineGroup =
       subscriptionFrequency?: string;
       isFreeGift?: boolean;
       productFields?: ProductField[];
+      customInputs?: Record<string, unknown>;
     };
 
 export function buildMatrix(children: ChildProduct[]): {

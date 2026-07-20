@@ -471,6 +471,8 @@
     "clearMatrix": "Clear",
     "bulkMode": "Bulk mode",
     "updateAll": "Update all",
+    "editableUpdate": "Update",
+    "editableCancel": "Cancel",
     "noVariants": "No variants found for this product.",
     "subtotal": "Subtotal",
     "discount": "Discount",

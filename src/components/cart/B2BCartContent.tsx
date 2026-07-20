@@ -24,6 +24,28 @@ import type {
 } from "./types";
 import type { PromotionSuggestion } from "@/context/CartContext";
 import { Tag } from "lucide-react";
+import {
+  getCartGroupValues,
+  cartGroupKey,
+  type GroupableCartItem,
+  type CartGroupValue,
+} from "@/lib/cart-grouping";
+
+/** Plain title row above a cart group's items (see the grouped itemsColumn). */
+function CartGroupHeader({ values }: { values: CartGroupValue[] }) {
+  return (
+    <div className="flex items-center gap-x-5 gap-y-0.5 flex-wrap">
+      {values.map((v, i) => (
+        <span key={i} className="inline-flex items-center gap-1.5 text-[13px]">
+          <span className="text-ink-500 font-medium uppercase tracking-wide text-[11px]">
+            {v.label}
+          </span>
+          <span className="text-ink-900 font-semibold">{v.value || "—"}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
 
 function OffersSection({
   promotionSuggestions,
@@ -66,7 +88,7 @@ type Props = { lang: string };
 export function B2BCartContent({ lang }: Props) {
   const t = useTranslations("cart");
   const { items, isLoading, isInitializing, addItem, addItems, bulkUpdateItems, updateQuantity, removeItem, promotionSuggestions } = useCart();
-  const { cartViewMode } = useTenantConfig();
+  const { cartViewMode, cartGroupBy } = useTenantConfig();
 
   const productInfoCache = useRef<Map<string, ProductInfo>>(new Map());
   const childrenCache = useRef<Map<string, ChildProduct[]>>(new Map());
@@ -143,6 +165,7 @@ export function B2BCartContent({ lang }: Props) {
             lineTotal: item.lineTotalFormatted,
             imageUrl: item.imageHref,
             bundleComponents: item.bundleComponents,
+            customInputs: item.customInputs,
           };
         }
         return {
@@ -163,6 +186,7 @@ export function B2BCartContent({ lang }: Props) {
           subscriptionFrequency: item.subscriptionFrequency,
           isFreeGift: item.isFreeGift,
           productFields: item.productFields,
+          customInputs: item.customInputs,
         };
       });
       setGroups(lineGroups);
@@ -222,6 +246,7 @@ export function B2BCartContent({ lang }: Props) {
           lineTotal: item.lineTotalFormatted,
           imageUrl: item.imageHref,
           bundleComponents: item.bundleComponents,
+            customInputs: item.customInputs,
         });
         continue;
       }
@@ -279,6 +304,7 @@ export function B2BCartContent({ lang }: Props) {
         subscriptionFrequency: item.subscriptionFrequency,
         isFreeGift: item.isFreeGift,
         productFields: item.productFields,
+          customInputs: item.customInputs,
       });
     }
 
@@ -420,6 +446,160 @@ export function B2BCartContent({ lang }: Props) {
     [updateQuantity, removeItem, showCartError],
   );
 
+  // ── Grouping by configured cart line-item fields (ui.cartGroupBy) ──────────
+  const itemById = useMemo(() => {
+    const map = new Map<string, (typeof items)[number]>();
+    for (const it of items) map.set(it.id, it);
+    return map;
+  }, [items]);
+
+  // The source cart item a line group draws its grouping values from. Matrix
+  // groups aggregate several child items; they share the parent's grouping
+  // fields (e.g. the same PO), so the first child represents the group.
+  const groupRepItem = useCallback(
+    (group: LineGroup): GroupableCartItem => {
+      if (group.kind === "matrix") {
+        return (
+          items.find(
+            (i) => i.customInputs?.parent_product_id === group.matrixGroup.parentId,
+          ) ?? {}
+        );
+      }
+      return itemById.get(group.cartItemId) ?? {};
+    },
+    [items, itemById],
+  );
+
+  const groupedLineGroups = useMemo(() => {
+    if (cartGroupBy.length === 0) return null;
+    const byKey = new Map<
+      string,
+      { key: string; values: CartGroupValue[]; isEmpty: boolean; lineGroups: LineGroup[] }
+    >();
+    for (const group of groups) {
+      const item = groupRepItem(group);
+      const key = cartGroupKey(item, cartGroupBy);
+      let bucket = byKey.get(key);
+      if (!bucket) {
+        const values = getCartGroupValues(item, cartGroupBy);
+        bucket = {
+          key,
+          values,
+          isEmpty: values.every((v) => v.value === ""),
+          lineGroups: [],
+        };
+        byKey.set(key, bucket);
+      }
+      bucket.lineGroups.push(group);
+    }
+    return [...byKey.values()];
+  }, [groups, cartGroupBy, groupRepItem]);
+
+  // Show headers when grouping is configured and there's something to label —
+  // i.e. not just a single group whose items all lack the fields.
+  const showGroupHeaders =
+    !!groupedLineGroups &&
+    (groupedLineGroups.length > 1 || !groupedLineGroups[0]?.isEmpty);
+
+  // One line group → its row, using the components that match the active view.
+  const renderRow = useCallback(
+    (group: LineGroup) => {
+      if (group.kind === "bundle") {
+        return viewMode === "list" ? (
+          <BundleCartRowList
+            lang={lang}
+            key={group.cartItemId}
+            {...group}
+            onQuantityChange={handleSimpleQtyChange}
+            onRemove={removeItem}
+            disabled={isLoading}
+          />
+        ) : (
+          <BundleCartRow
+            lang={lang}
+            key={group.cartItemId}
+            {...group}
+            onQuantityChange={handleSimpleQtyChange}
+            onRemove={removeItem}
+            disabled={isLoading}
+          />
+        );
+      }
+      if (group.kind === "matrix") {
+        return (
+          <MatrixCartRow
+            key={group.matrixGroup.parentId}
+            matrixGroup={group.matrixGroup}
+            cartItemsByProductId={group.cartItemsByProductId}
+            onQuantityChange={handleMatrixQtyChange}
+            onBulkAdd={handleMatrixBulkAdd}
+            onBulkUpdate={handleMatrixBulkUpdate}
+            {...(viewMode === "grid"
+              ? { bulkMode, pendingQtys, onPendingChange: handlePendingChange }
+              : {})}
+            disabled={isLoading}
+          />
+        );
+      }
+      return viewMode === "list" ? (
+        <SimpleCartRowList
+          lang={lang}
+          key={group.cartItemId}
+          {...group}
+          onQuantityChange={handleSimpleQtyChange}
+          onRemove={removeItem}
+          disabled={isLoading}
+        />
+      ) : (
+        <SimpleCartRow
+          lang={lang}
+          key={group.cartItemId}
+          {...group}
+          onQuantityChange={handleSimpleQtyChange}
+          onRemove={removeItem}
+          disabled={isLoading}
+          bulkMode={bulkMode}
+          pendingQty={simplePendingQtys.get(group.cartItemId)}
+          onPendingChange={handleSimplePendingChange}
+        />
+      );
+    },
+    [
+      viewMode,
+      lang,
+      isLoading,
+      bulkMode,
+      pendingQtys,
+      simplePendingQtys,
+      handleSimpleQtyChange,
+      handleMatrixQtyChange,
+      handleMatrixBulkAdd,
+      handleMatrixBulkUpdate,
+      handlePendingChange,
+      handleSimplePendingChange,
+      removeItem,
+    ],
+  );
+
+  const itemsColumn =
+    showGroupHeaders && groupedLineGroups ? (
+      <div className="flex flex-col gap-7">
+        {groupedLineGroups.map((bucket) => (
+          // A single light left rail ties the header to its items — no extra
+          // boxes on top of the item cards' own borders.
+          <div
+            key={bucket.key || "__ungrouped__"}
+            className="pl-4 border-l-2 border-ink-200 flex flex-col gap-3"
+          >
+            <CartGroupHeader values={bucket.values} />
+            {bucket.lineGroups.map(renderRow)}
+          </div>
+        ))}
+      </div>
+    ) : (
+      <div className="flex flex-col gap-4">{groups.map(renderRow)}</div>
+    );
+
   const totalUnits = items.reduce((s, i) => s + i.quantity, 0);
   const lineCount = groups.length;
 
@@ -546,46 +726,8 @@ export function B2BCartContent({ lang }: Props) {
           {/* List view: two-column layout with summary sidebar */}
           {!isLoadingState && viewMode === "list" && (
             <div className="lg:grid lg:grid-cols-[1fr_400px] lg:gap-8 lg:items-start">
-              {/* Left: items */}
-              <div className="flex flex-col gap-4">
-                {groups.map((group, idx) => {
-                  if (group.kind === "bundle") {
-                    return (
-                      <BundleCartRowList
-                        lang={lang}
-                        key={group.cartItemId}
-                        {...group}
-                        onQuantityChange={handleSimpleQtyChange}
-                        onRemove={removeItem}
-                        disabled={isLoading}
-                      />
-                    );
-                  }
-                  if (group.kind === "matrix") {
-                    return (
-                      <MatrixCartRow
-                        key={group.matrixGroup.parentId}
-                        matrixGroup={group.matrixGroup}
-                        cartItemsByProductId={group.cartItemsByProductId}
-                        onQuantityChange={handleMatrixQtyChange}
-                        onBulkAdd={handleMatrixBulkAdd}
-                        onBulkUpdate={handleMatrixBulkUpdate}
-                        disabled={isLoading}
-                      />
-                    );
-                  }
-                  return (
-                    <SimpleCartRowList
-                      lang={lang}
-                      key={group.cartItemId + idx}
-                      {...group}
-                      onQuantityChange={handleSimpleQtyChange}
-                      onRemove={removeItem}
-                      disabled={isLoading}
-                    />
-                  );
-                })}
-              </div>
+              {/* Left: items (grouped by cartGroupBy when configured) */}
+              {itemsColumn}
 
               {/* Right: sticky order summary + offers section */}
               <div className="mt-6 lg:mt-0 lg:sticky lg:top-24 flex flex-col gap-4">
@@ -598,51 +740,8 @@ export function B2BCartContent({ lang }: Props) {
           {/* Grid view: full-width single-column, totals shown in header */}
           {!isLoadingState && viewMode === "grid" && (
             <>
-              <div className="flex flex-col gap-4">
-                {groups.map((group, idx) => {
-                  if (group.kind === "bundle") {
-                    return (
-                      <BundleCartRow
-                        lang={lang}
-                        key={group.cartItemId}
-                        {...group}
-                        onQuantityChange={handleSimpleQtyChange}
-                        onRemove={removeItem}
-                        disabled={isLoading}
-                      />
-                    );
-                  }
-                  if (group.kind === "matrix") {
-                    return (
-                      <MatrixCartRow
-                        key={group.matrixGroup.parentId}
-                        matrixGroup={group.matrixGroup}
-                        cartItemsByProductId={group.cartItemsByProductId}
-                        onQuantityChange={handleMatrixQtyChange}
-                        onBulkAdd={handleMatrixBulkAdd}
-                        onBulkUpdate={handleMatrixBulkUpdate}
-                        bulkMode={bulkMode}
-                        pendingQtys={pendingQtys}
-                        onPendingChange={handlePendingChange}
-                        disabled={isLoading}
-                      />
-                    );
-                  }
-                  return (
-                    <SimpleCartRow
-                      lang={lang}
-                      key={group.cartItemId + idx}
-                      {...group}
-                      onQuantityChange={handleSimpleQtyChange}
-                      onRemove={removeItem}
-                      disabled={isLoading}
-                      bulkMode={bulkMode}
-                      pendingQty={simplePendingQtys.get(group.cartItemId)}
-                      onPendingChange={handleSimplePendingChange}
-                    />
-                  );
-                })}
-              </div>
+              {/* Items (grouped by cartGroupBy when configured) */}
+              {itemsColumn}
               <div className="mt-6">
                 <OffersSection promotionSuggestions={promotionSuggestions} lang={lang} t={t} />
               </div>
