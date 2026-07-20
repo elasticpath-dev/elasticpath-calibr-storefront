@@ -98,7 +98,7 @@ export function SearchResultsList({
                 <img
                   src={result.imageUrl}
                   alt={result.name}
-                  className="w-10 h-10 rounded-lg object-cover bg-gray-100 flex-shrink-0"
+                  className="w-10 h-10 rounded-lg object-contain bg-gray-100 flex-shrink-0"
                 />
               ) : (
                 <div className="w-10 h-10 rounded-lg bg-gray-100 flex-shrink-0" />
