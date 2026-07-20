@@ -11,9 +11,15 @@ import { getPlasmicConfig } from "@/lib/plasmic-config";
  * the static key array), so different tenants' CMS projects never collide.
  */
 const getCachedComponentData = unstable_cache(
-  async (projectId: string, apiToken: string, preview: boolean, component: string) => {
+  async (
+    projectId: string,
+    apiToken: string,
+    preview: boolean,
+    host: string,
+    component: string,
+  ) => {
     try {
-      const loader = getServerPlasmicLoader({ projectId, apiToken, preview });
+      const loader = getServerPlasmicLoader({ projectId, apiToken, preview, host });
       return (await loader?.maybeFetchComponentData(component)) ?? null;
     } catch {
       return null;
@@ -24,7 +30,7 @@ const getCachedComponentData = unstable_cache(
 );
 
 export async function getPlasmicComponentData(component: string) {
-  const { projectId, apiToken, preview } = await getPlasmicConfig();
+  const { projectId, apiToken, preview, host } = await getPlasmicConfig();
   if (!projectId || !apiToken) return null;
-  return getCachedComponentData(projectId, apiToken, preview, component);
+  return getCachedComponentData(projectId, apiToken, preview, host, component);
 }

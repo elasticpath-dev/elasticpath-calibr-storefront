@@ -1,6 +1,11 @@
 import { headers } from "next/headers";
 import { cache } from "react";
 
+// Default Plasmic Studio host used when no NEXT_PUBLIC_EP_CMS_HOST (or remote
+// cms.host) is configured. Exported so the loaders reference the same value.
+export const DEFAULT_PLASMIC_HOST =
+  "https://codegen.euwest.storefront.elasticpath.com";
+
 export type ThemeConfig = {
   brandPrimary: string;
   brandSecondary: string;
@@ -41,7 +46,7 @@ export type TenantConfig = {
     environmentId?: string;
     storeId?: string;
   };
-  cms: { projectId: string; apiToken: string; preview: boolean };
+  cms: { projectId: string; apiToken: string; preview: boolean; host: string };
   site: { name: string; title: string; description: string };
   theme: ThemeConfig;
   features: {
@@ -113,7 +118,7 @@ export type ClientTenantConfig = {
   multiLocation: boolean;
   storeName: string;
   brandInk900: string;
-  cms: { projectId: string; apiToken: string; preview: boolean };
+  cms: { projectId: string; apiToken: string; preview: boolean; host: string };
   currency: { default: string; available: string[] };
   epContextTag?: string;
   environmentId?: string;
@@ -294,6 +299,7 @@ function buildTenantConfigFromEnv(): TenantConfig {
       projectId: e.NEXT_PUBLIC_EP_CMS_PROJECT_ID ?? "",
       apiToken: e.NEXT_PUBLIC_EP_CMS_API_TOKEN ?? "",
       preview: e.NEXT_PUBLIC_EP_CMS_PREVIEW === "true",
+      host: e.NEXT_PUBLIC_EP_CMS_HOST?.trim() || DEFAULT_PLASMIC_HOST,
     },
     site: {
       name: storeName,
@@ -439,6 +445,7 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
       projectId: r.cms?.projectId ?? defaults.cms.projectId,
       apiToken: r.cms?.apiToken ?? defaults.cms.apiToken,
       preview: r.cms?.preview ?? defaults.cms.preview,
+      host: r.cms?.host?.trim() || defaults.cms.host,
     },
     site: {
       name: r.site?.name || defaults.site.name,
