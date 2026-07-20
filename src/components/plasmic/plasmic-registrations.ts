@@ -429,6 +429,84 @@ export function registerPlasmicComponents(
       slides: {
         type: "slot",
         description: "One element per slide — add as many as you like.",
+        // Sample slides so authors see the structure to replace/extend.
+        defaultValue: [
+          {
+            type: "vbox",
+            styles: {
+              width: "100%",
+              minHeight: "360px",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              padding: "48px",
+              gap: "12px",
+              backgroundColor: "#0e1521",
+            },
+            children: [
+              {
+                type: "text",
+                value: "New Season Arrivals",
+                styles: { fontSize: "40px", fontWeight: 700, color: "#ffffff" },
+              },
+              {
+                type: "text",
+                value: "Discover the latest collection",
+                styles: { fontSize: "18px", color: "#c2c8d0" },
+              },
+            ],
+          },
+          {
+            type: "vbox",
+            styles: {
+              width: "100%",
+              minHeight: "360px",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              padding: "48px",
+              gap: "12px",
+              backgroundColor: "#144e31",
+            },
+            children: [
+              {
+                type: "text",
+                value: "Members Save More",
+                styles: { fontSize: "40px", fontWeight: 700, color: "#ffffff" },
+              },
+              {
+                type: "text",
+                value: "Sign in for exclusive pricing",
+                styles: { fontSize: "18px", color: "#d6f8e5" },
+              },
+            ],
+          },
+          {
+            type: "vbox",
+            styles: {
+              width: "100%",
+              minHeight: "360px",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center",
+              padding: "48px",
+              gap: "12px",
+              backgroundColor: "#56dc9b",
+            },
+            children: [
+              {
+                type: "text",
+                value: "Free Delivery",
+                styles: { fontSize: "40px", fontWeight: 700, color: "#0e1521" },
+              },
+              {
+                type: "text",
+                value: "On orders over $50",
+                styles: { fontSize: "18px", color: "#144e31" },
+              },
+            ],
+          },
+        ],
       },
       autoplay: {
         type: "boolean",
