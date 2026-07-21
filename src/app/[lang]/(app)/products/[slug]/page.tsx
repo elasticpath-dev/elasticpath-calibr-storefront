@@ -73,6 +73,13 @@ export default async function ProductDetailPage({ params }: Props) {
     product.priceFormatted,
   );
 
+  // The standalone <Price> renders for plain products (no bundle/subscription/
+  // variations) — there we show the alternative prices right under it; for the
+  // other layouts the price is embedded in an actions component, so they fall
+  // back to the block lower down.
+  const hasInlinePrice =
+    !product.isBundle && !offering && !(product.variations?.length ?? 0);
+
   const relMsgs = (
     (messages as Record<string, unknown>).product as Record<string, unknown>
   )?.customRelationships as Record<string, string> | undefined;
@@ -184,6 +191,12 @@ export default async function ProductDetailPage({ params }: Props) {
                       originalFormatted={product.originalPriceFormatted}
                       className="text-2xl"
                     />
+                    {alternativePriceRows.length > 0 && (
+                      <AlternativePrices
+                        items={alternativePriceRows}
+                        className="mt-2"
+                      />
+                    )}
                   </div>
                 )}
 
@@ -234,12 +247,12 @@ export default async function ProductDetailPage({ params }: Props) {
               </>
             )}
 
-            {alternativePriceRows.length > 0 && (
-              <div className="mt-8">
-                <AlternativePrices
-                  items={alternativePriceRows}
-                  heading={t("pricingLabel")}
-                />
+            {!hasInlinePrice && alternativePriceRows.length > 0 && (
+              <div className="mt-6">
+                <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1.5">
+                  {t("pricingLabel")}
+                </p>
+                <AlternativePrices items={alternativePriceRows} />
               </div>
             )}
 
