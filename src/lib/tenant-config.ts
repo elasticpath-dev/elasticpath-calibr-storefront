@@ -138,6 +138,10 @@ export type TenantConfig = {
     /** True when the resolved endpoint is Elastic Path–hosted (SaaS) — shopping mode is fixed to B2C. */
     shoppingModeLocked: boolean;
     cartViewMode: "list" | "grid";
+    /** Category & search results: when true, replace pagination with infinite
+     * scroll (lazy-load the next page as the shopper nears the bottom, until
+     * there are no more results). From NEXT_PUBLIC_LAZY_LOAD_RESULTS. */
+    lazyLoadResults: boolean;
     /** Use 100% of the viewport width for the whole shell (header, footer,
      * content, cart, checkout) instead of the default centered max-width —
      * wired through the --shell-max-width CSS vars (see globals.css /
@@ -200,6 +204,8 @@ export type ClientTenantConfig = {
   defaultShoppingMode: "b2c" | "b2b";
   shoppingModeLocked: boolean;
   cartViewMode: "list" | "grid";
+  /** Category & search results use infinite scroll instead of pagination. */
+  lazyLoadResults: boolean;
   fullWidth: boolean;
   /** Needed client-side by StorefrontNavigation (Plasmic-driven nav):
    * componentProps on PlasmicComponent only reach the Studio root, not
@@ -235,6 +241,7 @@ export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
     defaultShoppingMode: config.ui.defaultShoppingMode,
     shoppingModeLocked: config.ui.shoppingModeLocked,
     cartViewMode: config.ui.cartViewMode,
+    lazyLoadResults: config.ui.lazyLoadResults,
     fullWidth: config.ui.fullWidth,
     navStyle: config.ui.navStyle,
     cartGroupBy: config.ui.cartGroupBy,
@@ -446,6 +453,7 @@ function buildTenantConfigFromEnv(): TenantConfig {
       shoppingModeLocked,
       cartViewMode:
         (e.NEXT_PUBLIC_CART_VIEW_MODE as "list" | "grid" | undefined) ?? "list",
+      lazyLoadResults: e.NEXT_PUBLIC_LAZY_LOAD_RESULTS === "true",
       fullWidth: e.NEXT_PUBLIC_FULL_WIDTH === "true",
       headerNavPosition: oneOf(
         e.NEXT_PUBLIC_HEADER_NAV_POSITION,
@@ -585,6 +593,7 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
         : r.ui?.defaultShoppingMode ?? defaults.ui.defaultShoppingMode,
       shoppingModeLocked,
       cartViewMode: r.ui?.cartViewMode ?? defaults.ui.cartViewMode,
+      lazyLoadResults: r.ui?.lazyLoadResults ?? defaults.ui.lazyLoadResults,
       fullWidth: r.ui?.fullWidth ?? defaults.ui.fullWidth,
       headerNavPosition: oneOf(
         r.ui?.headerNavPosition,

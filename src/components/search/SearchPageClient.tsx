@@ -3,9 +3,7 @@
 import { useMemo, useState } from "react";
 import {
   InstantSearch,
-  useHits,
   useInstantSearch,
-  usePagination,
   useSearchBox,
   useStats,
 } from "react-instantsearch";
@@ -15,8 +13,8 @@ import { SlidersHorizontal, X } from "lucide-react";
 import { useEpClient } from "@/components/ClientProvider";
 import { getSelectedCurrency } from "@/lib/currency";
 import { hasBulkBuyForCurrency } from "@/lib/bulk-buy";
-import { ProductGrid } from "@/components/product/ProductGrid";
-import { Pagination } from "@/components/ui/Pagination/Pagination";
+import { PaginatedResults, InfiniteResults } from "@/components/search/ResultsGrid";
+import { useTenantConfig } from "@/context/TenantConfigContext";
 import { Button } from "@/components/ui/Button";
 import {
   CATEGORY_HIERARCHICAL_ATTRIBUTES,
@@ -81,16 +79,14 @@ function SearchInner({
   const t = useTranslations("search");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const { status, error, results } = useInstantSearch();
-  const { hits } = useHits<Record<string, unknown>>();
   const { query } = useSearchBox();
   const { nbHits } = useStats();
-  const { currentRefinement, nbPages, refine: goToPage } = usePagination();
+  const { lazyLoadResults } = useTenantConfig();
 
   const isLoading =
     (!results && status !== "error") ||
     status === "loading" ||
     status === "stalled";
-  const currentPage = currentRefinement + 1;
 
   return (
     <div>
@@ -136,7 +132,10 @@ function SearchInner({
 
         {/* Product grid */}
         <div className="flex-1 min-w-0">
-          {isLoading && (
+          {/* Full skeleton only on the initial load (no results yet). While
+              loading MORE (infinite scroll) or changing pages, results stay
+              mounted so the grid doesn't flash/unmount. */}
+          {isLoading && nbHits === 0 && (
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
@@ -154,22 +153,15 @@ function SearchInner({
             </div>
           )}
 
-          {!isLoading && hits.length > 0 && (
-            <>
-              <ProductGrid products={hits.map(hitToCard)} lang={lang} />
-              {nbPages > 1 && (
-                <div className="mt-10 flex justify-center">
-                  <Pagination
-                    currentPage={currentPage}
-                    totalPages={nbPages}
-                    onPageChange={(page) => goToPage(page - 1)}
-                  />
-                </div>
-              )}
-            </>
+          {nbHits > 0 && (
+            lazyLoadResults ? (
+              <InfiniteResults lang={lang} hitToCard={hitToCard} />
+            ) : (
+              <PaginatedResults lang={lang} hitToCard={hitToCard} />
+            )
           )}
 
-          {!isLoading && hits.length === 0 && !error && (
+          {!isLoading && nbHits === 0 && !error && (
             <div className="py-20 text-center">
               <p className="text-gray-500 text-base">
                 {query ? t("noResultsForQuery", { query }) : t("noResults")}
