@@ -78,7 +78,17 @@ export type TenantConfig = {
     requireLogin: boolean;
   };
   currency: { default: string; available: string[] };
-  inventory: { multiLocation: boolean };
+  inventory: {
+    multiLocation: boolean;
+    /** Location slugs to hide from the location selector when multi-location
+     * inventory is on. Parsed from NEXT_PUBLIC_EP_INVENTORIES_EXCLUDED_LOCATIONS
+     * (comma-separated slugs). */
+    excludedLocations: string[];
+    /** Location slug selected by default (when the shopper hasn't chosen one).
+     * From NEXT_PUBLIC_EP_INVENTORIES_DEFAULT_LOCATION. Falls back to the first
+     * available location when empty or not found. */
+    defaultLocation: string;
+  };
   /** Extra headers attached to every EPCC API request, when non-empty. */
   requestHeaders: {
     epContextTag?: string;
@@ -168,6 +178,11 @@ export type ClientTenantConfig = {
   passwordProfileId: string;
   oidcProfileIds: string[];
   multiLocation: boolean;
+  /** Location slugs to hide from the location selector — see
+   * TenantConfig.inventory.excludedLocations. */
+  excludedLocations: string[];
+  /** Default location slug — see TenantConfig.inventory.defaultLocation. */
+  defaultLocation: string;
   storeName: string;
   brandInk900: string;
   /** Non-transactional marketing mode — see TenantConfig.features.marketingMode.
@@ -203,6 +218,8 @@ export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
     passwordProfileId: config.auth.passwordProfileId,
     oidcProfileIds: config.auth.oidcProfileIds,
     multiLocation: config.inventory.multiLocation,
+    excludedLocations: config.inventory.excludedLocations,
+    defaultLocation: config.inventory.defaultLocation,
     marketingMode: config.features.marketingMode,
     storeName: config.site.name,
     brandInk900: config.theme.ink900,
@@ -351,6 +368,12 @@ function buildTenantConfigFromEnv(): TenantConfig {
     currency: { default: defaultCurrency, available: availableCurrencies },
     inventory: {
       multiLocation: e.NEXT_PUBLIC_EP_INVENTORIES_MULTI_LOCATION === "true",
+      excludedLocations: (e.NEXT_PUBLIC_EP_INVENTORIES_EXCLUDED_LOCATIONS ?? "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean),
+      defaultLocation:
+        e.NEXT_PUBLIC_EP_INVENTORIES_DEFAULT_LOCATION?.trim() ?? "",
     },
     requestHeaders: {
       epContextTag: e.NEXT_PUBLIC_EP_CONTEXT_TAG?.trim() ?? "",
@@ -498,6 +521,11 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
     inventory: {
       multiLocation:
         r.inventory?.multiLocation ?? defaults.inventory.multiLocation,
+      excludedLocations: r.inventory?.excludedLocations?.length
+        ? r.inventory.excludedLocations
+        : defaults.inventory.excludedLocations,
+      defaultLocation:
+        r.inventory?.defaultLocation ?? defaults.inventory.defaultLocation,
     },
     requestHeaders: {
       epContextTag:

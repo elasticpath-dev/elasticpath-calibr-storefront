@@ -13,6 +13,7 @@ import {
 import { RadioOption, type OptionItem } from "./RadioOption";
 import { LocaleSelector } from "./LocaleSelector";
 import { CurrencySelector } from "./CurrencySelector";
+import { LocationSelector } from "./LocationSelector";
 
 export function SettingsButton() {
   const t = useTranslations("preferences");
@@ -106,6 +107,10 @@ export function SettingsButton() {
               </div>
             </section>
           )}
+
+          {/* Location — only when multi-location inventory is enabled and
+              locations exist (component gates itself). */}
+          <LocationSelector />
 
           {/* Language */}
           <section>

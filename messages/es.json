@@ -564,7 +564,12 @@
       "upsell": "También te puede gustar",
       "crossSell": "Combina bien con"
     },
-    "digitalTag": "Digital"
+    "digitalTag": "Digital",
+    "inStock": "En stock",
+    "outOfStock": "Agotado",
+    "unitsAvailable": "({count} disponibles)",
+    "checkOtherLocations": "Ver otras ubicaciones",
+    "unitsAvailableBadge": "{count} disponibles"
   },
   "membership": {
     "selectPlan": "Elegir {plan}",
@@ -813,6 +818,7 @@
     "shoppingModeB2BDesc": "Pedidos empresariales con herramientas de volumen",
     "language": "Idioma",
     "currency": "Moneda",
-    "footerHint": "Los cambios se aplican de inmediato y persisten entre sesiones."
+    "footerHint": "Los cambios se aplican de inmediato y persisten entre sesiones.",
+    "location": "Ubicación"
   }
 }

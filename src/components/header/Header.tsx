@@ -3,6 +3,7 @@ import { NavBar } from "./navigation/NavBar";
 import { MobileNavBar } from "./navigation/MobileNavBar";
 import { SearchButton } from "./search/SearchButton";
 import { HeaderSearchBar } from "./search/HeaderSearchBar";
+import { HeaderLocation } from "./HeaderLocation";
 import { BulkOrderButton } from "./BulkOrderButton";
 import { MarketingGate } from "./MarketingGate";
 import { CartButton } from "./cart/CartButton";
@@ -88,6 +89,7 @@ export async function Header({ lang }: HeaderProps) {
                 ) : (
                   <SearchButton lang={lang} />
                 ))}
+              <HeaderLocation />
               {features.bulkOrderEnabled && <BulkOrderButton lang={lang} />}
             </MarketingGate>
             <AccountButton />

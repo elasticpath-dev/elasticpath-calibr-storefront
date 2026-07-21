@@ -31,6 +31,8 @@ import { createEpClient } from "@/lib/api/ep-client";
 import { SHIPPING_CUSTOM_ITEM_SKU_PREFIX } from "@/lib/cart-constants";
 import { useAuth } from "@/context/AuthContext";
 import { useTenantConfig } from "@/context/TenantConfigContext";
+import { readLocationCookie } from "@/lib/inventory-location";
+import { fetchLocations } from "@/lib/api/locations";
 
 export type AppliedPromoCode = {
   id: string;
@@ -95,6 +97,12 @@ export type CartLineItem = {
   bundleComponents?: BundleComponentItem[];
   customInputs?: Record<string, string>;
   productFields?: ProductField[];
+  /** Multi-location stock location slug this line was added against. Must be
+   * re-sent on every update while present (the API treats it as required). */
+  location?: string;
+  /** custom_inputs.location_name — the multi-location stock location this line
+   * was added against (shown on the cart). */
+  locationName?: string;
   discounts?: CartItemDiscount[];
   isSubscription?: boolean;
   subscriptionPlanName?: string;
@@ -146,6 +154,9 @@ type CartContextValue = {
     customInputs?: Record<string, string>,
     subscriptionConfig?: { offeringId: string; plan: string; pricing_option: string; planName: string; frequency: string; imageUrl?: string },
     productFields?: ProductField[],
+    /** Multi-location: explicit stock location for this line (e.g. the PDP's
+     * page-local selection). Falls back to the universal cookie when omitted. */
+    location?: string,
   ) => Promise<PromotionSuggestion[] | undefined>;
   addItems: (
     items: Array<{ productId: string; quantity: number; customInputs?: Record<string, string> }>,
@@ -317,6 +328,13 @@ function toCartLineItem(
     bundleComponents,
     customInputs,
     productFields,
+    // EP doesn't echo the top-level `location` slug on cart reads, so we also
+    // stash it in custom_inputs.location on add — read either.
+    location:
+      (raw.location as string | undefined) ||
+      (raw.custom_inputs?.location as string | undefined) ||
+      undefined,
+    locationName: (raw.custom_inputs?.location_name as string | undefined) || undefined,
     discounts,
     isSubscription: isSubscription || undefined,
     subscriptionPlanName: subscriptionMeta?.plan_name ?? undefined,
@@ -513,12 +531,18 @@ function toCartSummary(
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, hasSession } = useAuth();
-  const { marketingMode } = useTenantConfig();
+  const { marketingMode, multiLocation } = useTenantConfig();
   // Marketing mode: don't create/load a cart (EP calls) until signed in.
   const holdApis = marketingMode && !hasSession;
   const [epClient, setEpClient] = useState<Client | null>(null);
   const [cartId, setCartId] = useState<string | null>(null);
   const [items, setItems] = useState<CartLineItem[]>([]);
+  // Mirror of `items` for use inside update callbacks (which look up a line's
+  // stock location to re-send it) without adding `items` to their deps.
+  const itemsRef = useRef<CartLineItem[]>([]);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
   const [itemCount, setItemCount] = useState(0);
   const [cartTotal, setCartTotal] = useState("");
   const [cartTotalAmount, setCartTotalAmount] = useState(0);
@@ -774,6 +798,49 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [epClient, cartId]);
 
+  // Resolve a location slug to its display name (memoized/cached fetch) so
+  // add-to-cart can stamp `custom_inputs.location_name` alongside `location`.
+  const resolveLocationName = useCallback(
+    async (slug: string): Promise<string | null> => {
+      if (!epClient) return null;
+      try {
+        const locs = await fetchLocations(epClient);
+        return (
+          locs.find((l) => l.attributes.slug === slug)?.attributes.name ?? null
+        );
+      } catch {
+        return null;
+      }
+    },
+    [epClient],
+  );
+
+  // Resolve the stock location slug for an existing cart line so updates can
+  // re-send it (required by the API when a line has a location). Prefers the
+  // slug we stashed in custom_inputs; falls back to matching the stored
+  // location name against the location list (covers lines added before the
+  // slug was stashed — EP never returns the slug on cart reads).
+  const getLineLocation = useCallback(
+    async (cartItemId: string): Promise<string | null> => {
+      const existing = itemsRef.current.find((i) => i.id === cartItemId);
+      if (!existing) return null;
+      if (existing.location) return existing.location;
+      if (existing.locationName && epClient) {
+        try {
+          const locs = await fetchLocations(epClient);
+          return (
+            locs.find((l) => l.attributes.name === existing.locationName)
+              ?.attributes.slug ?? null
+          );
+        } catch {
+          return null;
+        }
+      }
+      return null;
+    },
+    [epClient],
+  );
+
   const addItem = useCallback(
     async (
       productId: string,
@@ -781,6 +848,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       customInputs?: Record<string, string>,
       subscriptionConfig?: { offeringId: string; plan: string; pricing_option: string; planName: string; frequency: string; imageUrl?: string },
       productFields?: ProductField[],
+      location?: string,
     ): Promise<PromotionSuggestion[] | undefined> => {
       if (!epClient || !cartId) return undefined;
       setIsLoading(true);
@@ -814,6 +882,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
           if (nonEmptyFields.length > 0) {
             ci.product_fields = nonEmptyFields;
           }
+          // Multi-location inventory: track this line against the explicit
+          // (PDP page-local) location, else the universal cookie selection —
+          // and record the location's name in custom_inputs.location_name.
+          const resolvedLocation =
+            location ?? (multiLocation ? readLocationCookie() : null);
+          if (resolvedLocation) {
+            body.data.location = resolvedLocation;
+            ci.location = resolvedLocation;
+            const locationName = await resolveLocationName(resolvedLocation);
+            if (locationName) ci.location_name = locationName;
+          }
           if (Object.keys(ci).length > 0) {
             body.data.custom_inputs = ci;
           }
@@ -840,7 +919,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     },
-    [epClient, cartId, loadItems],
+    [epClient, cartId, loadItems, multiLocation, resolveLocationName],
   );
 
   const addItems = useCallback(
@@ -853,15 +932,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const prevIds = new Set(
           promotionSuggestionsRef.current?.map((s) => s.promotion_id) ?? [],
         );
+        // All items share the universal cookie location; resolve its name once.
+        const location = multiLocation ? readLocationCookie() : null;
+        const locationName = location
+          ? await resolveLocationName(location)
+          : null;
         const res = await manageCarts({
           client: epClient,
           path: { cartID: cartId },
           body: {
             data: items.map(({ productId, quantity, customInputs }) => {
               const item: any = { type: "cart_item", id: productId, quantity };
-              if (customInputs && Object.keys(customInputs).length > 0) {
-                item.custom_inputs = customInputs;
+              const ci: Record<string, unknown> = { ...(customInputs ?? {}) };
+              if (location) {
+                item.location = location;
+                ci.location = location;
+                if (locationName) ci.location_name = locationName;
               }
+              if (Object.keys(ci).length > 0) item.custom_inputs = ci;
               return item;
             }),
           },
@@ -879,7 +967,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     },
-    [epClient, cartId, loadItems],
+    [epClient, cartId, loadItems, multiLocation, resolveLocationName],
   );
 
   const addItemsBySku = useCallback(
@@ -892,15 +980,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       setIsLoading(true);
       try {
+        const location = multiLocation ? readLocationCookie() : null;
+        const locationName = location
+          ? await resolveLocationName(location)
+          : null;
         const res = await manageCarts({
           client: epClient,
           path: { cartID: cartId },
           body: {
-            data: clean.map(({ sku, quantity }) => ({
-              type: "cart_item",
-              sku,
-              quantity,
-            })),
+            data: clean.map(({ sku, quantity }) => {
+              const item: any = { type: "cart_item", sku, quantity };
+              if (location) {
+                item.location = location;
+                item.custom_inputs = {
+                  location,
+                  ...(locationName ? { location_name: locationName } : {}),
+                };
+              }
+              return item;
+            }),
           } as any,
         });
         const body = res.data as any;
@@ -919,7 +1017,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     },
-    [epClient, cartId, loadItems],
+    [epClient, cartId, loadItems, multiLocation, resolveLocationName],
   );
 
   const addBundleItem = useCallback(
@@ -934,17 +1032,25 @@ export function CartProvider({ children }: { children: ReactNode }) {
         const prevIds = new Set(
           promotionSuggestionsRef.current?.map((s) => s.promotion_id) ?? [],
         );
+        const bundleData: any = {
+          type: "cart_item",
+          id: productId,
+          quantity,
+          bundle_configuration: { selected_options: selectedOptions },
+        };
+        const bundleLocation = multiLocation ? readLocationCookie() : null;
+        if (bundleLocation) {
+          bundleData.location = bundleLocation;
+          const bundleLocationName = await resolveLocationName(bundleLocation);
+          bundleData.custom_inputs = {
+            location: bundleLocation,
+            ...(bundleLocationName ? { location_name: bundleLocationName } : {}),
+          };
+        }
         const res = await manageCarts({
           client: epClient,
           path: { cartID: cartId },
-          body: {
-            data: {
-              type: "cart_item",
-              id: productId,
-              quantity,
-              bundle_configuration: { selected_options: selectedOptions },
-            },
-          } as any,
+          body: { data: bundleData } as any,
         });
         const suggestions = (res.data as any)?.meta?.promotion_suggestions as
           | PromotionSuggestion[]
@@ -959,7 +1065,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     },
-    [epClient, cartId, loadItems],
+    [epClient, cartId, loadItems, multiLocation, resolveLocationName],
   );
 
   const removeItem = useCallback(
@@ -993,10 +1099,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       setIsLoading(true);
       try {
+        // Location is required by the API on update whenever the line has one.
+        const location = await getLineLocation(cartItemId);
+        const data: any = { type: "cart_item", quantity };
+        if (location) data.location = location;
         const res = await updateACartItem({
           client: epClient,
           path: { cartID: cartId, cartitemID: cartItemId },
-          body: { data: { type: "cart_item", quantity } },
+          body: { data },
         });
         if (res.error) throw res.error;
         const suggestions = (res.data as any)?.meta?.promotion_suggestions as
@@ -1009,7 +1119,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     },
-    [epClient, cartId, removeItem, loadItems, setPromotionSuggestions],
+    [epClient, cartId, removeItem, loadItems, setPromotionSuggestions, getLineLocation],
   );
 
   const updateItemCustomInputs = useCallback(
@@ -1023,12 +1133,27 @@ export function CartProvider({ children }: { children: ReactNode }) {
       try {
         // Send quantity alongside so the update doesn't reset it; custom_inputs
         // is replaced wholesale, hence callers pass the full merged object.
+        const existing = itemsRef.current.find((i) => i.id === cartItemId);
+        const location = await getLineLocation(cartItemId);
+        const mergedInputs: Record<string, unknown> = { ...customInputs };
+        // Keep the location slug + name in custom_inputs (replaced wholesale).
+        if (location && mergedInputs.location == null) {
+          mergedInputs.location = location;
+        }
+        if (existing?.locationName && mergedInputs.location_name == null) {
+          mergedInputs.location_name = existing.locationName;
+        }
+        const data: any = {
+          type: "cart_item",
+          quantity,
+          custom_inputs: mergedInputs,
+        };
+        // Location is required on update whenever the line has one.
+        if (location) data.location = location;
         const res = await updateACartItem({
           client: epClient,
           path: { cartID: cartId, cartitemID: cartItemId },
-          body: {
-            data: { type: "cart_item", quantity, custom_inputs: customInputs },
-          } as any,
+          body: { data } as any,
         });
         if (res.error) throw res.error;
         await loadItems();
@@ -1036,7 +1161,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     },
-    [epClient, cartId, loadItems],
+    [epClient, cartId, loadItems, getLineLocation],
   );
 
   const bulkUpdateItems = useCallback(
@@ -1044,19 +1169,26 @@ export function CartProvider({ children }: { children: ReactNode }) {
       if (!epClient || !cartId || items.length === 0) return;
       setIsLoading(true);
       try {
+        const data = await Promise.all(
+          items.map(async ({ cartItemId, quantity }) => {
+            // Re-send the line's location (required on update when present).
+            const location = await getLineLocation(cartItemId);
+            const entry: any = { id: cartItemId, quantity };
+            if (location) entry.location = location;
+            return entry;
+          }),
+        );
         await bulkUpdateItemsInCart({
           client: epClient,
           path: { cartID: cartId },
-          body: {
-            data: items.map(({ cartItemId, quantity }) => ({ id: cartItemId, quantity })),
-          },
+          body: { data },
         });
         await loadItems();
       } finally {
         setIsLoading(false);
       }
     },
-    [epClient, cartId, loadItems],
+    [epClient, cartId, loadItems, getLineLocation],
   );
 
   const clearCart = useCallback(async () => {

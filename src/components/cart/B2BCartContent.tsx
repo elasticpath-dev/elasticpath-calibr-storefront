@@ -224,6 +224,7 @@ export function B2BCartContent({ lang }: Props) {
           isFreeGift: item.isFreeGift,
           productFields: item.productFields,
           customInputs: item.customInputs,
+          locationName: item.locationName,
         };
       });
       setGroups(lineGroups);
@@ -341,7 +342,8 @@ export function B2BCartContent({ lang }: Props) {
         subscriptionFrequency: item.subscriptionFrequency,
         isFreeGift: item.isFreeGift,
         productFields: item.productFields,
-          customInputs: item.customInputs,
+        customInputs: item.customInputs,
+        locationName: item.locationName,
       });
     }
 

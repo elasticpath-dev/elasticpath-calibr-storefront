@@ -20,6 +20,13 @@ type Props = {
    */
   missingPrice?: boolean;
   /**
+   * Multi-location inventory: no stock at the selected location — disables the
+   * control and shows an "Out of stock" label instead of "Add to cart".
+   */
+  outOfStock?: boolean;
+  /** Multi-location: explicit stock location for this line (PDP page-local). */
+  location?: string;
+  /**
    * Card layout: rendered on the first row next to the quantity selector
    * (typically the Price), pushing the Add to Cart button onto its own
    * full-width second row.
@@ -34,16 +41,21 @@ export function QuantityAddToCart({
   onBeforeAdd,
   compact = false,
   missingPrice = false,
+  outOfStock = false,
+  location,
   priceSlot,
 }: Props) {
   const t = useTranslations("product");
   const [quantity, setQuantity] = useState(1);
 
+  const disabled = missingPrice || outOfStock;
+  const addToCartLabel = outOfStock ? t("outOfStock") : undefined;
+
   const selector = (
     <QuantitySelector
       value={quantity}
       onChange={setQuantity}
-      disabled={missingPrice}
+      disabled={disabled}
       // Squeezed stepper next to the price on stacked cards; regular size
       // in the inline (grid/row view) layout below.
       size={priceSlot ? "sm" : "default"}
@@ -65,8 +77,10 @@ export function QuantityAddToCart({
         className="w-full justify-center h-9"
         customInputs={customInputs}
         productFields={productFields}
+        location={location}
         onBeforeAdd={onBeforeAdd}
-        disabled={missingPrice}
+        disabled={disabled}
+        label={addToCartLabel}
       />
     </div>
   ) : (
@@ -83,8 +97,10 @@ export function QuantityAddToCart({
             className="flex-1 justify-center h-9"
             customInputs={customInputs}
             productFields={productFields}
+            location={location}
             onBeforeAdd={onBeforeAdd}
-            disabled={missingPrice}
+            disabled={disabled}
+            label={addToCartLabel}
           />
         </>
       ) : (
@@ -97,8 +113,10 @@ export function QuantityAddToCart({
             className="flex-1 justify-center"
             customInputs={customInputs}
             productFields={productFields}
+            location={location}
             onBeforeAdd={onBeforeAdd}
-            disabled={missingPrice}
+            disabled={disabled}
+            label={addToCartLabel}
           />
         </div>
       )}

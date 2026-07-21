@@ -14,6 +14,8 @@ type AddToCartProps = {
   customInputs?: Record<string, string>;
   productFields?: ProductField[];
   disabled?: boolean;
+  /** Multi-location: explicit stock location for this line (PDP page-local). */
+  location?: string;
   onBeforeAdd?: () => boolean;
   /** Called after a successful add — e.g. to reset a shared quantity value elsewhere. */
   onAdded?: () => void;
@@ -30,13 +32,19 @@ export function AddToCart({
   customInputs,
   productFields,
   disabled,
+  location,
   onBeforeAdd,
   onAdded,
   label,
   addedLabel,
 }: AddToCartProps) {
   const t = useTranslations("product");
-  const { add, isPending, added } = useAddToCart(productId, customInputs, productFields);
+  const { add, isPending, added } = useAddToCart(
+    productId,
+    customInputs,
+    productFields,
+    location,
+  );
 
   async function handleClick() {
     if (onBeforeAdd && !onBeforeAdd()) return;

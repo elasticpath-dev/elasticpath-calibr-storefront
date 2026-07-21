@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ShoppingBag, Minus, Plus, Trash2 } from "lucide-react";
+import { ShoppingBag, Minus, Plus, Trash2, MapPin } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -31,6 +31,7 @@ type Props = {
   isFreeGift?: boolean;
   productFields?: ProductField[];
   customInputs?: Record<string, unknown>;
+  locationName?: string;
   onQuantityChange: (cartItemId: string, qty: number) => void;
   onRemove: (cartItemId: string) => void;
   disabled?: boolean;
@@ -58,6 +59,7 @@ export function SimpleCartRow({
   isFreeGift,
   productFields,
   customInputs,
+  locationName,
   onQuantityChange,
   onRemove,
   disabled,
@@ -151,6 +153,15 @@ export function SimpleCartRow({
           className="px-[18px] py-1.5 bg-green-50 border-b border-green-100 text-[12px] text-green-700"
         />
       ))}
+
+      {locationName && (
+        <div className="px-[18px] py-2 border-b border-ink-100">
+          <span className="inline-flex items-center gap-1 text-[12px] text-ink-600">
+            <MapPin size={13} className="text-brand-primary flex-shrink-0" />
+            {locationName}
+          </span>
+        </div>
+      )}
 
       {readOnlyFields && readOnlyFields.length > 0 && (
         <div className="px-[18px] py-2 border-b border-ink-100 flex flex-col gap-0.5">

@@ -10,6 +10,8 @@ export function useAddToCart(
   productId: string,
   customInputs?: Record<string, string>,
   productFields?: ProductField[],
+  /** Multi-location: explicit stock location for this line (PDP page-local). */
+  location?: string,
 ) {
   const t = useTranslations("product");
   const { addItem } = useCart();
@@ -27,6 +29,7 @@ export function useAddToCart(
           customInputs,
           subscriptionConfig ?? undefined,
           productFields,
+          location,
         );
         setAdded(true);
         setTimeout(() => setAdded(false), 2000);
@@ -47,7 +50,7 @@ export function useAddToCart(
         setIsPending(false);
       }
     },
-    [addItem, productId, customInputs, subscriptionConfig, productFields, t],
+    [addItem, productId, customInputs, subscriptionConfig, productFields, location, t],
   );
 
   return { add, isPending, added };

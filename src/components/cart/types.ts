@@ -69,6 +69,8 @@ export type LineGroup =
       isFreeGift?: boolean;
       productFields?: ProductField[];
       customInputs?: Record<string, unknown>;
+      /** Multi-location stock location name (custom_inputs.location_name). */
+      locationName?: string;
     };
 
 export function buildMatrix(children: ChildProduct[]): {

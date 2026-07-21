@@ -9,6 +9,8 @@ import { getProductByIdAction } from "@/lib/actions/product";
 import { ProductVariationSelector } from "./ProductVariationSelector";
 import { QuantityAddToCart } from "./QuantityAddToCart";
 import { CustomInputsForm } from "./CustomInputsForm";
+import { ProductLocationInventory } from "./ProductLocationInventory";
+import { useProductInventory } from "@/hooks/use-product-inventory";
 
 type Props = {
   productId: string;
@@ -77,6 +79,13 @@ export function VariantAddToCart({
   const effectiveProductId = hasVariations
     ? (resolvedProductId ?? productId)
     : productId;
+
+  // Multi-location stock for the concrete product being added — for variations
+  // that's the resolved child once every option is chosen (skip until then so
+  // we don't check the parent's stock).
+  const inventory = useProductInventory(
+    !hasVariations || allSelected ? effectiveProductId : null,
+  );
 
   function validateRequiredInputs(): boolean {
     if (!productCustomInputs) return true;
@@ -181,6 +190,8 @@ export function VariantAddToCart({
         />
       )}
 
+      <ProductLocationInventory inventory={inventory} />
+
       <div className="relative group/cart">
         <div
           className={
@@ -192,6 +203,8 @@ export function VariantAddToCart({
           <QuantityAddToCart
             productId={effectiveProductId}
             missingPrice={missingPrice}
+            outOfStock={inventory.outOfStock}
+            location={inventory.selectedSlug ?? undefined}
             customInputs={customInputs}
             productFields={
               productCustomInputs

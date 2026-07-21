@@ -11,6 +11,7 @@ import {
   Plus,
   Eraser,
   Tag,
+  MapPin,
 } from "lucide-react";
 import { PromoTooltip } from "@/components/cart/PromoTooltip";
 import { PromotionCarousel } from "@/components/cart/PromotionCarousel";
@@ -271,6 +272,13 @@ export function CartButton() {
                             </span>
                           )}
                         </div>
+
+                        {item.locationName && (
+                          <p className="mt-2 inline-flex items-center gap-1 text-xs text-gray-500">
+                            <MapPin size={12} className="text-brand-primary flex-shrink-0" />
+                            {item.locationName}
+                          </p>
+                        )}
 
                         {item.productFields && item.productFields.length > 0 && (
                           <div className="mt-2 flex flex-col gap-0.5">

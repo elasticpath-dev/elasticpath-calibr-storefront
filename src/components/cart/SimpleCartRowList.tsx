@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { ShoppingBag, Minus, Plus, Trash2 } from "lucide-react";
+import { ShoppingBag, Minus, Plus, Trash2, MapPin } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -30,6 +30,7 @@ type Props = {
   isFreeGift?: boolean;
   productFields?: ProductField[];
   customInputs?: Record<string, unknown>;
+  locationName?: string;
   onQuantityChange: (cartItemId: string, qty: number) => void;
   onRemove: (cartItemId: string) => void;
   disabled?: boolean;
@@ -54,6 +55,7 @@ export function SimpleCartRowList({
   isFreeGift,
   productFields,
   customInputs,
+  locationName,
   onQuantityChange,
   onRemove,
   disabled,
@@ -157,6 +159,14 @@ export function SimpleCartRowList({
             className="text-[12px] text-green-700 w-fit"
           />
         ))}
+
+        {/* Multi-location stock location */}
+        {locationName && (
+          <span className="inline-flex items-center gap-1 text-[12px] text-ink-600 w-fit">
+            <MapPin size={13} className="text-brand-primary flex-shrink-0" />
+            {locationName}
+          </span>
+        )}
 
         {/* Custom input fields (read-only; editable ones are filtered out) */}
         {readOnlyFields && readOnlyFields.length > 0 && (
