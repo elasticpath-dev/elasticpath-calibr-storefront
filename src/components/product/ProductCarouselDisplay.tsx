@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { ProductCard } from "./ProductCard";
 import { useTenantConfig } from "@/context/TenantConfigContext";
 import { useResponsiveSlides } from "@/hooks/use-responsive-slides";
+import { useProductsInventory } from "@/hooks/use-products-inventory";
 import type { ProductCardData } from "@/lib/api/products";
 
 export type ProductCarouselDisplayProps = {
@@ -26,6 +27,9 @@ export function ProductCarouselDisplay({
   showDots = true,
   infinite = true,
 }: ProductCarouselDisplayProps) {
+  const { outOfStockById } = useProductsInventory(
+    useMemo(() => products.map((p) => p.id), [products]),
+  );
   const scrollRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const { fullWidth } = useTenantConfig();
@@ -135,6 +139,7 @@ export function ProductCarouselDisplay({
                 product={product}
                 lang={lang}
                 priority={index < effectiveSlides}
+                outOfStock={outOfStockById[product.id]}
               />
             </div>
           ))}

@@ -57,3 +57,13 @@ export function useEpClient(): Client {
   // this hook are only rendered once signed in, so that's not reached.
   return client as Client;
 }
+
+/**
+ * Non-throwing variant: returns the client, or null when the APIs are held OR
+ * when there's no ClientProvider at all (e.g. the Plasmic Studio canvas, which
+ * doesn't mount one). For components that may render outside the app shell.
+ */
+export function useEpClientOptional(): Client | null {
+  const client = useContext(ClientContext);
+  return (client ?? null) as Client | null;
+}

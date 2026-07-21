@@ -5,6 +5,7 @@ import { LayoutGrid, LayoutList, Layers } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { ProductCard } from "./ProductCard";
+import { useProductsInventory } from "@/hooks/use-products-inventory";
 import { Button } from "@/components/ui/Button";
 import type { ChildProduct, MatrixGroup } from "@/components/cart/types";
 import { useCart } from "@/context/CartContext";
@@ -34,6 +35,9 @@ type ProductGridProps = {
 };
 
 export function ProductGrid({ products, lang }: ProductGridProps) {
+  const { outOfStockById } = useProductsInventory(
+    useMemo(() => products.map((p) => p.id), [products]),
+  );
   const t = useTranslations("search");
   const tProduct = useTranslations("product");
   const { addItems, isLoading } = useCart();
@@ -293,6 +297,7 @@ export function ProductGrid({ products, lang }: ProductGridProps) {
               bulkMode={bulkMode}
               bulkQuantity={pendingQtys.get(product.id) ?? 0}
               onBulkQuantityChange={handleBulkQuantityChange}
+              outOfStock={outOfStockById[product.id]}
             />
           ))}
         </div>
@@ -313,6 +318,7 @@ export function ProductGrid({ products, lang }: ProductGridProps) {
                 bulkMode={bulkMode}
                 bulkQuantity={pendingQtys.get(product.id) ?? 0}
                 onBulkQuantityChange={handleBulkQuantityChange}
+                outOfStock={outOfStockById[product.id]}
                 onRequestMatrix={
                   product.hasVariations ? handleRequestMatrix : undefined
                 }

@@ -240,7 +240,7 @@ export function CategorySearchClient({
       include: ["main_image"],
       additionalSearchParameters: {
         query_by: "name,description,sku",
-        per_page: 12,
+        per_page: 15,
         filter_by: nodeSlugFilter,
         facet_by: buildFacetBy(filterItems),
       },

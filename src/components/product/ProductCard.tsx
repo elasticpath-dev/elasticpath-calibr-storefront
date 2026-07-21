@@ -56,6 +56,9 @@ type ProductCardProps = {
   matrix?: MatrixProps;
   /** row variant only: called the first time a product's variants are shown, so the parent can lazily fetch its matrix data. */
   onRequestMatrix?: (productId: string) => void;
+  /** Multi-location: no stock at the shopper's location — disables add-to-cart
+   * and shows "Out of stock". */
+  outOfStock?: boolean;
 };
 
 export function ProductCard({
@@ -70,6 +73,7 @@ export function ProductCard({
   onBulkQuantityChange,
   matrix,
   onRequestMatrix,
+  outOfStock = false,
 }: ProductCardProps) {
   const t = useTranslations("product");
   const [showVariants, setShowVariants] = useState(false);
@@ -120,12 +124,13 @@ export function ProductCard({
         value={bulkQuantity}
         onChange={(qty) => onBulkQuantityChange?.(product.id, qty)}
         min={0}
-        disabled={missingPrice}
+        disabled={missingPrice || outOfStock}
       />
       <AddToCart
         productId={product.id}
         quantity={bulkQuantity}
-        disabled={bulkQuantity === 0 || missingPrice}
+        disabled={bulkQuantity === 0 || missingPrice || outOfStock}
+        label={outOfStock ? t("outOfStock") : undefined}
         className="flex-1 justify-center h-9"
         // Once this product has been added individually, drop it back to 0
         // so it isn't also included the next time "Add all to cart" runs.
@@ -133,7 +138,12 @@ export function ProductCard({
       />
     </div>
   ) : (
-    <QuantityAddToCart productId={product.id} compact missingPrice={missingPrice} />
+    <QuantityAddToCart
+      productId={product.id}
+      compact
+      missingPrice={missingPrice}
+      outOfStock={outOfStock}
+    />
   );
 
   // Stacked control for the default/flat card variants: price + quantity
@@ -150,14 +160,15 @@ export function ProductCard({
             value={bulkQuantity}
             onChange={(qty) => onBulkQuantityChange?.(product.id, qty)}
             min={0}
-            disabled={missingPrice}
+            disabled={missingPrice || outOfStock}
             size="sm"
           />
         </div>
         <AddToCart
           productId={product.id}
           quantity={bulkQuantity}
-          disabled={bulkQuantity === 0 || missingPrice}
+          disabled={bulkQuantity === 0 || missingPrice || outOfStock}
+          label={outOfStock ? t("outOfStock") : undefined}
           className="w-full justify-center h-9"
           onAdded={() => onBulkQuantityChange?.(product.id, 0)}
         />
@@ -167,6 +178,7 @@ export function ProductCard({
         productId={product.id}
         compact
         missingPrice={missingPrice}
+        outOfStock={outOfStock}
         priceSlot={price}
       />
     );

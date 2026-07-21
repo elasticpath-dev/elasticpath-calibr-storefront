@@ -246,7 +246,7 @@ export function SearchPageClient({
       include: ["main_image"],
       additionalSearchParameters: {
         query_by: "name,description,sku",
-        per_page: 12,
+        per_page: 15,
         facet_by: buildFacetBy(filterItems),
       },
     });
