@@ -16,7 +16,7 @@ export function useEpPayPalPayment(
   savedAddresses: AccountAddressResponse[] = [],
 ) {
   const t = useTranslations("checkout");
-  const { cartId } = useCart();
+  const { cartId, syncItemLocations } = useCart();
   const { credentials } = useAuth();
   const { storeName } = useTenantConfig();
   const [isLoading, setIsLoading] = useState(false);
@@ -152,6 +152,10 @@ export function useEpPayPalPayment(
               },
             };
 
+        // Multi-location: re-assert each line's location (shipping-group
+        // updates clear it) before the order allocates stock.
+        await syncItemLocations();
+
         // 1. Convert cart to order
         const orderRes = await checkoutApi({
           client,
@@ -232,7 +236,7 @@ export function useEpPayPalPayment(
         setIsLoading(false);
       }
     },
-    [cartId, lang, savedAddresses, credentials, storeName, t],
+    [cartId, lang, savedAddresses, credentials, storeName, t, syncItemLocations],
   );
 
   return { processPayment, isLoading, isRedirecting, error };

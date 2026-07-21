@@ -17,7 +17,7 @@ export function useEpPOPayment(
   savedAddresses: AccountAddressResponse[] = [],
 ) {
   const t = useTranslations("checkout");
-  const { cartId, clearCart } = useCart();
+  const { cartId, clearCart, syncItemLocations } = useCart();
   const { credentials } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -158,6 +158,10 @@ export function useEpPOPayment(
               },
             };
 
+        // Multi-location: shipping-group updates may have cleared each line's
+        // top-level location; re-assert it before the order allocates stock.
+        await syncItemLocations();
+
         const orderRes = await checkoutApi({
           client,
           path: { cartID: cartId },
@@ -207,7 +211,7 @@ export function useEpPOPayment(
         setIsLoading(false);
       }
     },
-    [cartId, clearCart, router, lang, savedAddresses, credentials, t],
+    [cartId, clearCart, router, lang, savedAddresses, credentials, t, syncItemLocations],
   );
 
   return { processPayment, isLoading, isRedirecting, error };

@@ -22,7 +22,7 @@ export function useEpCODPayment(
   savedAddresses: AccountAddressResponse[] = [],
 ) {
   const t = useTranslations("checkout");
-  const { cartId, clearCart } = useCart();
+  const { cartId, clearCart, syncItemLocations } = useCart();
   const { credentials } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -158,6 +158,10 @@ export function useEpCODPayment(
               },
             };
 
+        // Multi-location: re-assert each line's location (shipping-group
+        // updates clear it) before the order allocates stock.
+        await syncItemLocations();
+
         const orderRes = await checkoutApi({
           client,
           path: { cartID: cartId },
@@ -205,7 +209,7 @@ export function useEpCODPayment(
         setIsLoading(false);
       }
     },
-    [cartId, clearCart, router, lang, savedAddresses, credentials, t],
+    [cartId, clearCart, router, lang, savedAddresses, credentials, t, syncItemLocations],
   );
 
   return { processPayment, isLoading, isRedirecting, error };

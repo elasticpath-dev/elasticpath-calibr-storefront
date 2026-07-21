@@ -40,7 +40,7 @@ export type CheckoutFormData = {
 };
 
 export function useCheckout(lang: string, savedAddresses: AccountAddressResponse[] = []) {
-  const { cartId, clearCart } = useCart();
+  const { cartId, clearCart, syncItemLocations } = useCart();
   const { credentials } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
@@ -108,6 +108,10 @@ export function useCheckout(lang: string, savedAddresses: AccountAddressResponse
               instructions: "",
             };
 
+        // Multi-location: shipping-group updates may have cleared each line's
+        // top-level location; re-assert it before the order allocates stock.
+        await syncItemLocations();
+
         const isAccountCheckout = !!credentials?.selected;
         const contactOrCustomer = isAccountCheckout
           ? { contact: { name: `${data.firstName} ${data.lastName}`, email: data.email } }
@@ -153,7 +157,7 @@ export function useCheckout(lang: string, savedAddresses: AccountAddressResponse
         setIsLoading(false);
       }
     },
-    [cartId, clearCart, router, lang, savedAddresses, credentials]
+    [cartId, clearCart, router, lang, savedAddresses, credentials, syncItemLocations]
   );
 
   return { submitCheckout, isLoading, error };

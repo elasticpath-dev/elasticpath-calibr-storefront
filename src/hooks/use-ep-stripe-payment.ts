@@ -36,7 +36,7 @@ export function useEpStripePayment(
   savedAddresses: AccountAddressResponse[] = []
 ) {
   const t = useTranslations("checkout");
-  const { cartId, clearCart, items } = useCart();
+  const { cartId, clearCart, items, syncItemLocations } = useCart();
   const { credentials } = useAuth();
   const { stripeAccountId } = useTenantConfig();
   const router = useRouter();
@@ -140,6 +140,10 @@ export function useEpStripePayment(
         const contactOrCustomer = isAccountCheckout
           ? { contact: { name: `${formData.firstName} ${formData.lastName}`, email: formData.email } }
           : { customer: { name: `${formData.firstName} ${formData.lastName}`, email: formData.email } };
+
+        // Multi-location: re-assert each line's location (shipping-group
+        // updates clear it) before the order allocates stock.
+        await syncItemLocations();
 
         // 1. Convert cart to order
         const orderRes = await checkoutApi({
@@ -273,7 +277,7 @@ export function useEpStripePayment(
         setIsLoading(false);
       }
     },
-    [cartId, clearCart, items, router, lang, savedAddresses, credentials, t, stripeAccountId]
+    [cartId, clearCart, items, router, lang, savedAddresses, credentials, t, stripeAccountId, syncItemLocations]
   );
 
   return { processPayment, isLoading, isRedirecting, error };

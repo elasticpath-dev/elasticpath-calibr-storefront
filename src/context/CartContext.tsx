@@ -181,6 +181,12 @@ type CartContextValue = {
     quantity: number,
   ) => Promise<void>;
   bulkUpdateItems: (items: Array<{ cartItemId: string; quantity: number }>) => Promise<void>;
+  /** Re-assert each line's top-level `location` from the surviving
+   * custom_inputs.location. EP clears omitted fields on a cart-item PUT, so the
+   * checkout shipping-group updates wipe `location`; call this right before
+   * checkout so inventory allocation targets the right location. No-op unless
+   * multi-location inventory is enabled. */
+  syncItemLocations: () => Promise<void>;
   clearCart: () => Promise<void>;
   switchCart: (newCartId: string) => Promise<void>;
   createCart: (name: string) => Promise<string | null>;
@@ -1191,6 +1197,40 @@ export function CartProvider({ children }: { children: ReactNode }) {
     [epClient, cartId, loadItems, getLineLocation],
   );
 
+  const syncItemLocations = useCallback(async () => {
+    if (!multiLocation || !epClient || !cartId) return;
+    try {
+      const res = await getCartItems({
+        client: epClient,
+        path: { cartID: cartId },
+      });
+      const raws = ((res.data as any)?.data ?? []) as any[];
+      await Promise.all(
+        raws.map(async (raw) => {
+          // Shipping-group (and other) PUTs drop the top-level location because
+          // EP clears omitted fields; custom_inputs.location survives, so
+          // re-assert the top-level location the order allocation needs.
+          const slug = raw?.custom_inputs?.location as string | undefined;
+          if (!slug || raw.location === slug) return;
+          const data: any = {
+            type: raw.type ?? "cart_item",
+            quantity: raw.quantity,
+            location: slug,
+            custom_inputs: raw.custom_inputs,
+          };
+          if (raw.shipping_group_id) data.shipping_group_id = raw.shipping_group_id;
+          await updateACartItem({
+            client: epClient,
+            path: { cartID: cartId, cartitemID: raw.id },
+            body: { data },
+          }).catch(() => {});
+        }),
+      );
+    } catch {
+      // Best-effort — never block checkout on the reconcile itself.
+    }
+  }, [multiLocation, epClient, cartId]);
+
   const clearCart = useCallback(async () => {
     if (!epClient || !cartId) return;
     setIsLoading(true);
@@ -1429,6 +1469,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         updateQuantity,
         updateItemCustomInputs,
         bulkUpdateItems,
+        syncItemLocations,
         clearCart,
         switchCart,
         createCart,
