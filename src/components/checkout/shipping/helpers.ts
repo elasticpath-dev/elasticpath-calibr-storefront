@@ -41,13 +41,33 @@ export async function mergeGroupDuplicates(
   }
 
   const deleteIds: string[] = [];
-  const updateOps: { id: string; qty: number; gid: string; itemType: string }[] = [];
+  const updateOps: {
+    id: string;
+    qty: number;
+    gid: string;
+    itemType: string;
+    location?: string;
+  }[] = [];
 
   for (const [, dupes] of byKey) {
     if (dupes.length <= 1) continue;
     const mergedQty = dupes.reduce((s, i) => s + (i.quantity ?? 0), 0);
     const [keep, ...rest] = dupes;
-    updateOps.push({ id: keep.id!, qty: mergedQty, gid: keep.shipping_group_id!, itemType: keep.type ?? "cart_item" });
+    // Multi-location: preserve the line's stock location (root-level, with a
+    // custom_inputs fallback) — EP clears it on any update that omits it.
+    const location =
+      (typeof keep.location === "string" && keep.location) ||
+      (typeof keep.custom_inputs?.location === "string"
+        ? (keep.custom_inputs.location as string)
+        : undefined) ||
+      undefined;
+    updateOps.push({
+      id: keep.id!,
+      qty: mergedQty,
+      gid: keep.shipping_group_id!,
+      itemType: keep.type ?? "cart_item",
+      location,
+    });
     rest.forEach((r) => deleteIds.push(r.id!));
   }
 
@@ -57,11 +77,19 @@ export async function mergeGroupDuplicates(
     ...deleteIds.map((id) =>
       deleteACartItem({ client, path: { cartID: cartId, cartitemID: id } }).catch(() => {}),
     ),
-    ...updateOps.map(({ id, qty, gid, itemType }) =>
+    ...updateOps.map(({ id, qty, gid, itemType, location }) =>
       updateACartItem({
         client,
         path: { cartID: cartId, cartitemID: id },
-        body: { data: { type: itemType, id, quantity: qty, shipping_group_id: gid } } as any,
+        body: {
+          data: {
+            type: itemType,
+            id,
+            quantity: qty,
+            shipping_group_id: gid,
+            ...(location ? { location } : {}),
+          },
+        } as any,
       }).catch(() => {}),
     ),
   ]);

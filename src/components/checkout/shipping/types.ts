@@ -21,6 +21,9 @@ export type CartItem = {
   quantity?: number;
   imageHref?: string;
   shipping_group_id?: string;
+  /** Multi-location stock location slug (root-level on the cart item). Must be
+   * re-sent on every update or EP clears it. */
+  location?: string;
   custom_inputs?: Record<string, unknown>;
   meta?: {
     display_price?: {

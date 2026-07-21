@@ -38,6 +38,19 @@ function cleanInputs(inputs?: Record<string, unknown>): Record<string, unknown> 
   return rest;
 }
 
+// Multi-location: EP clears the top-level `location` on any cart-item update
+// that omits it, so every shipping-group update must re-send it. The slug lives
+// on the cart item's root `location` field (with a custom_inputs.location
+// fallback for older lines whose root value was already cleared).
+function locationOf(
+  item?: { location?: unknown; custom_inputs?: Record<string, unknown> } | null,
+): string | undefined {
+  const root = item?.location;
+  if (typeof root === "string" && root) return root;
+  const ci = item?.custom_inputs?.location;
+  return typeof ci === "string" && ci ? ci : undefined;
+}
+
 // custom_item rows are shippable like any other line item (e.g. a bespoke
 // product added as a custom item), except the hidden shipping charge
 // B2CDeliverySection adds — that one shouldn't be assignable to a shipment.
@@ -329,11 +342,13 @@ export function ShippingGroupManager({ onReadyChange, onShippingCostChange, onLo
           body: {
             data: pickedItems.map((itemId) => {
               const cartItem = cartItems.find((i) => i.id === itemId);
+              const location = locationOf(cartItem);
               return {
                 id: itemId,
                 quantity: cartItem?.quantity ?? 1,
                 shipping_group_id: ng.id,
                 custom_inputs: cleanInputs(cartItem?.custom_inputs),
+                ...(location ? { location } : {}),
               };
             }),
           } as any,
@@ -383,10 +398,14 @@ export function ShippingGroupManager({ onReadyChange, onShippingCostChange, onLo
           client,
           path: { cartID: cartId },
           body: {
-            data: members.map((i) => ({
-              id: i.id,
-              shipping_group_id: "",
-            })),
+            data: members.map((i) => {
+              const location = locationOf(i);
+              return {
+                id: i.id,
+                shipping_group_id: "",
+                ...(location ? { location } : {}),
+              };
+            }),
           } as any,
         });
       }
@@ -450,7 +469,14 @@ export function ShippingGroupManager({ onReadyChange, onShippingCostChange, onLo
           updateACartItem({
             client,
             path: { cartID: cartId, cartitemID: existingInTarget.id },
-            body: { data: { id: existingInTarget.id, quantity: mergedQty, shipping_group_id: groupId } } as any,
+            body: {
+              data: {
+                id: existingInTarget.id,
+                quantity: mergedQty,
+                shipping_group_id: groupId,
+                ...(locationOf(existingInTarget) ? { location: locationOf(existingInTarget) } : {}),
+              },
+            } as any,
           }),
         ]);
         await syncItems();
@@ -470,7 +496,15 @@ export function ShippingGroupManager({ onReadyChange, onShippingCostChange, onLo
         await updateACartItem({
           client,
           path: { cartID: cartId, cartitemID: itemId },
-          body: { data: { id: itemId, quantity: item.quantity ?? 1, shipping_group_id: groupId, custom_inputs: inputs } } as any,
+          body: {
+            data: {
+              id: itemId,
+              quantity: item.quantity ?? 1,
+              shipping_group_id: groupId,
+              custom_inputs: inputs,
+              ...(locationOf(item) ? { location: locationOf(item) } : {}),
+            },
+          } as any,
         });
         await syncItems();
         void refreshCart();
@@ -495,7 +529,13 @@ export function ShippingGroupManager({ onReadyChange, onShippingCostChange, onLo
       await updateACartItem({
         client,
         path: { cartID: cartId, cartitemID: itemId },
-        body: { data: { id: itemId, shipping_group_id: "" } } as any,
+        body: {
+          data: {
+            id: itemId,
+            shipping_group_id: "",
+            ...(locationOf(item) ? { location: locationOf(item) } : {}),
+          },
+        } as any,
       });
       await syncItems();
       void refreshCart();
@@ -520,6 +560,7 @@ export function ShippingGroupManager({ onReadyChange, onShippingCostChange, onLo
     if (totalQty > cartTotalForProduct) { toast.error(t("toastSplitExceeds")); setSplit(null); return; }
 
     const splitItem = cartItems.find((i) => i.id === itemId);
+    const splitLoc = locationOf(splitItem);
     setSplit(null);
     const client = createEpClient();
     try {
@@ -532,7 +573,15 @@ export function ShippingGroupManager({ onReadyChange, onShippingCostChange, onLo
           updateACartItem({
             client,
             path: { cartID: cartId, cartitemID: itemId },
-            body: { data: { type: splitItem?.type ?? "cart_item", id: itemId, quantity: safeRemainQty, shipping_group_id: currentGroupId } } as any,
+            body: {
+              data: {
+                type: splitItem?.type ?? "cart_item",
+                id: itemId,
+                quantity: safeRemainQty,
+                shipping_group_id: currentGroupId,
+                ...(splitLoc ? { location: splitLoc } : {}),
+              },
+            } as any,
           }),
           updateACartItem({
             client,
@@ -543,6 +592,7 @@ export function ShippingGroupManager({ onReadyChange, onShippingCostChange, onLo
                 id: existingInTarget.id,
                 quantity: (existingInTarget.quantity ?? 0) + safeSplitQty,
                 shipping_group_id: targetGroupId,
+                ...(locationOf(existingInTarget) ? { location: locationOf(existingInTarget) } : {}),
               },
             } as any,
           }),
@@ -557,6 +607,7 @@ export function ShippingGroupManager({ onReadyChange, onShippingCostChange, onLo
               type: splitItem?.type ?? "cart_item", id: itemId, quantity: safeRemainQty,
               shipping_group_id: currentGroupId,
               custom_inputs: { _ep_split_id: `${splitId}-src` },
+              ...(splitLoc ? { location: splitLoc } : {}),
             },
           } as any,
         });
@@ -567,6 +618,7 @@ export function ShippingGroupManager({ onReadyChange, onShippingCostChange, onLo
             data: {
               type: "cart_item", id: productId, quantity: safeSplitQty,
               custom_inputs: { _ep_split_id: `${splitId}-tgt` },
+              ...(splitLoc ? { location: splitLoc } : {}),
             },
           } as any,
         });
@@ -578,7 +630,15 @@ export function ShippingGroupManager({ onReadyChange, onShippingCostChange, onLo
           await updateACartItem({
             client,
             path: { cartID: cartId, cartitemID: newItem.id },
-            body: { data: { type: newItem.type ?? "cart_item", id: newItem.id, quantity: safeSplitQty, shipping_group_id: targetGroupId } } as any,
+            body: {
+              data: {
+                type: newItem.type ?? "cart_item",
+                id: newItem.id,
+                quantity: safeSplitQty,
+                shipping_group_id: targetGroupId,
+                ...(splitLoc ? { location: splitLoc } : {}),
+              },
+            } as any,
           });
         }
       }
@@ -613,7 +673,15 @@ export function ShippingGroupManager({ onReadyChange, onShippingCostChange, onLo
         updateACartItem({
           client,
           path: { cartID: cartId, cartitemID: keeper.id! },
-          body: { data: { type: keeper.type ?? "cart_item", id: keeper.id, quantity: totalQty, custom_inputs: keeperInputs } } as any,
+          body: {
+            data: {
+              type: keeper.type ?? "cart_item",
+              id: keeper.id,
+              quantity: totalQty,
+              custom_inputs: keeperInputs,
+              ...(locationOf(keeper) ? { location: locationOf(keeper) } : {}),
+            },
+          } as any,
         }),
         ...rest.map((i) =>
           deleteACartItem({ client, path: { cartID: cartId, cartitemID: i.id! } }),
