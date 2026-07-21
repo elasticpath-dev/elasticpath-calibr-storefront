@@ -3,9 +3,10 @@
 import { type ReactNode, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useHits, useInstantSearch } from "react-instantsearch";
+import { useHierarchicalMenu, useHits, useInstantSearch } from "react-instantsearch";
 import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
+import { CATEGORY_HIERARCHICAL_ATTRIBUTES } from "@/lib/instantsearch-routing";
 import { FilterSection } from "./FilterSection";
 
 // How the index stores lvlN category values ("Root > Child > Grandchild").
@@ -91,6 +92,13 @@ export function CategoryFilter({
   const lang = pathname?.split("/")[1] || "en";
   const { results } = useInstantSearch();
   const { items: hits } = useHits<Record<string, unknown>>();
+  // On the search page, clicking a category refines the current query in place
+  // (via the hierarchical facet) instead of navigating to the category page —
+  // so the keyword search is preserved and results are query AND category.
+  const { refine: refineCategory } = useHierarchicalMenu({
+    attributes: CATEGORY_HIERARCHICAL_ATTRIBUTES,
+  });
+  const isSearchContext = !currentCategoryName;
 
   const maxSegments = currentCategoryName ? Infinity : SEARCH_MAX_SEGMENTS;
 
@@ -127,23 +135,42 @@ export function CategoryFilter({
   function renderTree(list: TreeNode[], depth = 0): ReactNode {
     return list.map((node) => {
       const isCurrent = node.label === currentCategoryName;
+      const rowClass = cn(
+        "w-full flex items-center justify-between rounded-md pr-2 py-1.5 text-sm transition-colors text-left",
+        isCurrent
+          ? "font-semibold text-brand-primary bg-brand-primary/5"
+          : "text-gray-700 hover:bg-gray-50",
+      );
+      const rowInner = (
+        <>
+          <span className="truncate">{node.label}</span>
+          <span className="ml-2 text-xs text-gray-400 flex-shrink-0">
+            {node.count}
+          </span>
+        </>
+      );
       return (
         <div key={node.path}>
-          <Link
-            href={hrefFor(node)}
-            style={{ paddingLeft: 8 + depth * 14 }}
-            className={cn(
-              "w-full flex items-center justify-between rounded-md pr-2 py-1.5 text-sm transition-colors text-left",
-              isCurrent
-                ? "font-semibold text-brand-primary bg-brand-primary/5"
-                : "text-gray-700 hover:bg-gray-50",
-            )}
-          >
-            <span className="truncate">{node.label}</span>
-            <span className="ml-2 text-xs text-gray-400 flex-shrink-0">
-              {node.count}
-            </span>
-          </Link>
+          {isSearchContext ? (
+            // Search page: refine the current query in place (keeps the keyword).
+            <button
+              type="button"
+              onClick={() => refineCategory(node.path)}
+              style={{ paddingLeft: 8 + depth * 14 }}
+              className={rowClass}
+            >
+              {rowInner}
+            </button>
+          ) : (
+            // Category page: navigate into the category.
+            <Link
+              href={hrefFor(node)}
+              style={{ paddingLeft: 8 + depth * 14 }}
+              className={rowClass}
+            >
+              {rowInner}
+            </Link>
+          )}
           {node.children.length > 0 && (
             <div className="mt-0.5">{renderTree(node.children, depth + 1)}</div>
           )}
