@@ -273,6 +273,24 @@ function oneOf<T extends string>(
   return allowed.includes(v as T) ? (v as T) : fallback;
 }
 
+/** Normalizes an "excluded" list (extensions, etc.) from the tenant config,
+ * which may arrive as a string[] or a comma-separated string, into a trimmed,
+ * lowercased list. Returns null when there's nothing usable so the caller can
+ * fall back to the env default. Lowercasing matches parseExtensions()'s
+ * case-insensitive compare. */
+function normalizeStringList(raw: unknown): string[] | null {
+  const parts = Array.isArray(raw)
+    ? raw
+    : typeof raw === "string"
+      ? raw.split(",")
+      : null;
+  if (!parts) return null;
+  const out = parts
+    .map((s) => String(s).trim().toLowerCase())
+    .filter(Boolean);
+  return out.length ? out : null;
+}
+
 /** Parses "pricebookId1|Retail Price,pricebookId2|Members Price" into an
  * ordered list. Entries missing an id or label are dropped. */
 function parseAlternativePriceBooks(
@@ -558,9 +576,12 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
       searchEnabled:
         r.features?.searchEnabled ?? defaults.features.searchEnabled,
       filterItems: r.features?.filterItems ?? defaults.features.filterItems,
-      extensionsExcluded: r.features?.extensionsExcluded?.length
-        ? r.features.extensionsExcluded
-        : defaults.features.extensionsExcluded,
+      // Accept a string[] or a comma-separated string, and lowercase to match
+      // parseExtensions()'s case-insensitive compare — same result the env path
+      // produces for "DealerSpecification".
+      extensionsExcluded:
+        normalizeStringList(r.features?.extensionsExcluded) ??
+        defaults.features.extensionsExcluded,
       hideNavHierarchy:
         r.features?.hideNavHierarchy ?? defaults.features.hideNavHierarchy,
       marketingMode: r.features?.marketingMode ?? defaults.features.marketingMode,
