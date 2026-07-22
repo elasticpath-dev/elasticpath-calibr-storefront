@@ -91,6 +91,15 @@ export type ProductExtensionGroup = {
   fields: ProductExtensionField[];
 };
 
+/** An extension whose value is an array of strings — rendered as a bullet list
+ * (under the product description) rather than a key/value table. `title` is the
+ * extension name (the `products(<name>)` part). */
+export type ProductExtensionList = {
+  key: string;
+  title: string;
+  items: string[];
+};
+
 export type ProductDetailData = {
   id: string;
   slug: string;
@@ -115,6 +124,8 @@ export type ProductDetailData = {
   customRelationshipSlugs?: string[];
   customInputs?: Record<string, ProductCustomInput>;
   extensions?: ProductExtensionGroup[];
+  /** Array-of-strings extensions, shown as bullet lists under the description. */
+  extensionLists?: ProductExtensionList[];
   breadCrumbNodes?: string[];
   breadCrumbs?: Record<string, string[]>;
   /** Pricebook "alternative_prices" from product meta, as-parsed (unfiltered).
@@ -199,32 +210,47 @@ function toTitleCase(slug: string): string {
 
 export async function parseExtensions(
   raw: Record<string, unknown>,
-): Promise<ProductExtensionGroup[]> {
+): Promise<{ groups: ProductExtensionGroup[]; lists: ProductExtensionList[] }> {
   const { features } = await getTenantConfig();
   const excluded = features.extensionsExcluded;
 
-  return Object.entries(raw)
-    .map(([extKey, extValue]) => {
-      const match = extKey.match(/\(([^)]+)\)/);
-      const name = match ? match[1] : extKey;
-      if (excluded.includes(name.toLowerCase())) return null;
-      if (!extValue || typeof extValue !== "object") return null;
+  const groups: ProductExtensionGroup[] = [];
+  const lists: ProductExtensionList[] = [];
 
-      const fields: ProductExtensionField[] = Object.entries(
-        extValue as Record<string, unknown>,
-      )
-        .filter(([, v]) => v !== null && v !== undefined && v !== "")
-        .map(([fieldKey, fieldValue]) => ({
-          key: fieldKey,
-          label: toTitleCase(fieldKey),
-          value: String(fieldValue),
-        }));
+  for (const [extKey, extValue] of Object.entries(raw)) {
+    const match = extKey.match(/\(([^)]+)\)/);
+    const name = match ? match[1] : extKey;
+    if (excluded.includes(name.toLowerCase())) continue;
 
-      if (fields.length === 0) return null;
+    // Array value → bullet list (shown under the description, not in the table).
+    if (Array.isArray(extValue)) {
+      const items = extValue
+        .filter((v) => v !== null && v !== undefined && v !== "")
+        .map((v) => String(v));
+      if (items.length > 0) {
+        lists.push({ key: name, title: toTitleCase(name), items });
+      }
+      continue;
+    }
 
-      return { key: name, title: toTitleCase(name), fields };
-    })
-    .filter((g): g is ProductExtensionGroup => g !== null);
+    if (!extValue || typeof extValue !== "object") continue;
+
+    const fields: ProductExtensionField[] = Object.entries(
+      extValue as Record<string, unknown>,
+    )
+      .filter(([, v]) => v !== null && v !== undefined && v !== "")
+      .map(([fieldKey, fieldValue]) => ({
+        key: fieldKey,
+        label: toTitleCase(fieldKey),
+        value: String(fieldValue),
+      }));
+
+    if (fields.length === 0) continue;
+
+    groups.push({ key: name, title: toTitleCase(name), fields });
+  }
+
+  return { groups, lists };
 }
 
 export type MatrixChildInfo = {
@@ -458,10 +484,10 @@ async function formatProductDetail(
 
   const rawExtensions = (product.attributes as Record<string, unknown>)
     ?.extensions as Record<string, unknown> | undefined;
-  const extensions =
+  const parsedExtensions =
     rawExtensions && Object.keys(rawExtensions).length > 0
       ? await parseExtensions(rawExtensions)
-      : undefined;
+      : { groups: [], lists: [] };
 
   return {
     id: product.id ?? "",
@@ -493,7 +519,12 @@ async function formatProductDetail(
       ? customRelationshipSlugs
       : undefined,
     customInputs,
-    extensions: extensions?.length ? extensions : undefined,
+    extensions: parsedExtensions.groups.length
+      ? parsedExtensions.groups
+      : undefined,
+    extensionLists: parsedExtensions.lists.length
+      ? parsedExtensions.lists
+      : undefined,
     breadCrumbNodes: (product.meta?.bread_crumb_nodes as string[] | undefined)?.length
       ? (product.meta!.bread_crumb_nodes as string[])
       : undefined,
@@ -613,6 +644,12 @@ export async function getProductBySlug(
         }
         if (!formatted.extensions?.length && parentFormatted.extensions?.length) {
           formatted.extensions = parentFormatted.extensions;
+        }
+        if (
+          !formatted.extensionLists?.length &&
+          parentFormatted.extensionLists?.length
+        ) {
+          formatted.extensionLists = parentFormatted.extensionLists;
         }
       }
     }

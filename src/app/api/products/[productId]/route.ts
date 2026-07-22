@@ -50,10 +50,10 @@ export async function GET(
         : null;
 
     const rawExtensions = raw.attributes?.extensions;
-    const extensions =
+    const parsedExtensions =
       rawExtensions && typeof rawExtensions === "object" && Object.keys(rawExtensions).length > 0
         ? await parseExtensions(rawExtensions as Record<string, unknown>)
-        : null;
+        : { groups: [], lists: [] };
 
     return NextResponse.json({
       id: product.id ?? "",
@@ -71,7 +71,8 @@ export async function GET(
       productType,
       parentId,
       customInputs,
-      extensions,
+      extensions: parsedExtensions.groups.length ? parsedExtensions.groups : null,
+      extensionLists: parsedExtensions.lists.length ? parsedExtensions.lists : null,
       variationOptions: variations.map((v: any) => ({
         variationName: v.name ?? "",
         optionName: v.option?.name ?? "",

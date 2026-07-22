@@ -272,6 +272,21 @@ export default async function ProductDetailPage({ params }: Props) {
               </div>
             )}
 
+            {/* Array-of-strings extensions: bullet lists right under the
+                description (kept out of the extensions table). */}
+            {product.extensionLists?.map((list) => (
+              <div key={list.key} className="mt-8">
+                <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-widest mb-3">
+                  {list.title}
+                </h2>
+                <ul className="list-disc pl-5 space-y-1 text-base text-gray-700">
+                  {list.items.map((item, i) => (
+                    <li key={i}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+
             {product.extensions && product.extensions.length > 0 && (
               <div className="mt-8">
                 <ProductExtensions extensions={product.extensions} />
