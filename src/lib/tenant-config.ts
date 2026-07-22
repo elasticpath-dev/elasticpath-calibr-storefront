@@ -215,6 +215,10 @@ export type ClientTenantConfig = {
   cartGroupBy: CartGroupField[];
   /** Cart line-item custom inputs the shopper can edit inline on the cart. */
   cartEditableInputs: CartGroupField[];
+  /** PostHog config — the client initializes analytics from this at runtime
+   * (see AnalyticsInit), so the key can come from the tenant-config endpoint
+   * rather than a build-time NEXT_PUBLIC_ var. */
+  analytics: { posthogKey: string; posthogHost: string };
 };
 
 export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
@@ -246,6 +250,7 @@ export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
     navStyle: config.ui.navStyle,
     cartGroupBy: config.ui.cartGroupBy,
     cartEditableInputs: config.ui.cartEditableInputs,
+    analytics: config.analytics,
   };
 }
 
