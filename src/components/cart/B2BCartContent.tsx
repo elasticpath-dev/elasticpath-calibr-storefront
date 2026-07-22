@@ -2,8 +2,8 @@
 
 import { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import { ShoppingBag, LayoutList, LayoutGrid, Layers, ChevronRight, ChevronDown } from "lucide-react";
-import Link from "next/link";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
 import { useTenantConfig } from "@/context/TenantConfigContext";
@@ -113,6 +113,7 @@ type Props = { lang: string };
 
 export function B2BCartContent({ lang }: Props) {
   const t = useTranslations("cart");
+  const router = useRouter();
   const { items, isLoading, isInitializing, addItem, addItems, bulkUpdateItems, updateQuantity, removeItem, promotionSuggestions } = useCart();
   const { cartViewMode, cartGroupBy } = useTenantConfig();
 
@@ -708,12 +709,14 @@ export function B2BCartContent({ lang }: Props) {
             </p>
             <p className="text-[14px] text-ink-600 mt-1">{t("emptyHint")}</p>
           </div>
-          <Link
-            href={`/${lang}`}
-            className="mt-2 h-11 px-6 rounded-[11px] bg-ink-900 text-white font-semibold text-[14px] flex items-center gap-2 hover:opacity-90 transition-opacity"
+          <Button
+            variant="primary"
+            size="lg"
+            className="mt-2"
+            onClick={() => router.push(`/${lang}`)}
           >
             {t("browseCatalog")}
-          </Link>
+          </Button>
         </div>
       )}
 
