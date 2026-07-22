@@ -5,6 +5,7 @@ import { LocaleHtml } from "@/components/LocaleHtml";
 import { getTenantConfig, toClientTenantConfig } from "@/lib/tenant-config";
 import { TenantConfigProvider } from "@/context/TenantConfigContext";
 import { AnalyticsInit } from "@/components/AnalyticsInit";
+import { LocationCookieInit } from "@/components/LocationCookieInit";
 import { fetchOidcProfiles } from "@/lib/api/oidc";
 import { OidcProfilesProvider } from "@/context/OidcProfilesContext";
 
@@ -49,6 +50,7 @@ export default async function LocaleLayout({
       <LocaleHtml locale={lang} />
       <TenantConfigProvider value={toClientTenantConfig(tenantConfig)}>
         <AnalyticsInit />
+        <LocationCookieInit />
         <OidcProfilesProvider value={oidcProfiles}>
           {children}
         </OidcProfilesProvider>
