@@ -367,7 +367,7 @@ function normalizeOidcProfileIds(v: unknown, fallback: string[]): string[] {
  * is off, and as the multi-tenant fallback when the external config API is
  * unreachable or the domain is unregistered.
  */
-function buildTenantConfigFromEnv(): TenantConfig {
+export function buildTenantConfigFromEnv(): TenantConfig {
   const e = process.env;
   const defaultCurrency = (
     e.NEXT_PUBLIC_DEFAULT_CURRENCY?.trim() || "USD"
