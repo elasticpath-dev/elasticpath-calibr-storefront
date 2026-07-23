@@ -110,7 +110,6 @@ export function OrdersTab() {
   const columns = [
     t("orderColumnId"),
     t("orderColumnDate"),
-    t("orderColumnItems"),
     t("orderColumnStatus"),
     t("orderColumnPayment"),
     t("orderColumnShipping"),
@@ -141,7 +140,6 @@ export function OrdersTab() {
                 <tr key={i}>
                   <td className="px-4 py-4"><Skeleton height={14} className="w-24" /></td>
                   <td className="px-4 py-4"><Skeleton height={14} className="mb-1 w-24" /><Skeleton height={11} className="w-16" /></td>
-                  <td className="px-4 py-4"><Skeleton height={14} className="w-8" /></td>
                   <td className="px-4 py-4"><Skeleton height={20} className="w-20 rounded-full" /></td>
                   <td className="px-4 py-4"><Skeleton height={20} className="w-16 rounded-full" /></td>
                   <td className="px-4 py-4"><Skeleton height={20} className="w-20 rounded-full" /></td>
@@ -186,9 +184,6 @@ export function OrdersTab() {
                       </td>
                       <td className="px-4 py-4">
                         <DateCell iso={order.createdAt} />
-                      </td>
-                      <td className="px-4 py-4 text-sm text-gray-700 whitespace-nowrap">
-                        {order.itemCount ?? "—"}
                       </td>
                       <td className="px-4 py-4">
                         <StatusBadge value={order.status} map={STATUS_VARIANT} />

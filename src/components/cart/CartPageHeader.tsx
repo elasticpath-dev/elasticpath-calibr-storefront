@@ -241,7 +241,7 @@ export function CartPageHeader({ lang, totalUnits, lineCount, showActions }: Pro
             ) : (
               <button
                 onClick={() => setCreating(true)}
-                className="flex items-center gap-2.5 w-full px-4 py-3 border-t border-ink-100 text-success-500 font-semibold text-[14px] hover:bg-success-50 transition-colors"
+                className="flex items-center gap-2.5 w-full px-4 py-3 border-t border-ink-100 text-brand-primary font-semibold text-[14px] hover:bg-brand-primary/5 transition-colors"
               >
                 <Plus size={16} />
                 {t("newRequisition")}
