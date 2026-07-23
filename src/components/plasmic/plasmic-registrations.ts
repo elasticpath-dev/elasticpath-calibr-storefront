@@ -534,6 +534,12 @@ export function registerPlasmicComponents(
         defaultValue: true,
         description: "Wrap from the last slide back to the first",
       },
+      editorMode: {
+        type: "boolean",
+        defaultValue: false,
+        description:
+          "Editor mode: stack all slides vertically so every slide is visible/editable in the canvas. Turn off for the live carousel.",
+      },
       className: {
         type: "class",
         description: "CSS class applied to the carousel wrapper",

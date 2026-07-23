@@ -42,6 +42,12 @@ export type HeroCarouselProps = {
   showDots?: boolean;
   /** Wrap around from the last slide to the first (and vice versa). */
   loop?: boolean;
+  /**
+   * Editor mode: renders every slide stacked vertically (one below another)
+   * instead of as a carousel, so all slides are visible/editable in the
+   * Plasmic Studio canvas. Turn off for the live carousel behavior.
+   */
+  editorMode?: boolean;
   className?: string;
 };
 
@@ -78,6 +84,7 @@ export function HeroCarousel({
   showArrows = true,
   showDots = true,
   loop = true,
+  editorMode = false,
   className,
 }: HeroCarouselProps) {
   const items = toSlides(slides);
@@ -127,6 +134,23 @@ export function HeroCarousel({
         }}
       >
         Add slides to the hero carousel
+      </div>
+    );
+  }
+
+  // Editor mode — render every slide stacked so all are visible/editable in
+  // the Plasmic canvas. No carousel transform, arrows, dots or autoplay.
+  if (editorMode) {
+    return (
+      <div
+        className={className}
+        style={{ display: "flex", flexDirection: "column" }}
+      >
+        {items.map((slide, i) => (
+          <div key={i} style={{ width: "100%", minWidth: 0 }}>
+            {slide}
+          </div>
+        ))}
       </div>
     );
   }
