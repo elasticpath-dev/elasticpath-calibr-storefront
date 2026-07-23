@@ -958,6 +958,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
               if (Object.keys(ci).length > 0) item.custom_inputs = ci;
               return item;
             }),
+            // Add whatever can be added rather than failing the whole batch.
+            options: { add_all_or_nothing: false },
           },
         });
         const suggestions = (res.data as any)?.meta?.promotion_suggestions as
@@ -1005,6 +1007,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
               }
               return item;
             }),
+            // Add whatever can be added rather than failing the whole batch
+            // (unknown SKUs / out-of-stock lines come back in `errors`).
+            options: { add_all_or_nothing: false },
           } as any,
         });
         const body = res.data as any;
