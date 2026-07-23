@@ -7,6 +7,7 @@ import type { Client } from "@hey-api/client-fetch";
 import { createEpClient } from "@/lib/api/ep-client";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
+import { useTenantConfig } from "@/context/TenantConfigContext";
 import { Button } from "@/components/ui/Button/Button";
 import { Badge } from "@/components/ui/Badge/Badge";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
@@ -57,6 +58,7 @@ export function BundleConfigurator({
   stickyFooter = false,
 }: Props) {
   const t = useTranslations("bundle");
+  const { showBundleOptionImages } = useTenantConfig();
 
   const epClientRef = useRef<Client | null>(null);
   if (!epClientRef.current) {
@@ -396,8 +398,8 @@ export function BundleConfigurator({
                         </Badge>
                       )}
 
-                      {option.imageUrl && (
-                        <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-50 shrink-0">
+                      {showBundleOptionImages && option.imageUrl && (
+                        <div className="w-20 h-20 rounded-lg overflow-hidden bg-gray-50 shrink-0">
                           <ProductThumbnail
                             imageUrl={option.imageUrl}
                             name={option.name}

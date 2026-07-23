@@ -164,6 +164,9 @@ export type TenantConfig = {
      * cart view — each renders an input box (empty when unset). Same selector
      * syntax as cartGroupBy. Parsed from NEXT_PUBLIC_CART_EDITABLE_INPUTS. */
     cartEditableInputs: CartGroupField[];
+    /** Show each bundle component option's product image (thumbnail) in the
+     * bundle configurator. From NEXT_PUBLIC_SHOW_BUNDLE_OPTION_IMAGES. */
+    showBundleOptionImages: boolean;
   };
   analytics: { posthogKey: string; posthogHost: string };
 };
@@ -215,6 +218,8 @@ export type ClientTenantConfig = {
   cartGroupBy: CartGroupField[];
   /** Cart line-item custom inputs the shopper can edit inline on the cart. */
   cartEditableInputs: CartGroupField[];
+  /** Show each bundle option's product image in the bundle configurator. */
+  showBundleOptionImages: boolean;
   /** PostHog config — the client initializes analytics from this at runtime
    * (see AnalyticsInit), so the key can come from the tenant-config endpoint
    * rather than a build-time NEXT_PUBLIC_ var. */
@@ -250,6 +255,7 @@ export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
     navStyle: config.ui.navStyle,
     cartGroupBy: config.ui.cartGroupBy,
     cartEditableInputs: config.ui.cartEditableInputs,
+    showBundleOptionImages: config.ui.showBundleOptionImages,
     analytics: config.analytics,
   };
 }
@@ -486,6 +492,8 @@ export function buildTenantConfigFromEnv(): TenantConfig {
       navStyle: oneOf(e.NEXT_PUBLIC_NAV_STYLE, ["mega", "cascade"], "mega"),
       cartGroupBy: parseCartGroupBy(e.NEXT_PUBLIC_CART_GROUP_BY),
       cartEditableInputs: parseCartGroupBy(e.NEXT_PUBLIC_CART_EDITABLE_INPUTS),
+      showBundleOptionImages:
+        e.NEXT_PUBLIC_SHOW_BUNDLE_OPTION_IMAGES === "true",
     },
     analytics: {
       posthogKey: e.NEXT_PUBLIC_POSTHOG_KEY ?? "",
@@ -641,6 +649,8 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
           : Array.isArray(r.ui?.cartEditableInputs)
             ? (r.ui.cartEditableInputs as CartGroupField[])
             : defaults.ui.cartEditableInputs,
+      showBundleOptionImages:
+        r.ui?.showBundleOptionImages ?? defaults.ui.showBundleOptionImages,
     },
     analytics: {
       posthogKey: r.analytics?.posthogKey ?? defaults.analytics.posthogKey,

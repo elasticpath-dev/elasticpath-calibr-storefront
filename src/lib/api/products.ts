@@ -4,6 +4,7 @@ import {
   getByContextProductsForNode,
   getByContextProductsForHierarchy,
   getByContextAllRelatedProducts,
+  getAllFiles,
   extractProductImage,
   type Product,
   type IncludedResponse,
@@ -591,6 +592,57 @@ export async function getProductsForNode(
   return products.map((p) => formatProduct(p, response.data?.included, currency));
 }
 
+/**
+ * EP's `main_image` include only resolves images for the top-level products,
+ * not for a bundle's included component_products (they carry a main_image
+ * relationship, but the file itself isn't returned in included.main_images).
+ * Fetch those image files explicitly and merge them into main_images so
+ * extractProductImage can resolve each bundle option's thumbnail.
+ */
+async function enrichComponentProductImages(
+  client: Awaited<ReturnType<typeof createElasticPathClient>>,
+  included: IncludedResponse | undefined,
+): Promise<void> {
+  const comps = included?.component_products;
+  if (!included || !comps?.length) return;
+
+  const have = new Set((included.main_images ?? []).map((f) => f.id));
+  const missing = Array.from(
+    new Set(
+      comps
+        .map((cp) => cp.relationships?.main_image?.data?.id)
+        .filter((id): id is string => Boolean(id) && !have.has(id)),
+    ),
+  );
+  if (missing.length === 0) return;
+
+  const fetched: unknown[] = [];
+  // The files endpoint caps page size, so batch in chunks of 100.
+  for (let i = 0; i < missing.length; i += 100) {
+    const chunk = missing.slice(i, i + 100);
+    try {
+      const res = await getAllFiles({
+        client,
+        query: {
+          filter: `in(id,${chunk.join(",")})`,
+          "page[limit]": BigInt(chunk.length),
+        } as any,
+      });
+      const files = res.data?.data;
+      if (files?.length) fetched.push(...files);
+    } catch {
+      // Non-fatal — affected options just render without a thumbnail.
+    }
+  }
+
+  if (fetched.length) {
+    included.main_images = [
+      ...(included.main_images ?? []),
+      ...(fetched as NonNullable<IncludedResponse["main_images"]>),
+    ];
+  }
+}
+
 export async function getProductBySlug(
   slug: string,
 ): Promise<ProductDetailData | null> {
@@ -604,6 +656,11 @@ export async function getProductBySlug(
   });
   const product = response.data?.data?.[0];
   if (!product) return null;
+
+  // Bundles: pull in the component products' image files (see helper).
+  if (response.data?.included) {
+    await enrichComponentProductImages(client, response.data.included);
+  }
 
   const currency = await getServerCurrency();
   const formatted = await formatProductDetail(

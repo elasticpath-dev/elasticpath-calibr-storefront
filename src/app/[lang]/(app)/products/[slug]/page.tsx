@@ -52,20 +52,23 @@ export default async function ProductDetailPage({ params }: Props) {
     relationshipCarousels,
     breadcrumbItems,
     { ui, features },
-  ] =
-    await Promise.all([
-      getTranslations("product"),
-      getMessages(),
-      getProductOffering(product.id).catch(() => null),
-      getProductRelationshipCarousels(
-        product.id,
-        product.customRelationshipSlugs ?? [],
-      ).catch(() => []),
-      product.breadCrumbNodes && product.breadCrumbs
-        ? getProductBreadcrumb(lang, product.breadCrumbNodes, product.breadCrumbs).catch(() => [])
-        : Promise.resolve([]),
-      getTenantConfig(),
-    ]);
+  ] = await Promise.all([
+    getTranslations("product"),
+    getMessages(),
+    getProductOffering(product.id).catch(() => null),
+    getProductRelationshipCarousels(
+      product.id,
+      product.customRelationshipSlugs ?? [],
+    ).catch(() => []),
+    product.breadCrumbNodes && product.breadCrumbs
+      ? getProductBreadcrumb(
+          lang,
+          product.breadCrumbNodes,
+          product.breadCrumbs,
+        ).catch(() => [])
+      : Promise.resolve([]),
+    getTenantConfig(),
+  ]);
 
   const alternativePriceRows = resolveAlternativePriceRows(
     product.alternativePrices,
@@ -110,11 +113,17 @@ export default async function ProductDetailPage({ params }: Props) {
 
         <div
           className={
-            ui.fullWidth
-              ? // Full-width shell: cap the image column instead of letting it
-                // balloon to half of an ultra-wide viewport; details take the rest.
-                "grid grid-cols-1 lg:grid-cols-[minmax(0,560px)_1fr] gap-12 lg:gap-16"
-              : "grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16"
+            product.isBundle
+              ? // Bundles: narrower image column so the configurator (options,
+                // quantities, prices) on the right gets more room.
+                ui.fullWidth
+                ? "grid grid-cols-1 lg:grid-cols-[minmax(0,400px)_1fr] gap-12 lg:gap-16"
+                : "grid grid-cols-1 lg:grid-cols-[minmax(0,250px)_1fr] gap-12 lg:gap-16"
+              : ui.fullWidth
+                ? // Full-width shell: cap the image column instead of letting it
+                  // balloon to half of an ultra-wide viewport; details take the rest.
+                  "grid grid-cols-1 lg:grid-cols-[minmax(0,560px)_1fr] gap-12 lg:gap-16"
+                : "grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16"
           }
         >
           {/* Left: Images */}
