@@ -24,14 +24,16 @@ export const CATEGORY_HIERARCHICAL_ATTRIBUTES = [
 
 const RESERVED = new Set(["q", "page"]);
 
-export function createSearchRouting() {
+export function createSearchRouting({ syncPage = true }: { syncPage?: boolean } = {}) {
   return {
     stateMapping: {
       stateToRoute(uiState: UiState): Record<string, unknown> {
         const s = uiState[SEARCH_INDEX_NAME] ?? {};
         const result: Record<string, unknown> = {};
         if (s.query) result.q = s.query;
-        if (s.page && s.page > 1) result.page = s.page;
+        // Lazy loading (infinite scroll) bumps the page as the shopper scrolls;
+        // keep that out of the URL.
+        if (syncPage && s.page && s.page > 1) result.page = s.page;
         if (s.refinementList) {
           for (const [attr, values] of Object.entries(s.refinementList)) {
             if ((values as string[]).length > 0) result[attr] = values;
@@ -51,7 +53,8 @@ export function createSearchRouting() {
         return {
           [SEARCH_INDEX_NAME]: {
             query: (routeState.q as string) ?? "",
-            page: routeState.page ? Number(routeState.page) : undefined,
+            page:
+              syncPage && routeState.page ? Number(routeState.page) : undefined,
             ...(Object.keys(refinementList).length > 0
               ? { refinementList }
               : {}),

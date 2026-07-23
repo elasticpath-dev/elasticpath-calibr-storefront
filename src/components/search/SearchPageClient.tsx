@@ -228,6 +228,7 @@ export function SearchPageClient({
 }: SearchPageClientProps) {
   const epClient = useEpClient();
   const tSearch = useTranslations("search");
+  const { lazyLoadResults } = useTenantConfig();
 
   const searchClient = useMemo(() => {
     // No EP client while APIs are held (marketing mode, signed out) — skip the
@@ -245,7 +246,12 @@ export function SearchPageClient({
     return adapter.searchClient;
   }, [epClient, filterItems]);
 
-  const routing = useMemo(() => createSearchRouting(), []);
+  // In lazy-load (infinite scroll) mode, don't sync the page number to the URL
+  // — the page increments as the shopper scrolls and shouldn't appear there.
+  const routing = useMemo(
+    () => createSearchRouting({ syncPage: !lazyLoadResults }),
+    [lazyLoadResults],
+  );
 
   if (!searchClient) {
     return (
