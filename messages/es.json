@@ -743,6 +743,7 @@
     "productCount": "{count, plural, one {# producto} other {# productos}}",
     "errorPrefix": "Error de búsqueda:",
     "filters": "Filtros",
+    "backToTop": "Volver arriba",
     "clearAll": "Borrar todo",
     "categories": "Categorías",
     "noCategoriesAvailable": "No hay categorías disponibles",

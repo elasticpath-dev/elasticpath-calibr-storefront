@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowUp } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   useHits,
   useInfiniteHits,
@@ -11,6 +13,33 @@ import { ProductGrid } from "@/components/product/ProductGrid";
 import { Pagination } from "@/components/ui/Pagination/Pagination";
 import { useAuth } from "@/context/AuthContext";
 import type { ProductCardData } from "@/lib/api/products";
+
+/**
+ * Floating "back to top" button shown (bottom-right) once the shopper has
+ * scrolled down through lazily-loaded results. Only rendered in infinite-scroll
+ * mode (inside InfiniteResults).
+ */
+function ScrollToTopButton() {
+  const t = useTranslations("search");
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 600);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  if (!visible) return null;
+  return (
+    <button
+      type="button"
+      onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+      aria-label={t("backToTop")}
+      className="fixed bottom-6 right-6 z-40 flex h-11 w-11 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700 shadow-lg transition-all hover:text-gray-900 hover:shadow-xl"
+    >
+      <ArrowUp size={20} />
+    </button>
+  );
+}
 
 type HitToCard = (hit: Record<string, unknown>) => ProductCardData;
 
@@ -211,6 +240,7 @@ export function InfiniteResults({
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-brand-primary" />
         </div>
       )}
+      <ScrollToTopButton />
     </>
   );
 }
