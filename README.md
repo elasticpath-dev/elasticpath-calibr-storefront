@@ -128,22 +128,22 @@ If you see "Manual payments aren't enabled for this store" at checkout, go to Co
 
 Events are proxied through the storefront's own domain (`/ingest`) so they aren't blocked by ad blockers.
 
-## Functional documentation
+## Capabilities documentation
 
-Each functional area has its own doc under [`functional_docs/`](functional_docs/), describing what the storefront supports from a functional/business perspective, not just how it's implemented:
+The [`docs/`](docs/) folder is a **capabilities catalog** — one doc per capability area, describing what the storefront supports (functional/business perspective), the environment-variable/tenant-config switches that change each behaviour, and Gherkin/BDD scenarios for the detail. Start at [docs/README.md](docs/README.md).
 
 | Area | Covers |
 |---|---|
-| [catalog.md](functional_docs/catalog.md) | Browsing, product detail pages, variations, bundles, bulk-buy pricing, digital products, search, Quick View |
-| [cart.md](functional_docs/cart.md) | Cart operations, drawer/full-page/list/grid presentation, promotions, multi-cart (B2B) |
-| [checkout.md](functional_docs/checkout.md) | B2C and B2B checkout flows, digital-only orders, billing, and all payment methods |
-| [quotes.md](functional_docs/quotes.md) | B2B quote requests and quote history |
-| [account.md](functional_docs/account.md) | Authentication, multi-account membership, address book, account navigation |
-| [orders.md](functional_docs/orders.md) | Order history, order detail, reorder |
-| [subscriptions.md](functional_docs/subscriptions.md) | Subscribing to a product and managing subscriptions afterward |
-| [localization.md](functional_docs/localization.md) | Language, currency, and B2C/B2B shopping-mode behavior |
-| [branding-and-cms.md](functional_docs/branding-and-cms.md) | Store branding/theming and the Elastic Path CMS integration |
-| [analytics-and-access.md](functional_docs/analytics-and-access.md) | Product analytics, web performance analytics, and the site-wide access gate |
+| [catalog-and-products.md](docs/catalog-and-products.md) | Browsing, product detail pages, variations, bundles, bulk-buy pricing, digital products, search, Quick View, inventory |
+| [cart.md](docs/cart.md) | Cart operations, drawer/full-page/list/grid presentation, promotions, multi-cart (B2B) |
+| [checkout.md](docs/checkout.md) | B2C and B2B checkout flows, digital-only orders, billing, and all payment methods |
+| [quotes.md](docs/quotes.md) | B2B quote requests and quote history |
+| [account.md](docs/account.md) | Authentication, multi-account membership, address book, account navigation |
+| [orders.md](docs/orders.md) | Order history, order detail, reorder |
+| [subscriptions.md](docs/subscriptions.md) | Subscribing to a product and managing subscriptions afterward |
+| [localization.md](docs/localization.md) | Language, currency, and B2C/B2B shopping-mode behavior |
+| [branding-and-cms.md](docs/branding-and-cms.md) | Store branding/theming and the Elastic Path CMS integration |
+| [analytics-and-access.md](docs/analytics-and-access.md) | Product analytics, web performance analytics, and the site-wide access gate |
 
 ## Available scripts
 

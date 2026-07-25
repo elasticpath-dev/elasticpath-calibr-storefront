@@ -1,24 +1,28 @@
-# Storefront — Page Functional Specifications
+# Storefront — Capabilities Catalog
 
-BDD-style (Behaviour-Driven Development) functional specs for the storefront's
-key pages. Each doc describes **what the page does** and the **environment
-variables / tenant-config switches** that change its behaviour, so a non-author
-can understand what's built and how to configure it.
+A catalog of what the storefront can do, organized by capability area. Each doc
+leads with a plain-language **Capabilities** list (what exists), then
+**Configuration** (the environment variables / tenant-config switches that change
+it, with defaults), then **Behaviour scenarios** in Gherkin/BDD for the detail,
+and a **Quick reference** cheat sheet.
 
-Each doc follows the same shape: intro + routes + source files, an environment-
-variable reference (with defaults), Gherkin `Feature`/`Scenario` behaviour specs
-grouped by area, and a quick-reference cheat sheet.
+Use it to understand what's built and how to configure it, without reading the code.
 
-## Pages
+## Areas
 
 | Doc | Covers |
 |---|---|
-| [category-page.md](category-page.md) | Category listing: search-backed vs static grid, filters, sorting, pagination/infinite scroll, product cards, inventory gating, bulk add |
-| [cart-page.md](cart-page.md) | Drawer + full cart, list/grid views, multi-cart/requisitions, line items, grouping & editable inputs, promotions, totals, states |
-| [checkout-shipping.md](checkout-shipping.md) | Checkout step 1: contact info, addresses (B2C single vs B2B multi-shipment), billing, shipping methods, proceed-to-payment gating |
-| [checkout-payment.md](checkout-payment.md) | Checkout step 2: payment methods (Stripe/EP Payments, PayPal, COD, PO), order placement, confirmation, errors |
-| [account-page.md](account-page.md) | Account tabs: personal/account-switch, addresses, orders, carts, quotes, subscriptions |
+| [catalog-and-products.md](catalog-and-products.md) | Listing & navigation, PDP, variations, bundles, bulk-buy pricing, digital products, custom inputs, catalog search, Quick View, inventory, currency-aware pricing |
+| [cart.md](cart.md) | Drawer + full cart, list/grid views, line-item types, grouping & editable inputs, promotions, multi-cart (requisitions), totals, checkout CTA |
+| [checkout.md](checkout.md) | Two-step checkout: B2C/B2B delivery & shipping methods, billing, digital-only orders, payment methods (Stripe/EP Payments, PayPal, COD, PO), confirmation |
+| [account.md](account.md) | Authentication, multi-account (B2B), personal details, address book, site-wide access gate |
+| [orders.md](orders.md) | Order history, status badges, reorder, order detail |
+| [quotes.md](quotes.md) | Requesting a quote from the cart, quote history & detail (B2B) |
+| [subscriptions.md](subscriptions.md) | Purchasing a subscription, managing (pause/resume/cancel), invoices |
+| [localization.md](localization.md) | Language, currency, shopping mode (B2C/B2B) & the EP-hosted lock |
+| [analytics-and-access.md](analytics-and-access.md) | PostHog & Vercel analytics, site-wide password gate, require-login |
+| [branding-and-cms.md](branding-and-cms.md) | Env-driven branding (identity, colours, logo) & Elastic Path CMS (Plasmic) |
 
-> All configuration switches ultimately resolve through `src/lib/tenant-config.ts`.
-> In multi-tenant mode (`MULTI_TENANT_MODE=true`) the same fields can be provided
+> All configuration switches resolve through `src/lib/tenant-config.ts`. In
+> multi-tenant mode (`MULTI_TENANT_MODE=true`) the same fields can be provided
 > per-hostname by the remote config endpoint instead of `NEXT_PUBLIC_*` env vars.
