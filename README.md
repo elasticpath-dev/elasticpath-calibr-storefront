@@ -60,12 +60,16 @@ Controls whether the homepage, footer, and logo are managed visually in the Elas
 | `NEXT_PUBLIC_EP_CMS_PROJECT_ID` | CMS project ID. Leave blank to disable CMS entirely. |
 | `NEXT_PUBLIC_EP_CMS_API_TOKEN` | CMS API token. |
 | `NEXT_PUBLIC_EP_CMS_PREVIEW` | `true` fetches unpublished draft content on every request — useful while authoring, but slow. Leave `false`/unset in production so the storefront serves the published version from cache. |
+| `NEXT_PUBLIC_EP_CMS_HOST` | Plasmic Studio host. Leave blank to use the default (`https://codegen.euwest.storefront.elasticpath.com`). |
 
 ### Access control
 
 | Variable | Purpose |
 |---|---|
 | `GATEKEEPER_PASSWORD` | Set to require a password before any page loads — handy for gating a staging/preview deployment. Leave empty to disable. |
+| `REQUIRE_LOGIN` | `true` requires shoppers to log in before any browsing (no anonymous access). Defaults to `false`. |
+| `NEXT_PUBLIC_MARKETING_MODE` | `true` runs the storefront in non-transactional "marketing" mode: Elastic Path APIs are held until the shopper signs in, so anonymous visitors see no catalog prices, cart, or checkout. Defaults to `false`. |
+| `NEXT_PUBLIC_OIDC_PROFILE_IDS` | Comma-separated OIDC profile IDs (Commerce Manager → Settings → Authentication → Single Sign-On) that add SSO buttons to the login form. Leave empty to disable SSO. |
 
 ### Store branding
 
@@ -87,6 +91,8 @@ All color variables ship with defaults, so you only need to set the ones you're 
 | `NEXT_PUBLIC_DEFAULT_CART_MODE` | `drawer` (slide-in panel, default) or `full` (dedicated `/cart` page). Shoppers can change this themselves from the header settings drawer. |
 | `NEXT_PUBLIC_DEFAULT_SHOPPING_MODE` | `b2c` or `b2b` — the initial shopping experience. Shoppers can switch it from the settings drawer unless overridden below. |
 | `NEXT_PUBLIC_CART_VIEW_MODE` | Default view for the B2B cart page: `list` or `grid`. |
+| `NEXT_PUBLIC_CART_GROUP_BY` | Group full-cart line items under collapsible headers by custom-input values. Comma-separated selectors, e.g. `po_number,product_fields[key="purchase_order"]`. Empty = no grouping. |
+| `NEXT_PUBLIC_CART_EDITABLE_INPUTS` | Custom inputs shoppers can edit inline on the full cart page; same selector syntax as `NEXT_PUBLIC_CART_GROUP_BY`. Empty = none. |
 
 > **Elastic Path–hosted stores are B2C-only.** If `NEXT_PUBLIC_EPCC_ENDPOINT_URL` contains `elasticpath.com`, shopping mode is always forced to `b2c` and the B2B/B2C switcher is hidden from settings — regardless of `NEXT_PUBLIC_DEFAULT_SHOPPING_MODE` or any previously saved preference. This only applies to Elastic Path SaaS-hosted endpoints; self-hosted or custom-domain endpoints are unaffected.
 
@@ -102,8 +108,9 @@ All color variables ship with defaults, so you only need to set the ones you're 
 
 | Variable | Purpose |
 |---|---|
-| `NEXT_PUBLIC_SEARCH_ENABLED` | `true` shows the search icon and enables the search page. |
+| `NEXT_PUBLIC_SEARCH_ENABLED` | `true` shows the search icon and enables the search page. Also gates whether the sidebar filters work; with search off, category pages fall back to a plain server-rendered grid. |
 | `NEXT_PUBLIC_FILTER_ITEMS` | Sidebar filters for search/category pages. Format: `attribute\|Display Name\|type`, comma-separated, where `type` is `checkbox` or `radio`. Requires `NEXT_PUBLIC_SEARCH_ENABLED=true`. |
+| `NEXT_PUBLIC_LAZY_LOAD_RESULTS` | `true` replaces numbered pagination on search/category with infinite scroll (loads the next page as the shopper nears the bottom) plus a back-to-top button. Defaults to `false`. |
 | `NEXT_PUBLIC_EXTENSIONS_EXCLUDED` | Comma-separated extension group names to hide on the product detail page. |
 
 ### Payments
@@ -112,6 +119,7 @@ All color variables ship with defaults, so you only need to set the ones you're 
 |---|---|
 | `NEXT_PUBLIC_STRIPE_ACCOUNT_ID` | Set this if you're using **EP Payments powered by Stripe** — it also switches the storefront to Elastic Path's managed Stripe gateway. |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Your Stripe publishable key. Required either way; if `NEXT_PUBLIC_STRIPE_ACCOUNT_ID` is left blank, the storefront uses your own Stripe account directly instead of EP Payments. |
+| `NEXT_PUBLIC_PAYPAL_ENABLED` | `true` adds PayPal (Express Checkout) as a payment option at checkout. Defaults to `false`. |
 
 Without `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, the "Card" payment option isn't shown at checkout at all. "Purchase Order" and "Cash on Delivery" are manual payment methods with no gateway involved: the order is placed directly via Elastic Path's `manual` payment gateway and reconciled by the merchant afterwards. Purchase Order captures a PO reference number from the shopper; Cash on Delivery captures nothing extra.
 
@@ -127,6 +135,42 @@ If you see "Manual payments aren't enabled for this store" at checkout, go to Co
 | `NEXT_PUBLIC_POSTHOG_HOST` | `https://eu.i.posthog.com` (default) or `https://us.i.posthog.com`, matching your PostHog project's region. |
 
 Events are proxied through the storefront's own domain (`/ingest`) so they aren't blocked by ad blockers.
+
+### Catalog & product display
+
+| Variable | Purpose |
+|---|---|
+| `NEXT_PUBLIC_SHOW_BUNDLE_OPTION_IMAGES` | `true` shows each bundle component option's product image in the bundle configurator on the PDP. Defaults to `false`. |
+| `NEXT_PUBLIC_SHOW_ALTERNATIVE_PRICES` | `true` shows alternative price rows (from other price books) on the product detail page. Defaults to `false`. |
+| `NEXT_PUBLIC_ALTERNATIVE_PRICE_BOOKS` | Which alternative price books to surface on the PDP. Format: `priceBookId\|Display Name`, comma-separated. Requires `NEXT_PUBLIC_SHOW_ALTERNATIVE_PRICES=true`. |
+| `NEXT_PUBLIC_PURCHASE_HISTORY_ENABLED` | `true` shows per-SKU purchase history on the product detail page. Defaults to `false`. |
+| `NEXT_PUBLIC_BULK_ORDER_ENABLED` | `true` enables the Bulk / Quick Order page (`/{lang}/bulk-order`) and its header entry-point icon. Defaults to `false`. |
+
+### Layout & navigation
+
+| Variable | Purpose |
+|---|---|
+| `NEXT_PUBLIC_FULL_WIDTH` | `true` makes the whole shell (header, footer, content, cart, checkout) span the full viewport width, with denser category/search grids. Defaults to `false` (centered layout). |
+| `NEXT_PUBLIC_HEADER_NAV_POSITION` | Desktop top-nav placement: `inline` (default, centered between logo and icons), `below` (own full-width row, left-aligned), or `below-center` (own row, centered). |
+| `NEXT_PUBLIC_NAV_STYLE` | Desktop nav dropdown style: `mega` (default, multi-column mega menu) or `cascade` (drill-down panel). |
+| `NEXT_PUBLIC_HIDE_NAV_HIERARCHY` | `true` flattens the hierarchy root out of the mega-menu and the category filter tree, promoting its children to the top level. Defaults to `false`. |
+
+### Inventory (multi-location)
+
+| Variable | Purpose |
+|---|---|
+| `NEXT_PUBLIC_EP_INVENTORIES_MULTI_LOCATION` | `true` enables per-location inventory: a location selector, per-location stock on cards/PDP, out-of-stock gating, and location tags on cart items. Adds the `EP-Inventories-Multi-Location` header to Elastic Path API calls. Defaults to `false`. |
+| `NEXT_PUBLIC_EP_INVENTORIES_DEFAULT_LOCATION` | Location slug used for stock display when the shopper hasn't picked one. Falls back to aggregate stock when empty. |
+| `NEXT_PUBLIC_EP_INVENTORIES_EXCLUDED_LOCATIONS` | Comma-separated location slugs to hide from the location selector. |
+
+### Advanced (request headers & cache)
+
+| Variable | Purpose |
+|---|---|
+| `NEXT_PUBLIC_EP_CONTEXT_TAG` | Optional header attached to every Elastic Path API request (server and client); only sent when non-empty. |
+| `NEXT_PUBLIC_ENVIRONMENT_ID` | Optional Elastic Path environment-id request header; only sent when non-empty. |
+| `NEXT_PUBLIC_STORE_ID` | Optional Elastic Path store-id request header; only sent when non-empty. |
+| `NAV_CACHE_REVALIDATE_SECRET` | Shared secret for the nav-cache clear endpoint (`POST /api/navigation/clear-cache`), letting you flush the 5-minute mega-menu cache without restarting. Leave blank to disable the endpoint. |
 
 ## Capabilities documentation
 

@@ -689,7 +689,9 @@ async function fetchTenantConfigFromApi(
         ? { Authorization: `Bearer ${process.env.TENANT_CONFIG_API_KEY}` }
         : undefined,
       next: {
-        revalidate: 60,
+        // 24h TTL — tenant config rarely changes, and an update can be pushed
+        // immediately via /api/tenant-config/revalidate (busts the tag below).
+        revalidate: 60 * 60 * 24,
         tags: [`tenant-config:${hostname}`],
       },
     });
