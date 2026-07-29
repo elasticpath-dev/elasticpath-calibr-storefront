@@ -63,6 +63,14 @@ export default async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // Run on the Node.js runtime (not Edge). The tenant-config lookup here
+  // (getTenantConfigForHostname) fetches from TENANT_CONFIG_API_URL; on Edge
+  // that fetch runs at every PoP with its own cache, so a single hostname
+  // produced many upstream calls. On Node it shares the persistent Data Cache
+  // (the fetch's `next: { revalidate, tags }`), collapsing to one upstream call
+  // per hostname per 24h across the whole deployment — still bustable on demand
+  // via /api/tenant-config/revalidate (the `tenant-config:${hostname}` tag).
+  runtime: "nodejs",
   // "ingest" is the PostHog reverse proxy (next.config rewrites) — the
   // locale middleware must not redirect it to /en/ingest.
   // "oidc" is the OIDC provider's static callback route (generateRedirectUri()
