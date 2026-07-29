@@ -1,4 +1,5 @@
 import { headers } from "next/headers";
+import { unstable_cache } from "next/cache";
 import { cache } from "react";
 
 // Default Plasmic Studio host used when no NEXT_PUBLIC_EP_CMS_HOST (or remote
@@ -709,8 +710,32 @@ async function resolveTenantConfigForHostname(
     return buildTenantConfigFromEnv();
   }
   if (!hostname) return buildTenantConfigFromEnv();
-  const raw = await fetchTenantConfigFromApi(hostname);
-  return raw ? normalizeTenantConfig(raw) : buildTenantConfigFromEnv();
+
+  // A single, shared Data-Cache entry per hostname (24h TTL), keyed by
+  // hostname and bustable on demand via revalidateTag(`tenant-config:${hostname}`)
+  // from /api/tenant-config/revalidate. Both the render path (getTenantConfig)
+  // and the proxy (getTenantConfigForHostname) read this one entry, so a
+  // hostname triggers a single upstream call per 24h across every server
+  // instance — instead of once per instance/request.
+  try {
+    return await unstable_cache(
+      async () => {
+        const raw = await fetchTenantConfigFromApi(hostname);
+        // Throw (don't return env defaults) so a transient API outage isn't
+        // cached for 24h — unstable_cache only stores successful results.
+        if (!raw) throw new Error("tenant-config-unavailable");
+        return normalizeTenantConfig(raw);
+      },
+      ["tenant-config", hostname],
+      { revalidate: 60 * 60 * 24, tags: [`tenant-config:${hostname}`] },
+    )();
+  } catch {
+    // The API was unavailable, or this execution context can't use
+    // unstable_cache — fetch directly so config stays correct, and fall back to
+    // env defaults only if that also fails. Never cached here.
+    const raw = await fetchTenantConfigFromApi(hostname);
+    return raw ? normalizeTenantConfig(raw) : buildTenantConfigFromEnv();
+  }
 }
 
 /**
