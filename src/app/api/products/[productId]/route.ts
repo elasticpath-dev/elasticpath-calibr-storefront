@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getByContextProduct, extractProductImage } from "@epcc-sdk/sdks-shopper";
+import {
+  getByContextProduct,
+  extractProductImage,
+} from "@epcc-sdk/sdks-shopper";
 import { createElasticPathClient } from "@/lib/create-elastic-path-client";
 import { parseExtensions } from "@/lib/api/products";
 
@@ -8,7 +11,8 @@ export async function GET(
   { params }: { params: Promise<{ productId: string }> },
 ) {
   const { productId } = await params;
-  if (!productId) return NextResponse.json({ error: "Missing productId" }, { status: 400 });
+  if (!productId)
+    return NextResponse.json({ error: "Missing productId" }, { status: 400 });
 
   try {
     const client = await createElasticPathClient();
@@ -19,15 +23,14 @@ export async function GET(
     });
 
     const product = res.data?.data;
-    if (!product) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!product)
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     const raw = product as any;
     const variationMatrix = raw.meta?.variation_matrix;
     const variations: any[] = raw.meta?.variations ?? [];
     const parentId: string | null =
-      raw.relationships?.parent?.data?.id ??
-      raw.meta?.base_product_id ??
-      null;
+      raw.relationships?.parent?.data?.id ?? raw.meta?.base_product_id ?? null;
 
     let productType: "parent" | "child" | "bundle" | "simple";
     if (variationMatrix && Object.keys(variationMatrix).length > 0) {
@@ -45,16 +48,50 @@ export async function GET(
 
     const rawCustomInputs = raw.attributes?.custom_inputs;
     const customInputs =
-      rawCustomInputs && typeof rawCustomInputs === "object" && Object.keys(rawCustomInputs).length > 0
+      rawCustomInputs &&
+      typeof rawCustomInputs === "object" &&
+      Object.keys(rawCustomInputs).length > 0
         ? rawCustomInputs
         : null;
 
     const rawExtensions = raw.attributes?.extensions;
     const parsedExtensions =
-      rawExtensions && typeof rawExtensions === "object" && Object.keys(rawExtensions).length > 0
+      rawExtensions &&
+      typeof rawExtensions === "object" &&
+      Object.keys(rawExtensions).length > 0
         ? await parseExtensions(rawExtensions as Record<string, unknown>)
         : { groups: [], lists: [] };
 
+    const responseData = {
+      id: product.id ?? "",
+      name: raw.attributes?.name ?? "",
+      sku: raw.attributes?.sku ?? null,
+      priceFormatted:
+        raw.meta?.display_price?.without_tax?.formatted ??
+        raw.meta?.display_price?.with_tax?.formatted ??
+        "",
+      originalPriceFormatted:
+        raw.meta?.original_display_price?.without_tax?.formatted ??
+        raw.meta?.original_display_price?.with_tax?.formatted ??
+        null,
+      imageUrl: image?.link?.href ?? null,
+      productType,
+      parentId,
+      // "physical" | "digital" — lets the variation add-to-cart flag a resolved
+      // child as digital (custom_inputs.is_digital) so checkout skips shipping.
+      commodityType: raw.attributes?.commodity_type ?? null,
+      customInputs,
+      extensions: parsedExtensions.groups.length
+        ? parsedExtensions.groups
+        : null,
+      extensionLists: parsedExtensions.lists.length
+        ? parsedExtensions.lists
+        : null,
+      variationOptions: variations.map((v: any) => ({
+        variationName: v.name ?? "",
+        optionName: v.option?.name ?? "",
+      })),
+    };
     return NextResponse.json({
       id: product.id ?? "",
       name: raw.attributes?.name ?? "",
@@ -70,9 +107,16 @@ export async function GET(
       imageUrl: image?.link?.href ?? null,
       productType,
       parentId,
+      // "physical" | "digital" — lets the variation add-to-cart flag a resolved
+      // child as digital (custom_inputs.is_digital) so checkout skips shipping.
+      commodityType: raw.attributes?.commodity_type ?? null,
       customInputs,
-      extensions: parsedExtensions.groups.length ? parsedExtensions.groups : null,
-      extensionLists: parsedExtensions.lists.length ? parsedExtensions.lists : null,
+      extensions: parsedExtensions.groups.length
+        ? parsedExtensions.groups
+        : null,
+      extensionLists: parsedExtensions.lists.length
+        ? parsedExtensions.lists
+        : null,
       variationOptions: variations.map((v: any) => ({
         variationName: v.name ?? "",
         optionName: v.option?.name ?? "",
@@ -80,6 +124,9 @@ export async function GET(
     });
   } catch (err) {
     console.error("Product info fetch error:", err);
-    return NextResponse.json({ error: "Failed to fetch product" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to fetch product" },
+      { status: 500 },
+    );
   }
 }

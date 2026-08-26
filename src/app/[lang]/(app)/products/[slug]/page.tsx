@@ -189,6 +189,7 @@ export default async function ProductDetailPage({ params }: Props) {
                   initialOffering={offering}
                   navigateOnSelect={true}
                   productCustomInputs={product.customInputs}
+                  initialCommodityType={product.commodityType}
                 />
               </>
             ) : (

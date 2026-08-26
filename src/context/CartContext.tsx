@@ -97,6 +97,9 @@ export type CartLineItem = {
   bundleComponents?: BundleComponentItem[];
   customInputs?: Record<string, string>;
   productFields?: ProductField[];
+  /** custom_inputs.options — a " / "-joined list of the variation option names
+   * (e.g. "Red / Large") for a variation child line, shown on the cart. */
+  variationOptions?: string;
   /** Multi-location stock location slug this line was added against. Must be
    * re-sent on every update while present (the API treats it as required). */
   location?: string;
@@ -334,6 +337,8 @@ function toCartLineItem(
     bundleComponents,
     customInputs,
     productFields,
+    variationOptions:
+      (rawCustomInputs?.options as string | undefined) || undefined,
     // EP doesn't echo the top-level `location` slug on cart reads, so we also
     // stash it in custom_inputs.location on add — read either.
     location:

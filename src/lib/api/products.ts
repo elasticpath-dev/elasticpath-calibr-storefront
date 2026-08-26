@@ -699,6 +699,12 @@ export async function getProductBySlug(
         if (!formatted.customInputs && parentFormatted.customInputs) {
           formatted.customInputs = parentFormatted.customInputs;
         }
+        // commodity_type is typically set on the base/parent product only; a
+        // child inherits it. Fall back so a digital variation child still adds
+        // to cart with custom_inputs.is_digital (checkout skips shipping).
+        if (!formatted.commodityType && parentFormatted.commodityType) {
+          formatted.commodityType = parentFormatted.commodityType;
+        }
         if (!formatted.extensions?.length && parentFormatted.extensions?.length) {
           formatted.extensions = parentFormatted.extensions;
         }

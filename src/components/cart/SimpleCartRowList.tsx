@@ -30,6 +30,7 @@ type Props = {
   isFreeGift?: boolean;
   productFields?: ProductField[];
   customInputs?: Record<string, unknown>;
+  variationOptions?: string;
   locationName?: string;
   onQuantityChange: (cartItemId: string, qty: number) => void;
   onRemove: (cartItemId: string) => void;
@@ -55,6 +56,7 @@ export function SimpleCartRowList({
   isFreeGift,
   productFields,
   customInputs,
+  variationOptions,
   locationName,
   onQuantityChange,
   onRemove,
@@ -123,6 +125,9 @@ export function SimpleCartRowList({
             )}
             {sku && (
               <p className="text-[12px] text-ink-400 font-mono mt-0.5">{t("sku")}: {sku}</p>
+            )}
+            {variationOptions && (
+              <p className="text-[12px] text-ink-600 mt-0.5">{variationOptions}</p>
             )}
             {isSubscription && (subscriptionPlanName || subscriptionFrequency) && (
               <p className="text-[12px] text-ink-600 mt-0.5">

@@ -4,7 +4,11 @@ import React from "react";
 import { useAuth } from "@/context/AuthContext";
 import { BundleConfigurator } from "./BundleConfigurator";
 import { VariantAddToCart } from "./VariantAddToCart";
-import type { BundleComponent, ProductCustomInput, ProductVariation } from "@/lib/api/products";
+import type {
+  BundleComponent,
+  ProductCustomInput,
+  ProductVariation,
+} from "@/lib/api/products";
 
 type Props = {
   productId: string;

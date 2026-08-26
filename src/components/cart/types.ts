@@ -69,6 +69,8 @@ export type LineGroup =
       isFreeGift?: boolean;
       productFields?: ProductField[];
       customInputs?: Record<string, unknown>;
+      /** Variation option names (custom_inputs.options), e.g. "Red / Large". */
+      variationOptions?: string;
       /** Multi-location stock location name (custom_inputs.location_name). */
       locationName?: string;
     };

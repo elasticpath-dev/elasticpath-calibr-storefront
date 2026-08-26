@@ -110,13 +110,16 @@ export function VariantAddToCart({
       const effectiveChildId = parentId ? productId : resolvedProductId;
       if (effectiveChildId && effectiveChildId !== effectiveParentId) {
         const optionNames = variations!
-          .map((v) => v.options.find((o) => o.id === selectedOptions[v.id])?.name)
+          .map(
+            (v) => v.options.find((o) => o.id === selectedOptions[v.id])?.name,
+          )
           .filter((n): n is string => !!n);
         if (optionNames.length) {
           variantInputs = {
             parent_product_id: effectiveParentId,
             options: optionNames.join(" / "),
           };
+          if (isDigital) variantInputs.is_digital = "true";
         }
       }
     }
@@ -208,11 +211,13 @@ export function VariantAddToCart({
             customInputs={customInputs}
             productFields={
               productCustomInputs
-                ? Object.entries(productFieldValues).map<ProductField>(([key, value]) => ({
-                    key,
-                    label: productCustomInputs[key]?.name ?? key,
-                    value,
-                  }))
+                ? Object.entries(productFieldValues).map<ProductField>(
+                    ([key, value]) => ({
+                      key,
+                      label: productCustomInputs[key]?.name ?? key,
+                      value,
+                    }),
+                  )
                 : undefined
             }
             onBeforeAdd={validateRequiredInputs}

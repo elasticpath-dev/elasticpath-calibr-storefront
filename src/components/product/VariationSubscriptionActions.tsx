@@ -24,6 +24,9 @@ type Props = {
   initialOffering?: ProductOffering | null;
   navigateOnSelect?: boolean;
   productCustomInputs?: Record<string, ProductCustomInput>;
+  /** "physical" | "digital" — the page product's commodity type; updated to the
+   * resolved child's on variant selection so a digital child is flagged. */
+  initialCommodityType?: string;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -47,6 +50,7 @@ export function VariationSubscriptionActions({
   initialOffering,
   navigateOnSelect = false,
   productCustomInputs,
+  initialCommodityType,
 }: Props) {
   const t = useTranslations("product");
 
@@ -54,6 +58,7 @@ export function VariationSubscriptionActions({
     initialOffering ?? null,
   );
   const [activeCustomInputs, setActiveCustomInputs] = useState(productCustomInputs);
+  const [commodityType, setCommodityType] = useState(initialCommodityType);
   const [priceFormatted, setPriceFormatted] = useState(initialPrice);
   const [originalPriceFormatted, setOriginalPriceFormatted] = useState<
     string | undefined
@@ -91,6 +96,7 @@ export function VariationSubscriptionActions({
         setPurchaseType("onetime");
         setPriceFormatted(initialPrice);
         setOriginalPriceFormatted(initialOriginalPrice);
+        setCommodityType(initialCommodityType);
         return;
       }
 
@@ -126,8 +132,9 @@ export function VariationSubscriptionActions({
         productRes?.originalPriceFormatted ?? undefined,
       );
       setActiveCustomInputs(productRes?.customInputs ?? productCustomInputs);
+      setCommodityType(productRes?.commodityType ?? initialCommodityType);
     },
-    [initialPrice, initialOriginalPrice, productId],
+    [initialPrice, initialOriginalPrice, productId, initialCommodityType, productCustomInputs],
   );
 
   return (
@@ -158,6 +165,7 @@ export function VariationSubscriptionActions({
         navigateOnSelect={navigateOnSelect}
         onVariantResolved={handleVariantResolved}
         productCustomInputs={activeCustomInputs}
+        commodityType={commodityType}
         slotBelowSelectors={
           offering ? (
             <SubscriptionSelector

@@ -225,6 +225,7 @@ export function B2BCartContent({ lang }: Props) {
           isFreeGift: item.isFreeGift,
           productFields: item.productFields,
           customInputs: item.customInputs,
+          variationOptions: item.variationOptions,
           locationName: item.locationName,
         };
       });
@@ -344,6 +345,7 @@ export function B2BCartContent({ lang }: Props) {
         isFreeGift: item.isFreeGift,
         productFields: item.productFields,
         customInputs: item.customInputs,
+        variationOptions: item.variationOptions,
         locationName: item.locationName,
       });
     }

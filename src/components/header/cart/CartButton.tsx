@@ -198,6 +198,11 @@ export function CartButton() {
                             {t("sku")}: {item.sku}
                           </p>
                         )}
+                        {item.variationOptions && (
+                          <p className="mt-0.5 text-xs text-gray-500">
+                            {item.variationOptions}
+                          </p>
+                        )}
                         {item.bundleComponents &&
                           item.bundleComponents.length > 0 && (
                             <div className="mt-2 rounded-lg border border-gray-100 bg-gray-50 divide-y divide-gray-100 overflow-hidden">
