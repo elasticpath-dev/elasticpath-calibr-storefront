@@ -410,6 +410,11 @@ export function BundleConfigurator({
                         <p className="text-sm font-medium text-gray-900 break-words">
                           {option.name}
                         </p>
+                        {option.variationLabel && (
+                          <p className="text-xs text-gray-600 break-words mt-0.5">
+                            {option.variationLabel}
+                          </p>
+                        )}
                         {option.sku && (
                           <p className="text-xs text-gray-400 break-all">
                             {t("sku", { sku: option.sku })}

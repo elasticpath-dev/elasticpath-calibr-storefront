@@ -55,6 +55,11 @@ export type BundleComponentOption = {
   name: string;
   sku?: string;
   imageUrl?: string;
+  /** For options that are variation children of a shared base product (so they
+   * share the same `name`), the joined child-variation option descriptions —
+   * e.g. "Adult / 3 Choice Pass Explorer" — from the component product's
+   * meta.child_variations. Distinguishes otherwise identically-named options. */
+  variationLabel?: string;
   quantity: number;
   min?: number;
   max?: number;
@@ -378,11 +383,30 @@ async function formatProductDetail(
             const optImage = optProduct
               ? extractProductImage(optProduct, included?.main_images)
               : undefined;
+            // Variation children of a shared base product carry
+            // meta.child_variations; join their option descriptions so options
+            // with an identical product name are still distinguishable.
+            const childVariations = (
+              optProduct?.meta as
+                | {
+                    child_variations?: Array<{
+                      option?: { description?: string; name?: string };
+                    }>;
+                  }
+                | undefined
+            )?.child_variations;
+            const variationLabel = childVariations?.length
+              ? childVariations
+                  .map((cv) => cv.option?.description || cv.option?.name)
+                  .filter(Boolean)
+                  .join(" / ") || undefined
+              : undefined;
             return {
               id: opt.id!,
               name: optProduct?.attributes?.name ?? opt.id!,
               sku: optProduct?.attributes?.sku,
               imageUrl: optImage?.link?.href,
+              variationLabel,
               quantity: opt.quantity ?? opt.min ?? 1,
               min: opt.min != null ? opt.min : undefined,
               max: opt.max != null ? opt.max : undefined,
