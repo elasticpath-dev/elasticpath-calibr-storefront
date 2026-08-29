@@ -1,15 +1,36 @@
 import { createClient } from "@epcc-sdk/sdks-shopper";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { getServerCurrency } from "./currency-server";
 import { getTenantConfig } from "./tenant-config";
+
+// Client-context headers we forward from the incoming request onto the
+// server-side EPCC API call. Without this, the outbound fetch originates from
+// this server, so EP's CDN (CloudFront) attributes the request to the server's
+// IP — losing the real shopper's IP/geo (country, city, …). Forwarding the
+// client IP (and any CloudFront viewer headers our own edge already resolved)
+// lets EP see the actual shopper.
+const FORWARDED_CLIENT_HEADERS = [
+  "x-forwarded-for",
+  "x-real-ip",
+  "true-client-ip",
+];
+function collectClientForwardHeaders(
+  incoming: Headers,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  incoming.forEach((value, key) => {
+    const k = key.toLowerCase();
+    if (FORWARDED_CLIENT_HEADERS.includes(k)) {
+      out[k] = value;
+    }
+  });
+  return out;
+}
 
 // Keyed by "endpointUrl:clientId" — in multi-tenant mode, different tenants
 // (potentially different EPCC stores) can be resolved within the same
 // running server process, so a single global token would leak across them.
-const tokenCache = new Map<
-  string,
-  { access_token: string; expires: number }
->();
+const tokenCache = new Map<string, { access_token: string; expires: number }>();
 const tokenFetchPromises = new Map<
   string,
   Promise<{ access_token: string; expires: number }>
@@ -84,6 +105,12 @@ export type ElasticPathClientConfig = {
 export function createElasticPathClientFromConfig(
   config: ElasticPathClientConfig,
   amToken?: string,
+  /**
+   * Client-context headers (IP / CloudFront viewer geo) collected from the
+   * incoming request, forwarded so EP attributes the call to the real shopper.
+   * Omitted by callers with no request context (e.g. cached nav build).
+   */
+  forwardHeaders?: Record<string, string>,
 ) {
   const client = createClient({
     baseUrl: `https://${config.endpointUrl}`,
@@ -117,6 +144,13 @@ export function createElasticPathClientFromConfig(
         amToken,
       );
     }
+    // Forward the shopper's IP / geo so EP's CDN sees the real client, not this
+    // server. Set last so nothing above overrides it.
+    if (forwardHeaders) {
+      for (const [key, value] of Object.entries(forwardHeaders)) {
+        request.headers.set(key, value);
+      }
+    }
     return request;
   });
 
@@ -125,11 +159,17 @@ export function createElasticPathClientFromConfig(
 
 export async function createElasticPathClient() {
   let amToken: string | undefined;
+  let forwardHeaders: Record<string, string> | undefined;
   try {
     const cookieStore = await cookies();
     amToken = cookieStore.get("ep_am_token")?.value;
   } catch {
     // Outside request context (e.g. build time) — no cookie available
+  }
+  try {
+    forwardHeaders = collectClientForwardHeaders(await headers());
+  } catch {
+    // Outside request context (e.g. build time) — no incoming headers
   }
   const [currency, tenantConfig] = await Promise.all([
     getServerCurrency(),
@@ -149,6 +189,7 @@ export async function createElasticPathClient() {
       storeId: requestHeaders.storeId,
     },
     amToken,
+    forwardHeaders,
   );
 }
 
