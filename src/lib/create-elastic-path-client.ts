@@ -6,24 +6,55 @@ import { getTenantConfig } from "./tenant-config";
 // Client-context headers we forward from the incoming request onto the
 // server-side EPCC API call. Without this, the outbound fetch originates from
 // this server, so EP's CDN (CloudFront) attributes the request to the server's
-// IP — losing the real shopper's IP/geo (country, city, …). Forwarding the
-// client IP (and any CloudFront viewer headers our own edge already resolved)
-// lets EP see the actual shopper.
+// IP — losing the real shopper's IP/geo (country, city, …). We forward the
+// client IP, plus the resolved geo (country/region/city) so EP sees it even
+// though it can't re-derive it from our server's IP.
 const FORWARDED_CLIENT_HEADERS = [
   "x-forwarded-for",
   "x-real-ip",
   "true-client-ip",
 ];
+
+// Vercel percent-encodes city/region (they can contain spaces/non-ASCII).
+function decodeGeo(value: string | null): string | undefined {
+  if (!value) return undefined;
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
 function collectClientForwardHeaders(
   incoming: Headers,
 ): Record<string, string> {
   const out: Record<string, string> = {};
-  incoming.forEach((value, key) => {
-    const k = key.toLowerCase();
-    if (FORWARDED_CLIENT_HEADERS.includes(k)) {
-      out[k] = value;
-    }
-  });
+
+  // Client IP — so EP can attribute the call to the real shopper.
+  for (const h of FORWARDED_CLIENT_HEADERS) {
+    const v = incoming.get(h);
+    if (v) out[h] = v;
+  }
+
+  // Geo. Behind CloudFront the CloudFront-Viewer-* headers are already present;
+  // on Vercel the same data arrives as x-vercel-ip-*. Normalize both into the
+  // CloudFront-Viewer-* header set so EP receives geo consistently regardless
+  // of where the storefront is hosted.
+  const country =
+    incoming.get("cloudfront-viewer-country") ??
+    incoming.get("x-vercel-ip-country") ??
+    undefined;
+  const region =
+    incoming.get("cloudfront-viewer-country-region") ??
+    decodeGeo(incoming.get("x-vercel-ip-country-region"));
+  const city =
+    incoming.get("cloudfront-viewer-city") ??
+    decodeGeo(incoming.get("x-vercel-ip-city"));
+
+  if (country) out["cloudfront-viewer-country"] = country;
+  if (region) out["cloudfront-viewer-country-region"] = region;
+  if (city) out["cloudfront-viewer-city"] = city;
+
   return out;
 }
 
