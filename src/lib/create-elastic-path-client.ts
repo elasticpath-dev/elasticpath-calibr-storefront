@@ -7,7 +7,7 @@ import { getTenantConfig } from "./tenant-config";
 // server-side EPCC API call. Without this, the outbound fetch originates from
 // this server, so EP loses the real shopper's IP/geo (country, city, …). We
 // forward the client IP plus Vercel's geo headers (x-vercel-ip-*, e.g.
-// x-vercel-ip-country/-city/-country-region) as-is so EP can read them.
+// x-vercel-ip-country/-city/-country-region) as-is so EP can read them
 const FORWARDED_CLIENT_HEADERS = [
   "x-forwarded-for",
   "x-real-ip",
