@@ -31,6 +31,23 @@ function collectClientForwardHeaders(
   return out;
 }
 
+/**
+ * Reads the incoming request's client-context headers (IP + geo) to forward to
+ * EPCC. Must be called in a request context (reads next/headers) — e.g. from a
+ * Server Component / Route Handler, and crucially OUTSIDE any unstable_cache
+ * callback (which forbids headers()). Returns undefined outside a request
+ * (build time) so callers can pass it straight through.
+ */
+export async function getClientForwardHeaders(): Promise<
+  Record<string, string> | undefined
+> {
+  try {
+    return collectClientForwardHeaders(await headers());
+  } catch {
+    return undefined; // Outside request context (e.g. build time)
+  }
+}
+
 // Keyed by "endpointUrl:clientId" — in multi-tenant mode, different tenants
 // (potentially different EPCC stores) can be resolved within the same
 // running server process, so a single global token would leak across them.
@@ -163,18 +180,13 @@ export function createElasticPathClientFromConfig(
 
 export async function createElasticPathClient() {
   let amToken: string | undefined;
-  let forwardHeaders: Record<string, string> | undefined;
   try {
     const cookieStore = await cookies();
     amToken = cookieStore.get("ep_am_token")?.value;
   } catch {
     // Outside request context (e.g. build time) — no cookie available
   }
-  try {
-    forwardHeaders = collectClientForwardHeaders(await headers());
-  } catch {
-    // Outside request context (e.g. build time) — no incoming headers
-  }
+  const forwardHeaders = await getClientForwardHeaders();
   const [currency, tenantConfig] = await Promise.all([
     getServerCurrency(),
     getTenantConfig(),

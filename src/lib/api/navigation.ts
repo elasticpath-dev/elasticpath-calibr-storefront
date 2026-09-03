@@ -14,6 +14,7 @@ export type NavHierarchyData = {
 import {
   createElasticPathClient,
   createElasticPathClientFromConfig,
+  getClientForwardHeaders,
 } from "@/lib/create-elastic-path-client";
 import { getTenantConfig } from "@/lib/tenant-config";
 import { getResolvedCatalogId } from "@/lib/api/catalog";
@@ -241,6 +242,7 @@ function getCachedNavItems(
   hideNavHierarchy: boolean,
   amToken: string | undefined,
   navigationCache: boolean,
+  forwardHeaders: Record<string, string> | undefined,
 ): Promise<NavItem[]> {
   const build = async () => {
     const client = createElasticPathClientFromConfig(
@@ -255,6 +257,7 @@ function getCachedNavItems(
         storeId,
       },
       amToken,
+      forwardHeaders,
     );
     return fetchSiteNavigation(client, hideNavHierarchy);
   };
@@ -280,9 +283,13 @@ function getCachedNavItems(
 export async function buildSiteNavigation(): Promise<NavItem[]> {
   const tenantConfig = await getTenantConfig();
   const { features, epcc, inventory, requestHeaders, currency } = tenantConfig;
-  const [catalogId, amToken] = await Promise.all([
+  // Collected here (a request context) — the /catalog/nodes call happens inside
+  // unstable_cache, which can't read next/headers itself; forwarded so EP sees
+  // the real shopper's IP/geo instead of this server's.
+  const [catalogId, amToken, forwardHeaders] = await Promise.all([
     getResolvedCatalogId(),
     getAmToken(),
+    getClientForwardHeaders(),
   ]);
 
   return getCachedNavItems(
@@ -297,6 +304,7 @@ export async function buildSiteNavigation(): Promise<NavItem[]> {
     features.hideNavHierarchy,
     amToken,
     features.navigationCache,
+    forwardHeaders,
   );
 }
 
@@ -359,6 +367,7 @@ function getCachedNavSubtree(
   rootId: string,
   amToken: string | undefined,
   navigationCache: boolean,
+  forwardHeaders: Record<string, string> | undefined,
 ): Promise<NavItem | null> {
   const build = async () => {
     const client = createElasticPathClientFromConfig(
@@ -373,6 +382,7 @@ function getCachedNavSubtree(
         storeId,
       },
       amToken,
+      forwardHeaders,
     );
     const nodes = await fetchAllCatalogNodes(client);
     return deriveNavSubtree(nodes, rootId);
@@ -410,9 +420,10 @@ export async function buildNavSubtree(opts: {
 
   const tenantConfig = await getTenantConfig();
   const { epcc, inventory, requestHeaders, currency, features } = tenantConfig;
-  const [catalogId, amToken] = await Promise.all([
+  const [catalogId, amToken, forwardHeaders] = await Promise.all([
     getResolvedCatalogId(),
     getAmToken(),
+    getClientForwardHeaders(),
   ]);
 
   return getCachedNavSubtree(
@@ -427,6 +438,7 @@ export async function buildNavSubtree(opts: {
     rootId,
     amToken,
     features.navigationCache,
+    forwardHeaders,
   );
 }
 
