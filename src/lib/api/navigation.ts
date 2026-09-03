@@ -240,24 +240,30 @@ function getCachedNavItems(
   storeId: string | undefined,
   hideNavHierarchy: boolean,
   amToken: string | undefined,
+  navigationCache: boolean,
 ): Promise<NavItem[]> {
+  const build = async () => {
+    const client = createElasticPathClientFromConfig(
+      {
+        endpointUrl,
+        clientId,
+        currency: tokenCurrency,
+        tokenCurrency,
+        multiLocation,
+        epContextTag,
+        environmentId,
+        storeId,
+      },
+      amToken,
+    );
+    return fetchSiteNavigation(client, hideNavHierarchy);
+  };
+
+  // Caching disabled (features.navigationCache) — rebuild on every request.
+  if (!navigationCache) return build();
+
   return unstable_cache(
-    async () => {
-      const client = createElasticPathClientFromConfig(
-        {
-          endpointUrl,
-          clientId,
-          currency: tokenCurrency,
-          tokenCurrency,
-          multiLocation,
-          epContextTag,
-          environmentId,
-          storeId,
-        },
-        amToken,
-      );
-      return fetchSiteNavigation(client, hideNavHierarchy);
-    },
+    build,
     [
       // Keyed by catalog_id alone (v4). revalidate:false entries never expire,
       // so the version must change whenever the payload shape/content changes.
@@ -290,6 +296,7 @@ export async function buildSiteNavigation(): Promise<NavItem[]> {
     requestHeaders.storeId,
     features.hideNavHierarchy,
     amToken,
+    features.navigationCache,
   );
 }
 
@@ -351,25 +358,31 @@ function getCachedNavSubtree(
   storeId: string | undefined,
   rootId: string,
   amToken: string | undefined,
+  navigationCache: boolean,
 ): Promise<NavItem | null> {
+  const build = async () => {
+    const client = createElasticPathClientFromConfig(
+      {
+        endpointUrl,
+        clientId,
+        currency: tokenCurrency,
+        tokenCurrency,
+        multiLocation,
+        epContextTag,
+        environmentId,
+        storeId,
+      },
+      amToken,
+    );
+    const nodes = await fetchAllCatalogNodes(client);
+    return deriveNavSubtree(nodes, rootId);
+  };
+
+  // Caching disabled (features.navigationCache) — rebuild on every request.
+  if (!navigationCache) return build();
+
   return unstable_cache(
-    async () => {
-      const client = createElasticPathClientFromConfig(
-        {
-          endpointUrl,
-          clientId,
-          currency: tokenCurrency,
-          tokenCurrency,
-          multiLocation,
-          epContextTag,
-          environmentId,
-          storeId,
-        },
-        amToken,
-      );
-      const nodes = await fetchAllCatalogNodes(client);
-      return deriveNavSubtree(nodes, rootId);
-    },
+    build,
     [
       // Keyed by catalog_id + subtree root (v3).
       "nav-subtree-v3",
@@ -396,7 +409,7 @@ export async function buildNavSubtree(opts: {
   if (!rootId) return null;
 
   const tenantConfig = await getTenantConfig();
-  const { epcc, inventory, requestHeaders, currency } = tenantConfig;
+  const { epcc, inventory, requestHeaders, currency, features } = tenantConfig;
   const [catalogId, amToken] = await Promise.all([
     getResolvedCatalogId(),
     getAmToken(),
@@ -413,6 +426,7 @@ export async function buildNavSubtree(opts: {
     requestHeaders.storeId,
     rootId,
     amToken,
+    features.navigationCache,
   );
 }
 

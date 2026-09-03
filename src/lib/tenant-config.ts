@@ -127,6 +127,11 @@ export type TenantConfig = {
      * showAlternativePrices is on, every alternative price is shown using its
      * own meta `name` as the label. */
     alternativePriceBooks: Array<{ pricebookId: string; label: string }>;
+    /** Cache the (expensive, ~30-call) top-navigation build in the Data Cache,
+     * cleared only via /api/navigation/clear-cache. Default true. Set to false
+     * to rebuild the nav on every request — useful while editing the catalog
+     * hierarchy. From NEXT_PUBLIC_NAVIGATION_CACHE ("false" disables). */
+    navigationCache: boolean;
   };
   payments: {
     stripePublishableKey: string;
@@ -466,6 +471,8 @@ export function buildTenantConfigFromEnv(): TenantConfig {
       alternativePriceBooks: parseAlternativePriceBooks(
         e.NEXT_PUBLIC_ALTERNATIVE_PRICE_BOOKS,
       ),
+      // Cached by default — only "false" opts out.
+      navigationCache: e.NEXT_PUBLIC_NAVIGATION_CACHE !== "false",
     },
     payments: {
       stripePublishableKey: e.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
@@ -611,6 +618,8 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
         r.features?.alternativePriceBooks,
         defaults.features.alternativePriceBooks,
       ),
+      navigationCache:
+        r.features?.navigationCache ?? defaults.features.navigationCache,
     },
     payments: {
       stripePublishableKey:

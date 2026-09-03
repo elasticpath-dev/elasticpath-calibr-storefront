@@ -154,6 +154,7 @@ Events are proxied through the storefront's own domain (`/ingest`) so they aren'
 | `NEXT_PUBLIC_HEADER_NAV_POSITION` | Desktop top-nav placement: `inline` (default, centered between logo and icons), `below` (own full-width row, left-aligned), or `below-center` (own row, centered). |
 | `NEXT_PUBLIC_NAV_STYLE` | Desktop nav dropdown style: `mega` (default, multi-column mega menu) or `cascade` (drill-down panel). |
 | `NEXT_PUBLIC_HIDE_NAV_HIERARCHY` | `true` flattens the hierarchy root out of the mega-menu and the category filter tree, promoting its children to the top level. Defaults to `false`. |
+| `NEXT_PUBLIC_NAVIGATION_CACHE` | Cache the (expensive, ~30-call) top-navigation build. Defaults to `true` (cache never auto-expires; cleared via `/api/navigation/clear-cache`). Set to `false` to rebuild the nav on every request — useful while editing the catalog hierarchy. |
 
 ### Inventory (multi-location)
 
