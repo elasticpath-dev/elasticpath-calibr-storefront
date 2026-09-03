@@ -120,10 +120,15 @@ All color variables ship with defaults, so you only need to set the ones you're 
 | `NEXT_PUBLIC_STRIPE_ACCOUNT_ID` | Set this if you're using **EP Payments powered by Stripe** — it also switches the storefront to Elastic Path's managed Stripe gateway. |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Your Stripe publishable key. Required either way; if `NEXT_PUBLIC_STRIPE_ACCOUNT_ID` is left blank, the storefront uses your own Stripe account directly instead of EP Payments. |
 | `NEXT_PUBLIC_PAYPAL_ENABLED` | `true` adds PayPal (Express Checkout) as a payment option at checkout. Defaults to `false`. |
+| `NEXT_PUBLIC_PAYMENT_CARD_ENABLED` | Show the Card (Stripe) method. Defaults to `true`. Card also requires `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` — no key means no Card regardless of this flag. |
+| `NEXT_PUBLIC_PAYMENT_COD_ENABLED` | Show the Cash on Delivery (manual gateway) method. Defaults to `true`. |
+| `NEXT_PUBLIC_PAYMENT_PO_ENABLED` | Show the Purchase Order method. Defaults to `true` (still hidden for B2C on an Elastic Path–hosted store). |
 
 Without `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, the "Card" payment option isn't shown at checkout at all. "Purchase Order" and "Cash on Delivery" are manual payment methods with no gateway involved: the order is placed directly via Elastic Path's `manual` payment gateway and reconciled by the merchant afterwards. Purchase Order captures a PO reference number from the shopper; Cash on Delivery captures nothing extra.
 
-"Purchase Order" is a B2B concept, so it's hidden for B2C shoppers on an Elastic Path–hosted store (see the shopping-mode lock above) — it remains available in B2B mode, and on any self-hosted/custom-domain store regardless of shopping mode. "Cash on Delivery" always shows.
+"Purchase Order" is a B2B concept, so it's hidden for B2C shoppers on an Elastic Path–hosted store (see the shopping-mode lock above) — it remains available in B2B mode, and on any self-hosted/custom-domain store regardless of shopping mode.
+
+Each method can be toggled with the `NEXT_PUBLIC_PAYMENT_*_ENABLED` flags above (all default on). If **every** method — Card, Cash on Delivery, Purchase Order and PayPal — is disabled, the checkout shows no payment UI at all and the order is placed through the manual gateway (the same path Cash on Delivery uses).
 
 If you see "Manual payments aren't enabled for this store" at checkout, go to Commerce Manager → Settings → Payment, select **Manual**, and enable it.
 

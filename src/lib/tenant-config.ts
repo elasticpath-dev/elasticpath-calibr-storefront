@@ -137,6 +137,14 @@ export type TenantConfig = {
     stripePublishableKey: string;
     stripeAccountId?: string;
     paypalEnabled: boolean;
+    /** Show the Card (Stripe) method. Default true. Card also requires a
+     * publishable key — no key means no Card regardless of this flag. */
+    cardEnabled: boolean;
+    /** Show the Cash on Delivery (manual gateway) method. Default true. */
+    codEnabled: boolean;
+    /** Show the Purchase Order method. Default true. Still hidden for B2C on an
+     * Elastic Path–hosted store (PO is a B2B concept). */
+    poEnabled: boolean;
   };
   ui: {
     defaultCartMode: "drawer" | "full";
@@ -209,6 +217,12 @@ export type ClientTenantConfig = {
   stripePublishableKey: string;
   stripeAccountId?: string;
   paypalEnabled: boolean;
+  /** Show the Card (Stripe) method — also needs a publishable key. */
+  cardEnabled: boolean;
+  /** Show the Cash on Delivery (manual gateway) method. */
+  codEnabled: boolean;
+  /** Show the Purchase Order method (still B2B-gated on EP-hosted stores). */
+  poEnabled: boolean;
   defaultCartMode: "drawer" | "full";
   defaultShoppingMode: "b2c" | "b2b";
   shoppingModeLocked: boolean;
@@ -252,6 +266,9 @@ export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
     stripePublishableKey: config.payments.stripePublishableKey,
     stripeAccountId: config.payments.stripeAccountId,
     paypalEnabled: config.payments.paypalEnabled,
+    cardEnabled: config.payments.cardEnabled,
+    codEnabled: config.payments.codEnabled,
+    poEnabled: config.payments.poEnabled,
     defaultCartMode: config.ui.defaultCartMode,
     defaultShoppingMode: config.ui.defaultShoppingMode,
     shoppingModeLocked: config.ui.shoppingModeLocked,
@@ -478,6 +495,11 @@ export function buildTenantConfigFromEnv(): TenantConfig {
       stripePublishableKey: e.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? "",
       stripeAccountId: e.NEXT_PUBLIC_STRIPE_ACCOUNT_ID || undefined,
       paypalEnabled: e.NEXT_PUBLIC_PAYPAL_ENABLED === "true",
+      // Card / Cash on Delivery / Purchase Order are enabled by default —
+      // only "false" opts out.
+      cardEnabled: e.NEXT_PUBLIC_PAYMENT_CARD_ENABLED !== "false",
+      codEnabled: e.NEXT_PUBLIC_PAYMENT_COD_ENABLED !== "false",
+      poEnabled: e.NEXT_PUBLIC_PAYMENT_PO_ENABLED !== "false",
     },
     ui: {
       defaultCartMode:
@@ -629,6 +651,10 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
         r.payments?.stripeAccountId ?? defaults.payments.stripeAccountId,
       paypalEnabled:
         r.payments?.paypalEnabled ?? defaults.payments.paypalEnabled,
+      cardEnabled:
+        r.payments?.cardEnabled ?? defaults.payments.cardEnabled,
+      codEnabled: r.payments?.codEnabled ?? defaults.payments.codEnabled,
+      poEnabled: r.payments?.poEnabled ?? defaults.payments.poEnabled,
     },
     ui: {
       defaultCartMode: r.ui?.defaultCartMode ?? defaults.ui.defaultCartMode,

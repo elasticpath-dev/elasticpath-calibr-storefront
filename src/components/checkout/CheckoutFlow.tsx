@@ -45,6 +45,7 @@ import type { BillingAddr } from "@/hooks/use-ep-stripe-payment";
 import type { Address, Group } from "@/components/checkout/shipping/types";
 
 type Step = "shipping" | "payment";
+type PaymentMethod = "card" | "po" | "cod" | "paypal";
 
 export function CheckoutFlow({
   lang,
@@ -95,6 +96,9 @@ export function CheckoutFlow({
     stripePublishableKey,
     stripeAccountId,
     paypalEnabled,
+    cardEnabled,
+    codEnabled,
+    poEnabled,
   } = useTenantConfig();
   const isB2C = shoppingMode === "b2c";
 
@@ -117,28 +121,47 @@ export function CheckoutFlow({
     cents: number;
     currency: string;
   } | null>(null);
-  // Card checkout needs a Stripe publishable key — without one, only
-  // Purchase Order / Cash on Delivery are offered.
-  const isCardPaymentEnabled = !!stripePublishableKey;
-  // Purchase Order is a B2B concept — hide it for B2C shoppers on an
-  // Elastic Path–hosted store (shoppingModeLocked), but keep it available
-  // for B2B, or on any self-hosted/custom-domain store regardless of mode.
-  const isPOPaymentEnabled = !isB2C || !shoppingModeLocked;
+  // Each method is toggled by its tenant-config flag. Card additionally needs a
+  // Stripe publishable key (no key ⇒ no Card, regardless of the flag).
+  const isCardPaymentEnabled = cardEnabled && !!stripePublishableKey;
+  const isCODPaymentEnabled = codEnabled;
+  // Purchase Order is a B2B concept — even when enabled, hide it for B2C
+  // shoppers on an Elastic Path–hosted store (shoppingModeLocked).
+  const isPOPaymentEnabled = poEnabled && (!isB2C || !shoppingModeLocked);
   // PayPal needs the paypal_express_checkout gateway configured in Commerce
-  // Manager — gated by a tenant config flag since there's no client-side
-  // key to check the way Stripe has a publishable key.
+  // Manager — gated by a tenant config flag since there's no client-side key.
   const isPayPalPaymentEnabled = paypalEnabled;
-  const [paymentMethod, setPaymentMethod] = useState<
-    "card" | "po" | "cod" | "paypal"
-  >(isCardPaymentEnabled ? "card" : "po");
 
-  // Correct the default once shopping-mode hydration completes, in case the
-  // pre-hydration default above picked "po" but it turns out to be disabled.
+  // Ordered list of methods to offer. When empty (all disabled), no method UI
+  // is shown and the order is placed via the manual gateway (Cash on Delivery
+  // path) — see handlePlaceOrder's "cod" fallback.
+  const enabledPaymentMethods = useMemo(() => {
+    const methods: PaymentMethod[] = [];
+    if (isCardPaymentEnabled) methods.push("card");
+    if (isPOPaymentEnabled) methods.push("po");
+    if (isCODPaymentEnabled) methods.push("cod");
+    if (isPayPalPaymentEnabled) methods.push("paypal");
+    return methods;
+  }, [
+    isCardPaymentEnabled,
+    isPOPaymentEnabled,
+    isCODPaymentEnabled,
+    isPayPalPaymentEnabled,
+  ]);
+  const anyPaymentEnabled = enabledPaymentMethods.length > 0;
+
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
+
+  // Keep the selection valid: once shopping-mode hydration settles (it affects
+  // PO), snap to the first enabled method if the current one isn't offered.
+  // With none enabled, fall back to "cod" (manual gateway) so placing the order
+  // still works even though nothing is shown.
   useEffect(() => {
-    if (modeHydrated && paymentMethod === "po" && !isPOPaymentEnabled) {
-      setPaymentMethod(isCardPaymentEnabled ? "card" : "cod");
+    if (!modeHydrated) return;
+    if (!enabledPaymentMethods.includes(paymentMethod)) {
+      setPaymentMethod(enabledPaymentMethods[0] ?? "cod");
     }
-  }, [modeHydrated, isPOPaymentEnabled, isCardPaymentEnabled, paymentMethod]);
+  }, [modeHydrated, enabledPaymentMethods, paymentMethod]);
   // undefined = not yet initialized; null = "same as shipping" (valid); BillingAddr = explicit address
   const [billingAddress, setBillingAddress] = useState<
     BillingAddr | null | undefined
@@ -656,7 +679,10 @@ export function CheckoutFlow({
             />
           </div>
 
-          {/* Payment method accordion card */}
+          {/* Payment method accordion card — hidden when every method is
+              disabled; the order still places via the manual gateway (see the
+              "cod" fallback in enabledPaymentMethods / handlePlaceOrder). */}
+          {anyPaymentEnabled && (
           <div className="rounded-xl border border-gray-200 bg-white overflow-hidden">
             <div className="px-5 py-4 border-b border-gray-100">
               <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
@@ -774,45 +800,47 @@ export function CheckoutFlow({
                 </div>
               )}
 
-              {/* Cash on Delivery */}
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("cod")}
-                  className="w-full flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors text-left"
-                >
-                  <span
-                    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${paymentMethod === "cod" ? "border-brand-primary" : "border-gray-300"}`}
+              {/* Cash on Delivery (manual gateway) */}
+              {isCODPaymentEnabled && (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("cod")}
+                    className="w-full flex items-center gap-3 px-5 py-4 hover:bg-gray-50 transition-colors text-left"
                   >
-                    {paymentMethod === "cod" && (
-                      <span className="w-2 h-2 rounded-full bg-brand-primary" />
-                    )}
-                  </span>
-                  <Banknote
-                    size={16}
-                    className={
-                      paymentMethod === "cod"
-                        ? "text-brand-primary"
-                        : "text-gray-400"
-                    }
-                  />
-                  <span
-                    className={`text-sm font-medium ${paymentMethod === "cod" ? "text-gray-900" : "text-gray-500"}`}
-                  >
-                    {t("payCOD")}
-                  </span>
-                </button>
-                {paymentMethod === "cod" && (
-                  <div className="px-5 pb-5 space-y-3">
-                    <p className="text-sm text-gray-500">{t("codDescription")}</p>
-                    {codError && (
-                      <div className="flex items-start gap-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                        <span>{codError}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                    <span
+                      className={`w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${paymentMethod === "cod" ? "border-brand-primary" : "border-gray-300"}`}
+                    >
+                      {paymentMethod === "cod" && (
+                        <span className="w-2 h-2 rounded-full bg-brand-primary" />
+                      )}
+                    </span>
+                    <Banknote
+                      size={16}
+                      className={
+                        paymentMethod === "cod"
+                          ? "text-brand-primary"
+                          : "text-gray-400"
+                      }
+                    />
+                    <span
+                      className={`text-sm font-medium ${paymentMethod === "cod" ? "text-gray-900" : "text-gray-500"}`}
+                    >
+                      {t("payCOD")}
+                    </span>
+                  </button>
+                  {paymentMethod === "cod" && (
+                    <div className="px-5 pb-5 space-y-3">
+                      <p className="text-sm text-gray-500">{t("codDescription")}</p>
+                      {codError && (
+                        <div className="flex items-start gap-3 rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
+                          <span>{codError}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* PayPal — hidden unless the paypal_express_checkout gateway is enabled for this tenant */}
               {isPayPalPaymentEnabled && (
@@ -857,6 +885,7 @@ export function CheckoutFlow({
               )}
             </div>
           </div>
+          )}
 
           {/* Place Order — below both cards */}
           <div className="space-y-3 pt-1">
