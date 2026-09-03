@@ -12,6 +12,7 @@ import { getClientPlasmicLoader } from "./plasmic-loader";
 import { useTenantConfig } from "@/context/TenantConfigContext";
 import { useCatalog } from "@/context/CatalogContext";
 import { useAuth } from "@/context/AuthContext";
+import { readCountryCookie } from "@/lib/geo";
 
 type PlasmicContentProps = {
   component: string;
@@ -40,11 +41,15 @@ export default function PlasmicContent({
   useEffect(() => {
     if (!loader || catalogLoading) return;
     let cancelled = false;
+    // Edge-resolved shopper country (ep_country cookie, written by the proxy) —
+    // read here so authors can target content by country like language/catalog.
+    const country = readCountryCookie() ?? "";
     loader
       .getActiveVariation({
         traits: {
           catalogId: catalogId ?? "",
           language,
+          country,
           accountName,
           epContextTag: epContextTag ?? "",
           isLoggedIn,

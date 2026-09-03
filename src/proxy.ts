@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 import { routing } from "./lib/routing";
 import { getTenantConfigForHostname } from "@/lib/tenant-config";
+import { COUNTRY_COOKIE } from "@/lib/geo";
 
 const GATE_COOKIE = "ep_gatekeeper";
 const GATE_PATH = "/gate";
@@ -59,7 +60,23 @@ export default async function middleware(request: NextRequest) {
     }
   }
 
-  return intlMiddleware(request);
+  const response = intlMiddleware(request);
+
+  // Expose the edge-resolved shopper country to the client (Plasmic country
+  // trait). Written only when it changes so we don't Set-Cookie on every hit.
+  const country =
+    request.headers.get("x-vercel-ip-country") ??
+    request.headers.get("cloudfront-viewer-country") ??
+    "";
+  if (country && request.cookies.get(COUNTRY_COOKIE)?.value !== country) {
+    response.cookies.set(COUNTRY_COOKIE, country, {
+      path: "/",
+      sameSite: "lax",
+      maxAge: 31536000,
+    });
+  }
+
+  return response;
 }
 
 export const config = {

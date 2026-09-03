@@ -40,6 +40,10 @@ export function getClientPlasmicLoader(cms: {
       type: "text",
       label: "Language",
     });
+    loader.registerTrait("country", {
+      type: "text",
+      label: "Country",
+    });
     loader.registerTrait("accountName", {
       type: "text",
       label: "Account Name",
