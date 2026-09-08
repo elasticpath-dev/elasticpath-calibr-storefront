@@ -132,6 +132,9 @@ export type ProductDetailData = {
   extensions?: ProductExtensionGroup[];
   /** Array-of-strings extensions, shown as bullet lists under the description. */
   extensionLists?: ProductExtensionList[];
+  /** attributes.shopper_attributes — a flat key/value map (e.g. rate_code),
+   * shown as its own key/value table on the PDP. */
+  shopperAttributes?: ProductExtensionField[];
   breadCrumbNodes?: string[];
   breadCrumbs?: Record<string, string[]>;
   /** Pricebook "alternative_prices" from product meta, as-parsed (unfiltered).
@@ -212,6 +215,20 @@ export function resolveAlternativePriceRows(
 
 function toTitleCase(slug: string): string {
   return slug.replace(/[-_]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/** Flattens attributes.shopper_attributes ({ rate_code: "BA" }) into labelled
+ * key/value fields for the PDP's Shopper Attributes table. Nested objects are
+ * skipped; primitives are stringified. */
+function parseShopperAttributes(raw: unknown): ProductExtensionField[] {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return [];
+  return Object.entries(raw as Record<string, unknown>)
+    .filter(([, v]) => v != null && typeof v !== "object")
+    .map(([key, value]) => ({
+      key,
+      label: toTitleCase(key),
+      value: String(value),
+    }));
 }
 
 export async function parseExtensions(
@@ -514,6 +531,10 @@ async function formatProductDetail(
       ? await parseExtensions(rawExtensions)
       : { groups: [], lists: [] };
 
+  const shopperAttributes = parseShopperAttributes(
+    (product.attributes as Record<string, unknown>)?.shopper_attributes,
+  );
+
   return {
     id: product.id ?? "",
     slug: product.attributes?.slug ?? product.id ?? "",
@@ -550,6 +571,7 @@ async function formatProductDetail(
     extensionLists: parsedExtensions.lists.length
       ? parsedExtensions.lists
       : undefined,
+    shopperAttributes: shopperAttributes.length ? shopperAttributes : undefined,
     breadCrumbNodes: (product.meta?.bread_crumb_nodes as string[] | undefined)?.length
       ? (product.meta!.bread_crumb_nodes as string[])
       : undefined,
@@ -737,6 +759,12 @@ export async function getProductBySlug(
           parentFormatted.extensionLists?.length
         ) {
           formatted.extensionLists = parentFormatted.extensionLists;
+        }
+        if (
+          !formatted.shopperAttributes?.length &&
+          parentFormatted.shopperAttributes?.length
+        ) {
+          formatted.shopperAttributes = parentFormatted.shopperAttributes;
         }
       }
     }

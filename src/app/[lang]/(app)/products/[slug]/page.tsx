@@ -302,6 +302,21 @@ export default async function ProductDetailPage({ params }: Props) {
                 <ProductExtensions extensions={product.extensions} />
               </div>
             )}
+
+            {product.shopperAttributes &&
+              product.shopperAttributes.length > 0 && (
+                <div className="mt-8">
+                  <ProductExtensions
+                    extensions={[
+                      {
+                        key: "shopper_attributes",
+                        title: t("shopperAttributes"),
+                        fields: product.shopperAttributes,
+                      },
+                    ]}
+                  />
+                </div>
+              )}
           </div>
         </div>
 
