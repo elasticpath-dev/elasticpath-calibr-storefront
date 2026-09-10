@@ -173,7 +173,7 @@ Events are proxied through the storefront's own domain (`/ingest`) so they aren'
 
 | Variable | Purpose |
 |---|---|
-| `NEXT_PUBLIC_EP_CONTEXT_TAG` | Optional header attached to every Elastic Path API request (server and client); only sent when non-empty. |
+| `NEXT_PUBLIC_EP_CONTEXT_TAG` | Optional `EP-Context-Tag` header attached to every Elastic Path API request (server and client); only sent when non-empty. Can be overridden per-shopper at runtime: a `?tag=<value>` query param on any page (e.g. `/en/products/x?tag=uk`) is captured by the proxy into the `ep_context_tag` cookie and used everywhere for that shopper until changed (`?tag=` with no value clears it). |
 | `NEXT_PUBLIC_ENVIRONMENT_ID` | Optional Elastic Path environment-id request header; only sent when non-empty. |
 | `NEXT_PUBLIC_STORE_ID` | Optional Elastic Path store-id request header; only sent when non-empty. |
 | `NAV_CACHE_REVALIDATE_SECRET` | Shared secret for the nav-cache clear endpoint (`POST /api/navigation/clear-cache`), letting you flush the 5-minute mega-menu cache without restarting. Leave blank to disable the endpoint. |

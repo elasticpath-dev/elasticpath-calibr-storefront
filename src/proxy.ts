@@ -1,13 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import createIntlMiddleware from "next-intl/middleware";
 import { routing } from "./lib/routing";
-import { getTenantConfigForHostname } from "@/lib/tenant-config";
+import {
+  getTenantConfigForHostname,
+  CONTEXT_TAG_COOKIE,
+} from "@/lib/tenant-config";
 import { COUNTRY_COOKIE } from "@/lib/geo";
 
 const GATE_COOKIE = "ep_gatekeeper";
 const GATE_PATH = "/gate";
 const AM_TOKEN_COOKIE = "ep_am_token";
 const LOGIN_REQUIRED_SEGMENT = "login-required";
+// Literal (also lives in catalog.ts / CatalogContext) — cleared when the tag
+// changes so the catalog id re-resolves under the new context.
+const CATALOG_ID_COOKIE = "ep_catalog_id";
 
 const intlMiddleware = createIntlMiddleware(routing);
 
@@ -17,6 +23,30 @@ export default async function middleware(request: NextRequest) {
   // Always let the gate page and its actions through — prevents redirect loop
   if (pathname.startsWith(GATE_PATH)) {
     return NextResponse.next();
+  }
+
+  // `?tag=` on any page overrides the EP-Context-Tag: capture it into a cookie,
+  // then redirect to the same URL without the param so the page renders with
+  // the tag already in place (getTenantConfig reads the cookie). An empty
+  // `?tag=` clears the override (back to the configured default).
+  if (request.nextUrl.searchParams.has("tag")) {
+    const tag = (request.nextUrl.searchParams.get("tag") ?? "").trim();
+    const url = request.nextUrl.clone();
+    url.searchParams.delete("tag");
+    const res = NextResponse.redirect(url);
+    if (tag) {
+      res.cookies.set(CONTEXT_TAG_COOKIE, tag, {
+        path: "/",
+        sameSite: "lax",
+        maxAge: 31536000,
+      });
+    } else {
+      res.cookies.delete(CONTEXT_TAG_COOKIE);
+    }
+    // The tag can change which catalog resolves — drop the cached catalog id so
+    // it re-resolves under the new context on the next render.
+    res.cookies.delete(CATALOG_ID_COOKIE);
+    return res;
   }
 
   const hostname = (

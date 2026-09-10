@@ -1,6 +1,13 @@
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { unstable_cache } from "next/cache";
 import { cache } from "react";
+
+/** Cookie holding a per-shopper EP-Context-Tag override, captured from a
+ * `?tag=` URL parameter by the proxy (see src/proxy.ts). When present it wins
+ * over the configured NEXT_PUBLIC_EP_CONTEXT_TAG / requestHeaders.epContextTag,
+ * so a link like `/en/products/x?tag=uk` serves that tag's context everywhere
+ * (server + client EP calls, navigation, Plasmic trait). */
+export const CONTEXT_TAG_COOKIE = "ep_context_tag";
 
 // Default Plasmic Studio host used when no NEXT_PUBLIC_EP_CMS_HOST (or remote
 // cms.host) is configured. Exported so the loaders reference the same value.
@@ -786,7 +793,25 @@ async function resolveTenantConfigForHostname(
  */
 export const getTenantConfig = cache(async (): Promise<TenantConfig> => {
   const hostname = await getRequestHostname();
-  return resolveTenantConfigForHostname(hostname);
+  const config = await resolveTenantConfigForHostname(hostname);
+
+  // Per-request EP-Context-Tag override from the `?tag=` URL param (captured
+  // into the ep_context_tag cookie by the proxy). Overriding here — the single
+  // source both the server client and the client config (toClientTenantConfig)
+  // derive from — makes it apply everywhere the context tag is used.
+  let cookieTag = "";
+  try {
+    cookieTag = (await cookies()).get(CONTEXT_TAG_COOKIE)?.value?.trim() ?? "";
+  } catch {
+    // Outside request context (e.g. build time) — no cookie available.
+  }
+  if (cookieTag && cookieTag !== config.requestHeaders.epContextTag) {
+    return {
+      ...config,
+      requestHeaders: { ...config.requestHeaders, epContextTag: cookieTag },
+    };
+  }
+  return config;
 });
 
 /**
