@@ -282,7 +282,7 @@ export function ProductCard({
                     disabled={matrixPendingCount === 0 || isAddingMatrix}
                     className={cn(
                       "inline-flex items-center justify-center gap-2 rounded-lg font-medium text-xs transition-all h-9 px-3",
-                      "bg-brand-primary text-white hover:opacity-90 disabled:opacity-60",
+                      "bg-brand-primary text-button-text hover:opacity-90 disabled:opacity-60",
                     )}
                   >
                     {isAddingMatrix ? (

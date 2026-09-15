@@ -207,7 +207,7 @@ export function ProductPurchaseHistory({ sku, lang }: Props) {
                 aria-pressed={p.key === periodKey}
                 className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                   p.key === periodKey
-                    ? "bg-brand-primary text-white border-transparent"
+                    ? "bg-brand-primary text-button-text border-transparent"
                     : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
                 }`}
               >

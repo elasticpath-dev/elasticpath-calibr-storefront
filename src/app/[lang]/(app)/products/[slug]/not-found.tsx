@@ -22,7 +22,7 @@ export default async function ProductNotFound() {
           </p>
           <Link
             href={`/${locale}`}
-            className="inline-flex items-center justify-center h-12 px-6 text-base font-medium rounded-lg bg-brand-primary text-white hover:opacity-90 transition-all duration-150"
+            className="inline-flex items-center justify-center h-12 px-6 text-base font-medium rounded-lg bg-brand-primary text-button-text hover:opacity-90 transition-all duration-150"
           >
             {t("notFoundCta")}
           </Link>

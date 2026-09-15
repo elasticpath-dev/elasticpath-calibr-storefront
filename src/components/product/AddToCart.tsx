@@ -62,8 +62,8 @@ export function AddToCart({
           ? "w-full py-3 px-6 text-base"
           : "px-3 py-1.5 text-xs",
         added
-          ? "bg-brand-secondary text-white"
-          : "bg-brand-primary text-white hover:opacity-90 disabled:opacity-60",
+          ? "bg-brand-secondary text-button-text"
+          : "bg-brand-primary text-button-text hover:opacity-90 disabled:opacity-60",
         className,
       )}
     >

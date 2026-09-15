@@ -76,7 +76,7 @@ export function AccountPageContent({ lang, children }: Props) {
           {/* Profile card */}
           <div className="bg-white border border-gray-100 rounded-2xl p-4 mb-3 shadow-sm">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-brand-primary text-white text-sm font-bold flex items-center justify-center shrink-0 select-none">
+              <div className="w-10 h-10 rounded-full bg-brand-primary text-button-text text-sm font-bold flex items-center justify-center shrink-0 select-none">
                 {initials}
               </div>
               <div className="min-w-0">

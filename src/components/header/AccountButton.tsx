@@ -86,7 +86,7 @@ export function AccountButton() {
         aria-expanded={showDropdown}
         aria-haspopup="true"
       >
-        <span className="w-7 h-7 rounded-full bg-brand-primary text-white text-xs font-semibold flex items-center justify-center shrink-0">
+        <span className="w-7 h-7 rounded-full bg-brand-primary text-button-text text-xs font-semibold flex items-center justify-center shrink-0">
           {initials}
         </span>
         <span className="hidden sm:flex sm:flex-col sm:items-start sm:max-w-[140px]">

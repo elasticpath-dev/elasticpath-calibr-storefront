@@ -85,7 +85,7 @@ export function CartPageHeader({ lang, totalUnits, lineCount, showActions }: Pro
           onClick={() => { setMenuOpen((o) => !o); setCreating(false); setConfirm(null); }}
           className="flex items-center gap-3.5 bg-white border border-ink-200 rounded-[14px] px-4 py-3 min-w-[340px] text-left hover:border-ink-300 transition-colors"
         >
-          <span className="w-[38px] h-[38px] rounded-[10px] bg-brand-primary text-white flex items-center justify-center flex-none">
+          <span className="w-[38px] h-[38px] rounded-[10px] bg-brand-primary text-button-text flex items-center justify-center flex-none">
             <ClipboardList size={19} />
           </span>
           <span className="flex-1 min-w-0">
@@ -176,7 +176,7 @@ export function CartPageHeader({ lang, totalUnits, lineCount, showActions }: Pro
                         >
                           <span className={[
                             "w-8 h-8 rounded-[8px] flex items-center justify-center flex-none transition-colors",
-                            isActive ? "bg-brand-primary text-white" : "bg-ink-100 text-ink-600",
+                            isActive ? "bg-brand-primary text-button-text" : "bg-ink-100 text-ink-600",
                           ].join(" ")}>
                             <ShoppingCart size={15} />
                           </span>
@@ -253,7 +253,7 @@ export function CartPageHeader({ lang, totalUnits, lineCount, showActions }: Pro
       ) : (
         <div>
           <div className="flex items-center gap-3.5">
-            <span className="w-[38px] h-[38px] rounded-[10px] bg-brand-primary text-white flex items-center justify-center flex-none">
+            <span className="w-[38px] h-[38px] rounded-[10px] bg-brand-primary text-button-text flex items-center justify-center flex-none">
               <ShoppingCart size={19} />
             </span>
             <div>

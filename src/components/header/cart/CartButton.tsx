@@ -373,7 +373,7 @@ export function CartButton() {
             <Link
               href={`/${lang}/checkout`}
               onClick={() => setIsOpen(false)}
-              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-brand-primary text-white text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
+              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl bg-brand-primary text-button-text text-sm font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
             >
               {t("checkout")}
               <ArrowRight size={16} />
@@ -401,7 +401,7 @@ export function CartButton() {
         {itemCount > 0 && (
           <span
             aria-hidden="true"
-            className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-brand-primary text-white text-[10px] font-bold leading-none"
+            className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-brand-primary text-button-text text-[10px] font-bold leading-none"
           >
             {itemCount > 99 ? "99+" : itemCount}
           </span>

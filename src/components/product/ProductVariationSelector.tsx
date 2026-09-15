@@ -109,7 +109,7 @@ export function ProductVariationSelector({
                     isDisabled
                       ? "cursor-not-allowed opacity-40 bg-gray-50 text-gray-400 border-gray-200"
                       : isSelected
-                      ? "bg-brand-primary text-white border-brand-primary"
+                      ? "bg-brand-primary text-button-text border-brand-primary"
                       : "bg-white text-gray-700 border-gray-300 hover:border-brand-primary",
                   ].join(" ")}
                 >

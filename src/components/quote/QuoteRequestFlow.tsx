@@ -288,9 +288,9 @@ export function QuoteRequestFlow({
                   className={[
                     "w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold transition-colors",
                     isPast
-                      ? "bg-brand-primary text-white"
+                      ? "bg-brand-primary text-button-text"
                       : isActive
-                        ? "bg-brand-primary text-white ring-2 ring-offset-2 ring-brand-primary"
+                        ? "bg-brand-primary text-button-text ring-2 ring-offset-2 ring-brand-primary"
                         : "bg-ink-200 text-ink-600",
                   ].join(" ")}
                 >

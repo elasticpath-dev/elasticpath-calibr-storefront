@@ -57,7 +57,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
           <ol className="space-y-2 text-sm text-gray-600">
             {(["nextStep1", "nextStep2", "nextStep3"] as const).map((key, i) => (
               <li key={key} className="flex items-start gap-2">
-                <span className="shrink-0 w-5 h-5 rounded-full bg-brand-secondary text-white text-[10px] font-bold flex items-center justify-center mt-0.5">
+                <span className="shrink-0 w-5 h-5 rounded-full bg-brand-secondary text-button-text text-[10px] font-bold flex items-center justify-center mt-0.5">
                   {i + 1}
                 </span>
                 {t(key)}
@@ -70,7 +70,7 @@ export default async function OrderConfirmationPage({ params }: Props) {
         <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
           <Link
             href={`/${lang}`}
-            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-brand-primary text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-brand-primary text-button-text text-sm font-semibold hover:opacity-90 transition-opacity"
           >
             {t("continueShopping")}
             <ArrowRight size={16} />

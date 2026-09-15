@@ -109,7 +109,7 @@ function PageButton({ onClick, disabled, isActive, children, ...props }: PageBut
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-1",
         "disabled:opacity-40 disabled:pointer-events-none",
         isActive
-          ? "bg-brand-primary text-white"
+          ? "bg-brand-primary text-button-text"
           : "text-gray-700 hover:bg-gray-100"
       )}
       {...props}

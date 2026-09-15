@@ -60,7 +60,7 @@ function HeroSection({ lang }: { lang: string }) {
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href={`/${lang}/category`}
-              className="inline-flex items-center px-6 py-3 rounded-lg bg-brand-primary text-white text-sm font-semibold hover:opacity-90 transition-opacity"
+              className="inline-flex items-center px-6 py-3 rounded-lg bg-brand-primary text-button-text text-sm font-semibold hover:opacity-90 transition-opacity"
             >
               Shop Now
             </Link>

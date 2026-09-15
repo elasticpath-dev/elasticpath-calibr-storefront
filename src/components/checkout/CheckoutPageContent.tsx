@@ -53,7 +53,7 @@ export function CheckoutPageContent({ lang }: Props) {
         <p className="text-gray-500 mb-8">{t("emptyCartSubtitle")}</p>
         <Link
           href={`/${lang}`}
-          className="inline-flex items-center px-6 py-3 rounded-lg bg-brand-primary text-white font-medium text-sm hover:opacity-90 transition-opacity"
+          className="inline-flex items-center px-6 py-3 rounded-lg bg-brand-primary text-button-text font-medium text-sm hover:opacity-90 transition-opacity"
         >
           {t("continueShopping")}
         </Link>

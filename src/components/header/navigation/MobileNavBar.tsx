@@ -145,7 +145,7 @@ export function MobileNavBar({ lang, hasPlasmicNav = false }: MobileNavBarProps)
                 onClick={() => handleLocaleChange(locale)}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium border transition-colors
                   ${locale === lang
-                    ? "bg-brand-primary text-white border-transparent"
+                    ? "bg-brand-primary text-button-text border-transparent"
                     : "bg-white text-gray-600 border-gray-200 hover:border-gray-400"
                   }`}
               >

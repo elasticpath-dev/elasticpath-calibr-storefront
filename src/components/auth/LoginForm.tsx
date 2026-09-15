@@ -125,7 +125,7 @@ export function LoginForm({
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-white px-4 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+          className="w-full flex items-center justify-center gap-2 rounded-lg bg-brand-primary text-button-text px-4 py-2.5 text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
         >
           {isLoading && <Loader2 size={16} className="animate-spin" />}
           {t("signInButton")}
