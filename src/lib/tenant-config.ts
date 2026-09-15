@@ -73,6 +73,9 @@ export type ThemeConfig = {
   error700: string;
   error600: string;
   warning600: string;
+  /** Text/foreground color on filled brand buttons (primary & secondary).
+   * Default white. From NEXT_PUBLIC_BUTTON_TEXT_COLOR. */
+  buttonText: string;
 };
 
 export type TenantConfig = {
@@ -477,6 +480,7 @@ export function buildTenantConfigFromEnv(): TenantConfig {
       error700: normalizeHex(e.NEXT_PUBLIC_COLOR_ERROR_700, "#a8341f"),
       error600: normalizeHex(e.NEXT_PUBLIC_COLOR_ERROR_600, "#c2402b"),
       warning600: normalizeHex(e.NEXT_PUBLIC_COLOR_WARNING_600, "#b26a00"),
+      buttonText: normalizeHex(e.NEXT_PUBLIC_BUTTON_TEXT_COLOR, "#ffffff"),
     },
     features: {
       searchEnabled: e.NEXT_PUBLIC_SEARCH_ENABLED === "true",

@@ -48,6 +48,7 @@ function buildThemeVars(theme: ThemeConfig): React.CSSProperties {
     "--color-error-700": theme.error700,
     "--color-error-600": theme.error600,
     "--color-warning-600": theme.warning600,
+    "--color-button-text": theme.buttonText,
   } as React.CSSProperties;
 }
 

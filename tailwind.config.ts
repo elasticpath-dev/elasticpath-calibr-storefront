@@ -50,6 +50,11 @@ const config: Config = {
           100: "var(--color-warning-100)",
           50:  "var(--color-warning-50)",
         },
+        // Configurable text color on filled brand buttons — `text-button-text`.
+        // Falls back to white where the theme var isn't injected (e.g. Storybook).
+        button: {
+          text: "var(--color-button-text, #ffffff)",
+        },
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],

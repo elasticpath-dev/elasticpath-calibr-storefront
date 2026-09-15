@@ -81,6 +81,7 @@ Controls whether the homepage, footer, and logo are managed visually in the Elas
 | `NEXT_PUBLIC_BRAND_PRIMARY`, `NEXT_PUBLIC_BRAND_SECONDARY`, `NEXT_PUBLIC_BRAND_ACCENT`, `NEXT_PUBLIC_BRAND_MUTED` | Brand color scale (hex, no `#`). Drives buttons, links, and selection states throughout the site. |
 | `NEXT_PUBLIC_COLOR_INK_*` (`900`–`50`) | Neutral/gray scale used for text and surfaces. |
 | `NEXT_PUBLIC_COLOR_SUCCESS_*`, `NEXT_PUBLIC_COLOR_ERROR_*`, `NEXT_PUBLIC_COLOR_WARNING_600` | Semantic colors for status badges, alerts, and confirmation states. |
+| `NEXT_PUBLIC_BUTTON_TEXT_COLOR` | Text color on filled brand buttons (primary & secondary), hex without `#`. Defaults to white (`ffffff`) — set a dark value when your brand color is light. |
 
 All color variables ship with defaults, so you only need to set the ones you're overriding.
 

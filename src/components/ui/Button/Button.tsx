@@ -24,9 +24,9 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "bg-brand-primary text-white hover:opacity-90 focus-visible:ring-brand-primary",
+    "bg-brand-primary text-button-text hover:opacity-90 focus-visible:ring-brand-primary",
   secondary:
-    "bg-brand-secondary text-white hover:opacity-90 focus-visible:ring-brand-secondary",
+    "bg-brand-secondary text-button-text hover:opacity-90 focus-visible:ring-brand-secondary",
   outline:
     "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 focus-visible:ring-gray-400",
   ghost:
