@@ -122,6 +122,10 @@ export type TenantConfig = {
     showAlternativePrices: boolean;
     /** Enable the Bulk / Quick Order page and its header entry point. */
     bulkOrderEnabled: boolean;
+    /** Show a "booking reference" input on the cart (like the promo code
+     * input). Applying it POSTs to the /v2/booking endpoint via /api/booking.
+     * Disabled by default. From NEXT_PUBLIC_BOOKING_REF_ENABLED. */
+    bookingRefEnabled: boolean;
     /** Non-transactional "marketing" storefront: until a shopper signs in, no
      * calls are made to the Elastic Path endpoint (no access token, catalog,
      * cart or navigation) — only Plasmic content renders. Signing in lifts the
@@ -219,6 +223,8 @@ export type ClientTenantConfig = {
   /** Non-transactional marketing mode — see TenantConfig.features.marketingMode.
    * On the client, "hold EP APIs until signed in" = marketingMode && !isAuthenticated. */
   marketingMode: boolean;
+  /** Show the booking-reference input on the cart — see features.bookingRefEnabled. */
+  bookingRefEnabled: boolean;
   cms: { projectId: string; apiToken: string; preview: boolean; host: string };
   currency: { default: string; available: string[] };
   epContextTag?: string;
@@ -266,6 +272,7 @@ export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
     excludedLocations: config.inventory.excludedLocations,
     defaultLocation: config.inventory.defaultLocation,
     marketingMode: config.features.marketingMode,
+    bookingRefEnabled: config.features.bookingRefEnabled,
     storeName: config.site.name,
     brandInk900: config.theme.ink900,
     currency: config.currency,
@@ -494,6 +501,7 @@ export function buildTenantConfigFromEnv(): TenantConfig {
       showAlternativePrices:
         e.NEXT_PUBLIC_SHOW_ALTERNATIVE_PRICES === "true",
       bulkOrderEnabled: e.NEXT_PUBLIC_BULK_ORDER_ENABLED === "true",
+      bookingRefEnabled: e.NEXT_PUBLIC_BOOKING_REF_ENABLED === "true",
       purchaseHistoryEnabled:
         e.NEXT_PUBLIC_PURCHASE_HISTORY_ENABLED === "true",
       alternativePriceBooks: parseAlternativePriceBooks(
@@ -644,6 +652,8 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
         defaults.features.showAlternativePrices,
       bulkOrderEnabled:
         r.features?.bulkOrderEnabled ?? defaults.features.bulkOrderEnabled,
+      bookingRefEnabled:
+        r.features?.bookingRefEnabled ?? defaults.features.bookingRefEnabled,
       purchaseHistoryEnabled:
         r.features?.purchaseHistoryEnabled ??
         defaults.features.purchaseHistoryEnabled,

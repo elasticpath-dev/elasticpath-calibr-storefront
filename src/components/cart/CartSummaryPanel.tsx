@@ -7,6 +7,7 @@ import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/Button";
 import { PromoCodeInput } from "./PromoCodeInput";
+import { BookingRefInput } from "./BookingRefInput";
 
 type Props = {
   lang: string;
@@ -82,9 +83,10 @@ export function CartSummaryPanel({ lang, lineCount, totalUnits }: Props) {
         )}
       </div>
 
-      {/* Promo code */}
-      <div className="px-6 pb-4 border-t border-ink-200 pt-4">
+      {/* Promo code + booking reference */}
+      <div className="px-6 pb-4 border-t border-ink-200 pt-4 space-y-3">
         <PromoCodeInput />
+        <BookingRefInput />
       </div>
 
       {/* Actions */}

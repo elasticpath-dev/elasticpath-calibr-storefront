@@ -16,6 +16,7 @@ import {
 import { PromoTooltip } from "@/components/cart/PromoTooltip";
 import { PromotionCarousel } from "@/components/cart/PromotionCarousel";
 import { PromoCodeInput } from "@/components/cart/PromoCodeInput";
+import { BookingRefInput } from "@/components/cart/BookingRefInput";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
@@ -337,6 +338,7 @@ export function CartButton() {
         {items.length > 0 && (
           <div className="shrink-0 border-t border-gray-100 px-6 py-5 space-y-3 bg-gray-50/60">
             <PromoCodeInput />
+            <BookingRefInput />
 
             {cartDiscountAmount < 0 && cartSubtotal ? (
               <>
