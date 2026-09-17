@@ -151,7 +151,7 @@ Events are proxied through the storefront's own domain (`/ingest`) so they aren'
 | `NEXT_PUBLIC_ALTERNATIVE_PRICE_BOOKS` | Which alternative price books to surface on the PDP. Format: `priceBookId\|Display Name`, comma-separated. Requires `NEXT_PUBLIC_SHOW_ALTERNATIVE_PRICES=true`. |
 | `NEXT_PUBLIC_PURCHASE_HISTORY_ENABLED` | `true` shows per-SKU purchase history on the product detail page. Defaults to `false`. |
 | `NEXT_PUBLIC_BULK_ORDER_ENABLED` | `true` enables the Bulk / Quick Order page (`/{lang}/bulk-order`) and its header entry-point icon. Defaults to `false`. |
-| `NEXT_PUBLIC_BOOKING_REF_ENABLED` | `true` shows a booking-reference input on the cart (like the promo code input); applying it POSTs to `/api/booking`, which calls Elastic Path's `/v2/booking` endpoint. Defaults to `false`. |
+| `NEXT_PUBLIC_BOOKING_REF_ENABLED` | `true` shows a booking-reference input on the cart (like the promo code input); applying it POSTs to `/api/booking`, which calls Elastic Path's `/v2/{cartId}/booking` endpoint. Defaults to `false`. |
 
 ### Layout & navigation
 

@@ -15,7 +15,7 @@ import { useTenantConfig } from "@/context/TenantConfigContext";
 export function BookingRefInput() {
   const t = useTranslations("cart");
   const { bookingRefEnabled } = useTenantConfig();
-  const { cartId } = useCart();
+  const { cartId, refreshCart } = useCart();
   const [open, setOpen] = useState(false);
   const [value, setValue] = useState("");
   const [applied, setApplied] = useState<string | null>(null);
@@ -40,6 +40,8 @@ export function BookingRefInput() {
         setApplied(trimmed);
         setValue("");
         setOpen(false);
+        // The endpoint returns the updated cart — reload it so totals/items reflect it.
+        await refreshCart();
       } else {
         setError(json?.error ?? t("bookingInvalid"));
       }
