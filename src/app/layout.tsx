@@ -69,8 +69,10 @@ export default async function RootLayout({
       <body suppressHydrationWarning>
         {children}
         <Analytics />
-        {/* Agentic chat widget — loaded on every page when enabled. */}
-        {agentic.enabled && agentic.src && (
+        {/* Agentic chat widget — loaded on every page when enabled. Optional
+            chaining guards against configs resolved before this field existed
+            (stale cache / older remote config). */}
+        {agentic?.enabled && agentic?.src && (
           <Script
             src={agentic.src}
             data-store-id={agentic.storeId || undefined}
