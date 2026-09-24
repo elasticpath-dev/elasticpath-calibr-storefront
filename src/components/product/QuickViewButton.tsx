@@ -183,6 +183,7 @@ export function QuickViewButton({ product, lang, className }: Props) {
                     navigateOnSelect={false}
                     onVariantResolved={handleVariantResolved}
                     commodityType={detail.commodityType}
+                    missingPrice={!displayPrice}
                   />
                 </SubscriptionProductActions>
               ) : (
@@ -211,6 +212,7 @@ export function QuickViewButton({ product, lang, className }: Props) {
                     navigateOnSelect={false}
                     onVariantResolved={handleVariantResolved}
                     commodityType={detail.commodityType}
+                    missingPrice={!displayPrice}
                   />
                 </>
               )}
