@@ -4,6 +4,8 @@ import { useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
 import { QuantitySelector } from "./QuantitySelector";
 import { AddToCart } from "./AddToCart";
+import { LoginToSeePrice } from "./LoginToSeePrice";
+import { usePriceGate } from "@/hooks/use-price-gate";
 import type { ProductField } from "@/context/CartContext";
 
 type Props = {
@@ -47,6 +49,31 @@ export function QuantityAddToCart({
 }: Props) {
   const t = useTranslations("product");
   const [quantity, setQuantity] = useState(1);
+
+  // No price for this currency: hide the control, or offer "Login to see
+  // price", per tenant config — otherwise fall through to the disabled default.
+  const { mode: priceMode, openLogin } = usePriceGate(missingPrice);
+  if (priceMode === "hide") return null;
+  if (priceMode === "login") {
+    if (priceSlot) {
+      return (
+        <LoginToSeePrice
+          onClick={openLogin}
+          variant="full"
+          className="w-full h-9 text-sm"
+        />
+      );
+    }
+    if (compact) {
+      return (
+        <LoginToSeePrice
+          onClick={openLogin}
+          className="flex-1 justify-center h-9"
+        />
+      );
+    }
+    return <LoginToSeePrice onClick={openLogin} variant="full" />;
+  }
 
   const disabled = missingPrice || outOfStock;
   const addToCartLabel = outOfStock ? t("outOfStock") : undefined;

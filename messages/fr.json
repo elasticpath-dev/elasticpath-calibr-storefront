@@ -528,6 +528,7 @@
     "showVariants": "Afficher les variantes",
     "hideVariants": "Masquer les variantes",
     "missingPriceTooltip": "Prix manquant",
+    "loginToSeePrice": "Connectez-vous pour voir le prix",
     "detailsLabel": "Détails du produit",
     "shopperAttributes": "Attributs de l'acheteur",
     "pricingLabel": "Tarifs",

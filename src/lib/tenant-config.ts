@@ -126,6 +126,17 @@ export type TenantConfig = {
      * input). Applying it POSTs to the /v2/booking endpoint via /api/booking.
      * Disabled by default. From NEXT_PUBLIC_BOOKING_REF_ENABLED. */
     bookingRefEnabled: boolean;
+    /** When a product has no price in the selected currency: default is a
+     * disabled Add to Cart; when true, hide the Add to Cart button entirely
+     * (PDP, search, carousels). From NEXT_PUBLIC_HIDE_ADD_TO_CART_WHEN_NO_PRICE. */
+    hideAddToCartWhenNoPrice: boolean;
+    /** When a product has no price and the shopper is signed out, show a
+     * "Login to see price" button (opens the login overlay) instead of a
+     * disabled/hidden Add to Cart. From NEXT_PUBLIC_LOGIN_TO_SEE_PRICE. */
+    loginToSeePrice: boolean;
+    /** Hide the "create account" link on the login overlay — shoppers can log
+     * in but not self-register. From NEXT_PUBLIC_DISABLE_REGISTRATION. */
+    disableRegistration: boolean;
     /** Non-transactional "marketing" storefront: until a shopper signs in, no
      * calls are made to the Elastic Path endpoint (no access token, catalog,
      * cart or navigation) — only Plasmic content renders. Signing in lifts the
@@ -225,6 +236,12 @@ export type ClientTenantConfig = {
   marketingMode: boolean;
   /** Show the booking-reference input on the cart — see features.bookingRefEnabled. */
   bookingRefEnabled: boolean;
+  /** Hide (vs disable) Add to Cart when there's no price — see features.hideAddToCartWhenNoPrice. */
+  hideAddToCartWhenNoPrice: boolean;
+  /** Show "Login to see price" (signed out, no price) — see features.loginToSeePrice. */
+  loginToSeePrice: boolean;
+  /** Hide the create-account link on the login overlay — see features.disableRegistration. */
+  disableRegistration: boolean;
   cms: { projectId: string; apiToken: string; preview: boolean; host: string };
   currency: { default: string; available: string[] };
   epContextTag?: string;
@@ -273,6 +290,9 @@ export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
     defaultLocation: config.inventory.defaultLocation,
     marketingMode: config.features.marketingMode,
     bookingRefEnabled: config.features.bookingRefEnabled,
+    hideAddToCartWhenNoPrice: config.features.hideAddToCartWhenNoPrice,
+    loginToSeePrice: config.features.loginToSeePrice,
+    disableRegistration: config.features.disableRegistration,
     storeName: config.site.name,
     brandInk900: config.theme.ink900,
     currency: config.currency,
@@ -502,6 +522,10 @@ export function buildTenantConfigFromEnv(): TenantConfig {
         e.NEXT_PUBLIC_SHOW_ALTERNATIVE_PRICES === "true",
       bulkOrderEnabled: e.NEXT_PUBLIC_BULK_ORDER_ENABLED === "true",
       bookingRefEnabled: e.NEXT_PUBLIC_BOOKING_REF_ENABLED === "true",
+      hideAddToCartWhenNoPrice:
+        e.NEXT_PUBLIC_HIDE_ADD_TO_CART_WHEN_NO_PRICE === "true",
+      loginToSeePrice: e.NEXT_PUBLIC_LOGIN_TO_SEE_PRICE === "true",
+      disableRegistration: e.NEXT_PUBLIC_DISABLE_REGISTRATION === "true",
       purchaseHistoryEnabled:
         e.NEXT_PUBLIC_PURCHASE_HISTORY_ENABLED === "true",
       alternativePriceBooks: parseAlternativePriceBooks(
@@ -654,6 +678,14 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
         r.features?.bulkOrderEnabled ?? defaults.features.bulkOrderEnabled,
       bookingRefEnabled:
         r.features?.bookingRefEnabled ?? defaults.features.bookingRefEnabled,
+      hideAddToCartWhenNoPrice:
+        r.features?.hideAddToCartWhenNoPrice ??
+        defaults.features.hideAddToCartWhenNoPrice,
+      loginToSeePrice:
+        r.features?.loginToSeePrice ?? defaults.features.loginToSeePrice,
+      disableRegistration:
+        r.features?.disableRegistration ??
+        defaults.features.disableRegistration,
       purchaseHistoryEnabled:
         r.features?.purchaseHistoryEnabled ??
         defaults.features.purchaseHistoryEnabled,

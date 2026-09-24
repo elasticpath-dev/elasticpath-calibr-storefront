@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useOidcProfiles } from "@/context/OidcProfilesContext";
 import { generateOidcLoginRedirectUrl } from "@/lib/oidc-utils";
+import { useTenantConfig } from "@/context/TenantConfigContext";
 
 export type LoginFormData = {
   email: string;
@@ -35,6 +36,7 @@ export function LoginForm({
   returnPath,
 }: Props) {
   const t = useTranslations("auth");
+  const { disableRegistration } = useTenantConfig();
   const {
     register,
     handleSubmit,
@@ -160,7 +162,7 @@ export function LoginForm({
         </div>
       )}
 
-      {onSignUp && (
+      {onSignUp && !disableRegistration && (
         <p className="mt-5 text-center text-sm text-gray-500">
           {t("noAccountPrompt")}{" "}
           <button

@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages } from "next-intl/server";
 import { CartProvider } from "@/context/CartContext";
 import { AuthProvider } from "@/context/AuthContext";
+import { AuthModalProvider } from "@/context/AuthModalContext";
 import { NavigationProvider } from "@/context/NavigationContext";
 import { CatalogProvider } from "@/context/CatalogContext";
 import { PreferencesProvider } from "@/context/PreferencesContext";
@@ -33,6 +34,7 @@ export default async function AppLayout({
           auto-authenticates and creates _store_ep_credentials / the cart
           cookie) can be withheld in marketing mode until sign-in. */}
       <AuthProvider initialSignedIn={initialSignedIn}>
+        <AuthModalProvider>
         <ClientProvider>
           <PreferencesProvider>
             <CatalogProvider>
@@ -47,6 +49,7 @@ export default async function AppLayout({
             </CatalogProvider>
           </PreferencesProvider>
         </ClientProvider>
+        </AuthModalProvider>
       </AuthProvider>
       </CurrencyProvider>
     </NextIntlClientProvider>

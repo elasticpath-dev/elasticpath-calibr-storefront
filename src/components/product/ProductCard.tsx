@@ -10,6 +10,8 @@ import { Price } from "./Price";
 import { QuantitySelector } from "./QuantitySelector";
 import { AddToCart } from "./AddToCart";
 import { QuantityAddToCart } from "./QuantityAddToCart";
+import { LoginToSeePrice } from "./LoginToSeePrice";
+import { usePriceGate } from "@/hooks/use-price-gate";
 import { QuickViewButton } from "./QuickViewButton";
 import { MatrixCartRow } from "@/components/cart/MatrixCartRow";
 import type { MatrixGroup } from "@/components/cart/types";
@@ -113,30 +115,41 @@ export function ProductCard({
     : 0;
 
   const missingPrice = !product.priceFormatted;
+  // No price for this currency: hide the control or offer "Login to see price"
+  // per tenant config (the non-bulk paths delegate to QuantityAddToCart, which
+  // applies the same gate; here we handle the bulk-mode staging controls).
+  const { mode: priceMode, openLogin } = usePriceGate(missingPrice);
 
   // Inline control for the horizontal "row" variant — everything on one line.
   const addToCartControl = bulkMode ? (
-    <div
-      className="flex items-center gap-2"
-      title={missingPrice ? t("missingPriceTooltip") : undefined}
-    >
-      <QuantitySelector
-        value={bulkQuantity}
-        onChange={(qty) => onBulkQuantityChange?.(product.id, qty)}
-        min={0}
-        disabled={missingPrice || outOfStock}
-      />
-      <AddToCart
-        productId={product.id}
-        quantity={bulkQuantity}
-        disabled={bulkQuantity === 0 || missingPrice || outOfStock}
-        label={outOfStock ? t("outOfStock") : undefined}
+    priceMode === "hide" ? null : priceMode === "login" ? (
+      <LoginToSeePrice
+        onClick={openLogin}
         className="flex-1 justify-center h-9"
-        // Once this product has been added individually, drop it back to 0
-        // so it isn't also included the next time "Add all to cart" runs.
-        onAdded={() => onBulkQuantityChange?.(product.id, 0)}
       />
-    </div>
+    ) : (
+      <div
+        className="flex items-center gap-2"
+        title={missingPrice ? t("missingPriceTooltip") : undefined}
+      >
+        <QuantitySelector
+          value={bulkQuantity}
+          onChange={(qty) => onBulkQuantityChange?.(product.id, qty)}
+          min={0}
+          disabled={missingPrice || outOfStock}
+        />
+        <AddToCart
+          productId={product.id}
+          quantity={bulkQuantity}
+          disabled={bulkQuantity === 0 || missingPrice || outOfStock}
+          label={outOfStock ? t("outOfStock") : undefined}
+          className="flex-1 justify-center h-9"
+          // Once this product has been added individually, drop it back to 0
+          // so it isn't also included the next time "Add all to cart" runs.
+          onAdded={() => onBulkQuantityChange?.(product.id, 0)}
+        />
+      </div>
+    )
   ) : (
     <QuantityAddToCart
       productId={product.id}
@@ -150,6 +163,13 @@ export function ProductCard({
   // selector share the first row, Add to Cart spans its own row below.
   const renderStackedControl = (price: React.ReactNode) =>
     bulkMode ? (
+      priceMode === "hide" ? null : priceMode === "login" ? (
+        <LoginToSeePrice
+          onClick={openLogin}
+          variant="full"
+          className="w-full h-9 text-sm"
+        />
+      ) : (
       <div
         className="flex flex-col gap-2"
         title={missingPrice ? t("missingPriceTooltip") : undefined}
@@ -173,6 +193,7 @@ export function ProductCard({
           onAdded={() => onBulkQuantityChange?.(product.id, 0)}
         />
       </div>
+      )
     ) : (
       <QuantityAddToCart
         productId={product.id}

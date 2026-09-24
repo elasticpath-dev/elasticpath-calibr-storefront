@@ -152,6 +152,9 @@ Events are proxied through the storefront's own domain (`/ingest`) so they aren'
 | `NEXT_PUBLIC_PURCHASE_HISTORY_ENABLED` | `true` shows per-SKU purchase history on the product detail page. Defaults to `false`. |
 | `NEXT_PUBLIC_BULK_ORDER_ENABLED` | `true` enables the Bulk / Quick Order page (`/{lang}/bulk-order`) and its header entry-point icon. Defaults to `false`. |
 | `NEXT_PUBLIC_BOOKING_REF_ENABLED` | `true` shows a booking-reference input on the cart (like the promo code input); applying it POSTs to `/api/booking`, which calls Elastic Path's `/v2/{cartId}/booking` endpoint. Defaults to `false`. |
+| `NEXT_PUBLIC_HIDE_ADD_TO_CART_WHEN_NO_PRICE` | When a product has no price in the shopper's currency, `true` hides the Add to Cart button entirely (PDP, search, carousels) instead of the default disabled button. Defaults to `false`. |
+| `NEXT_PUBLIC_LOGIN_TO_SEE_PRICE` | `true` shows a "Login to see price" button (opens the login overlay) in place of Add to Cart when the product has no price and the shopper is signed out. Takes precedence over `NEXT_PUBLIC_HIDE_ADD_TO_CART_WHEN_NO_PRICE` for guests. Defaults to `false`. |
+| `NEXT_PUBLIC_DISABLE_REGISTRATION` | `true` hides the "create account" link on the login overlay — shoppers can log in but not self-register. Defaults to `false`. |
 
 ### Layout & navigation
 
