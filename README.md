@@ -139,6 +139,10 @@ If you see "Manual payments aren't enabled for this store" at checkout, go to Co
 |---|---|
 | `NEXT_PUBLIC_POSTHOG_KEY` | PostHog project API key. Leave empty to disable analytics entirely — no script is loaded. |
 | `NEXT_PUBLIC_POSTHOG_HOST` | `https://eu.i.posthog.com` (default) or `https://us.i.posthog.com`, matching your PostHog project's region. |
+| `NEXT_PUBLIC_AGENTIC_ENABLED` | `true` injects the agent chat widget script on every page. Defaults to `false`. |
+| `NEXT_PUBLIC_AGENTIC_SRC` | Widget script URL. Defaults to `https://chat.elasticpath.solutions/agent-widget.js`. |
+| `NEXT_PUBLIC_AGENTIC_STORE_ID` | `data-store-id` for the widget. Falls back to `NEXT_PUBLIC_STORE_ID` when blank. |
+| `NEXT_PUBLIC_AGENTIC_AGENT` | `data-agent` for the widget — the agent slug (e.g. `dfilms-agent`). |
 
 Events are proxied through the storefront's own domain (`/ingest`) so they aren't blocked by ad blockers.
 

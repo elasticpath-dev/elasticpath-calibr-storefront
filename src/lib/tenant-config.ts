@@ -208,6 +208,17 @@ export type TenantConfig = {
     showBundleOptionImages: boolean;
   };
   analytics: { posthogKey: string; posthogHost: string };
+  /** Agentic chat widget. When enabled, the root layout injects the widget
+   * script on every page. Configured via NEXT_PUBLIC_AGENTIC_*. */
+  agentic: {
+    enabled: boolean;
+    /** Widget script src. */
+    src: string;
+    /** data-store-id attribute (falls back to NEXT_PUBLIC_STORE_ID). */
+    storeId: string;
+    /** data-agent attribute — the agent slug. */
+    agent: string;
+  };
 };
 
 /**
@@ -572,6 +583,18 @@ export function buildTenantConfigFromEnv(): TenantConfig {
       posthogKey: e.NEXT_PUBLIC_POSTHOG_KEY ?? "",
       posthogHost: e.NEXT_PUBLIC_POSTHOG_HOST ?? "https://eu.i.posthog.com",
     },
+    agentic: {
+      enabled: e.NEXT_PUBLIC_AGENTIC_ENABLED === "true",
+      src:
+        e.NEXT_PUBLIC_AGENTIC_SRC?.trim() ||
+        "https://chat.elasticpath.solutions/agent-widget.js",
+      // Falls back to the store's configured id when a dedicated one isn't set.
+      storeId:
+        e.NEXT_PUBLIC_AGENTIC_STORE_ID?.trim() ||
+        e.NEXT_PUBLIC_STORE_ID?.trim() ||
+        "",
+      agent: e.NEXT_PUBLIC_AGENTIC_AGENT?.trim() ?? "",
+    },
   };
 }
 
@@ -594,6 +617,7 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
     payments: Partial<TenantConfig["payments"]>;
     ui: Partial<TenantConfig["ui"]>;
     analytics: Partial<TenantConfig["analytics"]>;
+    agentic: Partial<TenantConfig["agentic"]>;
   }>;
 
   const theme = { ...defaults.theme } as ThemeConfig;
@@ -744,6 +768,12 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
     analytics: {
       posthogKey: r.analytics?.posthogKey ?? defaults.analytics.posthogKey,
       posthogHost: r.analytics?.posthogHost ?? defaults.analytics.posthogHost,
+    },
+    agentic: {
+      enabled: r.agentic?.enabled ?? defaults.agentic.enabled,
+      src: r.agentic?.src || defaults.agentic.src,
+      storeId: r.agentic?.storeId || defaults.agentic.storeId,
+      agent: r.agentic?.agent ?? defaults.agentic.agent,
     },
   };
 }

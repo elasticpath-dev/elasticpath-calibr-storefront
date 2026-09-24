@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
 import { getTenantConfig, type ThemeConfig } from "@/lib/tenant-config";
 import "./globals.css";
@@ -57,7 +58,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { theme, ui } = await getTenantConfig();
+  const { theme, ui, agentic } = await getTenantConfig();
   return (
     <html
       suppressHydrationWarning
@@ -68,6 +69,15 @@ export default async function RootLayout({
       <body suppressHydrationWarning>
         {children}
         <Analytics />
+        {/* Agentic chat widget — loaded on every page when enabled. */}
+        {agentic.enabled && agentic.src && (
+          <Script
+            src={agentic.src}
+            data-store-id={agentic.storeId || undefined}
+            data-agent={agentic.agent || undefined}
+            strategy="afterInteractive"
+          />
+        )}
       </body>
     </html>
   );
