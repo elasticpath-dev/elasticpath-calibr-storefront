@@ -1497,70 +1497,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [loadItems]);
 
   // The agentic chat widget mutates the same cart out-of-band; when it fires
-  // its add/update/delete events, re-fetch so our cart view stays in sync.
-  // Listen on both window and document since widgets dispatch on either, and
-  // cover both naming variants (add/update/delete and add/updated/deleted).
+  // its cart add/update/delete events (yd-agent-cart-*), re-fetch so our cart
+  // view stays in sync. Dispatched on window; both -update/-updated and
+  // -delete/-deleted spellings are covered defensively.
   useEffect(() => {
-    const handler = (event: Event) => {
-      // eslint-disable-next-line no-console
-      console.log(
-        "[cart-sync] received chat event:",
-        event.type,
-        (event as CustomEvent).detail,
-      );
+    const handler = () => {
       void refreshCart();
     };
     const events = [
-      "yd-agent-card-add",
-      "yd-agent-card-update",
-      "yd-agent-card-updated",
-      "yd-agent-card-delete",
-      "yd-agent-card-deleted",
+      "yd-agent-cart-add",
+      "yd-agent-cart-update",
+      "yd-agent-cart-updated",
+      "yd-agent-cart-delete",
+      "yd-agent-cart-deleted",
     ];
     for (const e of events) {
       window.addEventListener(e, handler);
       document.addEventListener(e, handler);
     }
-    // eslint-disable-next-line no-console
-    console.log("[cart-sync] listening for chat cart events:", events);
-
-    // TEMP discovery: reveal the exact event name/target the widget fires, even
-    // if it isn't in `events` above. Patches dispatchEvent to log any
-    // agent/cart-ish event. Remove once the real event name is confirmed.
-    const patch = (target: Window | Document, label: string) => {
-      const t = target as unknown as {
-        __ydPatched?: boolean;
-        dispatchEvent: (ev: Event) => boolean;
-      };
-      if (t.__ydPatched) return () => {};
-      const orig = target.dispatchEvent.bind(target);
-      t.__ydPatched = true;
-      t.dispatchEvent = (ev: Event) => {
-        if (typeof ev?.type === "string" && /agent|card|yd[-_]/i.test(ev.type)) {
-          // eslint-disable-next-line no-console
-          console.log(
-            `[cart-sync] ${label}.dispatchEvent saw:`,
-            ev.type,
-            (ev as CustomEvent).detail,
-          );
-        }
-        return orig(ev);
-      };
-      return () => {
-        t.dispatchEvent = orig;
-        t.__ydPatched = false;
-      };
-    };
-    const unpatchWindow = patch(window, "window");
-    const unpatchDocument = patch(document, "document");
-
     return () => {
       for (const e of events) {
         window.removeEventListener(e, handler);
         document.removeEventListener(e, handler);
       }
-      unpatchWindow();
-      unpatchDocument();
     };
   }, [refreshCart]);
 
