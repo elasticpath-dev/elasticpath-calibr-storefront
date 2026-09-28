@@ -155,14 +155,25 @@ type CartContextValue = {
     productId: string,
     quantity?: number,
     customInputs?: Record<string, string>,
-    subscriptionConfig?: { offeringId: string; plan: string; pricing_option: string; planName: string; frequency: string; imageUrl?: string },
+    subscriptionConfig?: {
+      offeringId: string;
+      plan: string;
+      pricing_option: string;
+      planName: string;
+      frequency: string;
+      imageUrl?: string;
+    },
     productFields?: ProductField[],
     /** Multi-location: explicit stock location for this line (e.g. the PDP's
      * page-local selection). Falls back to the universal cookie when omitted. */
     location?: string,
   ) => Promise<PromotionSuggestion[] | undefined>;
   addItems: (
-    items: Array<{ productId: string; quantity: number; customInputs?: Record<string, string> }>,
+    items: Array<{
+      productId: string;
+      quantity: number;
+      customInputs?: Record<string, string>;
+    }>,
   ) => Promise<PromotionSuggestion[] | undefined>;
   /** Adds items by SKU in one call (bulk / quick order). Returns how many
    * were added plus any per-SKU errors the API reported (e.g. unknown SKU). */
@@ -183,7 +194,9 @@ type CartContextValue = {
     customInputs: Record<string, unknown>,
     quantity: number,
   ) => Promise<void>;
-  bulkUpdateItems: (items: Array<{ cartItemId: string; quantity: number }>) => Promise<void>;
+  bulkUpdateItems: (
+    items: Array<{ cartItemId: string; quantity: number }>,
+  ) => Promise<void>;
   /** Re-assert each line's top-level `location` from the surviving
    * custom_inputs.location. EP clears omitted fields on a cart-item PUT, so the
    * checkout shipping-group updates wipe `location`; call this right before
@@ -303,17 +316,23 @@ function toCartLineItem(
   const isCustomItem = raw.type === "custom_item";
   const imageHref =
     (raw.custom_inputs?.image_url as string | undefined) ||
-    (item.image?.href || undefined);
+    item.image?.href ||
+    undefined;
 
   const subscriptionMeta = isSubscription
-    ? (raw.custom_inputs?.subscription as { plan_name?: string; frequency?: string } | undefined)
+    ? (raw.custom_inputs?.subscription as
+        | { plan_name?: string; frequency?: string }
+        | undefined)
     : undefined;
 
   const rawSubscriptionConfiguration = isSubscription
-    ? (raw.subscription_configuration as { plan?: string; pricing_option?: string } | undefined)
+    ? (raw.subscription_configuration as
+        | { plan?: string; pricing_option?: string }
+        | undefined)
     : undefined;
   const subscriptionConfiguration =
-    rawSubscriptionConfiguration?.plan && rawSubscriptionConfiguration?.pricing_option
+    rawSubscriptionConfiguration?.plan &&
+    rawSubscriptionConfiguration?.pricing_option
       ? {
           plan: rawSubscriptionConfiguration.plan,
           pricing_option: rawSubscriptionConfiguration.pricing_option,
@@ -325,7 +344,9 @@ function toCartLineItem(
     productId: item.product_id ?? "",
     sku: item.sku ?? undefined,
     // product_id present ⇒ PXM product ⇒ slug links to its PDP
-    slug: item.product_id ? ((raw.slug as string | undefined) ?? undefined) : undefined,
+    slug: item.product_id
+      ? ((raw.slug as string | undefined) ?? undefined)
+      : undefined,
     name: item.name ?? "",
     quantity: item.quantity ?? 1,
     unitPriceAmount: (withoutTax as any)?.unit?.amount ?? 0,
@@ -345,7 +366,8 @@ function toCartLineItem(
       (raw.location as string | undefined) ||
       (raw.custom_inputs?.location as string | undefined) ||
       undefined,
-    locationName: (raw.custom_inputs?.location_name as string | undefined) || undefined,
+    locationName:
+      (raw.custom_inputs?.location_name as string | undefined) || undefined,
     discounts,
     isSubscription: isSubscription || undefined,
     subscriptionPlanName: subscriptionMeta?.plan_name ?? undefined,
@@ -454,7 +476,8 @@ function parseCartResponse(response: CartsResponse): {
     if (type === "custom_item") {
       const sku = (i as any).sku;
       return (
-        typeof sku !== "string" || !sku.startsWith(SHIPPING_CUSTOM_ITEM_SKU_PREFIX)
+        typeof sku !== "string" ||
+        !sku.startsWith(SHIPPING_CUSTOM_ITEM_SKU_PREFIX)
       );
     }
     return false;
@@ -500,10 +523,8 @@ function parseCartResponse(response: CartsResponse): {
     (response.meta?.display_price as any)?.shipping?.formatted ?? "";
   const cartShippingAmount =
     (response.meta?.display_price as any)?.shipping?.amount ?? 0;
-  const cartTax =
-    (response.meta?.display_price as any)?.tax?.formatted ?? "";
-  const cartTaxAmount =
-    (response.meta?.display_price as any)?.tax?.amount ?? 0;
+  const cartTax = (response.meta?.display_price as any)?.tax?.formatted ?? "";
+  const cartTaxAmount = (response.meta?.display_price as any)?.tax?.amount ?? 0;
   return {
     items,
     itemCount,
@@ -857,14 +878,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
       productId: string,
       quantity = 1,
       customInputs?: Record<string, string>,
-      subscriptionConfig?: { offeringId: string; plan: string; pricing_option: string; planName: string; frequency: string; imageUrl?: string },
+      subscriptionConfig?: {
+        offeringId: string;
+        plan: string;
+        pricing_option: string;
+        planName: string;
+        frequency: string;
+        imageUrl?: string;
+      },
       productFields?: ProductField[],
       location?: string,
     ): Promise<PromotionSuggestion[] | undefined> => {
       if (!epClient || !cartId) return undefined;
       setIsLoading(true);
       try {
-        const nonEmptyFields = productFields?.filter((f) => f.value.trim() !== "") ?? [];
+        const nonEmptyFields =
+          productFields?.filter((f) => f.value.trim() !== "") ?? [];
 
         const body: any = subscriptionConfig
           ? {
@@ -883,7 +912,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
                     plan_name: subscriptionConfig.planName,
                     frequency: subscriptionConfig.frequency,
                   },
-                  ...(nonEmptyFields.length > 0 ? { product_fields: nonEmptyFields } : {}),
+                  ...(nonEmptyFields.length > 0
+                    ? { product_fields: nonEmptyFields }
+                    : {}),
                 },
               },
             }
@@ -935,7 +966,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const addItems = useCallback(
     async (
-      items: Array<{ productId: string; quantity: number; customInputs?: Record<string, string> }>,
+      items: Array<{
+        productId: string;
+        quantity: number;
+        customInputs?: Record<string, string>;
+      }>,
     ): Promise<PromotionSuggestion[] | undefined> => {
       if (!epClient || !cartId || items.length === 0) return undefined;
       setIsLoading(true);
@@ -1060,7 +1095,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
           const bundleLocationName = await resolveLocationName(bundleLocation);
           bundleData.custom_inputs = {
             location: bundleLocation,
-            ...(bundleLocationName ? { location_name: bundleLocationName } : {}),
+            ...(bundleLocationName
+              ? { location_name: bundleLocationName }
+              : {}),
           };
         }
         const res = await manageCarts({
@@ -1135,7 +1172,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setIsLoading(false);
       }
     },
-    [epClient, cartId, removeItem, loadItems, setPromotionSuggestions, getLineLocation],
+    [
+      epClient,
+      cartId,
+      removeItem,
+      loadItems,
+      setPromotionSuggestions,
+      getLineLocation,
+    ],
   );
 
   const updateItemCustomInputs = useCallback(
@@ -1228,7 +1272,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
             location: slug,
             custom_inputs: raw.custom_inputs,
           };
-          if (raw.shipping_group_id) data.shipping_group_id = raw.shipping_group_id;
+          if (raw.shipping_group_id)
+            data.shipping_group_id = raw.shipping_group_id;
           await updateACartItem({
             client: epClient,
             path: { cartID: cartId, cartitemID: raw.id },
@@ -1450,6 +1495,30 @@ export function CartProvider({ children }: { children: ReactNode }) {
       /* silent — stale values stay until next successful refresh */
     }
   }, [loadItems]);
+
+  // The agentic chat widget mutates the same cart out-of-band; when it fires
+  // its add/update/delete events, re-fetch so our cart view stays in sync.
+  // Listen on both window and document since widgets dispatch on either.
+  useEffect(() => {
+    const handler = () => {
+      void refreshCart();
+    };
+    const events = [
+      "yd-agent-card-add",
+      "yd-agent-card-updated",
+      "yd-agent-card-deleted",
+    ];
+    for (const e of events) {
+      window.addEventListener(e, handler);
+      document.addEventListener(e, handler);
+    }
+    return () => {
+      for (const e of events) {
+        window.removeEventListener(e, handler);
+        document.removeEventListener(e, handler);
+      }
+    };
+  }, [refreshCart]);
 
   return (
     <CartContext.Provider
