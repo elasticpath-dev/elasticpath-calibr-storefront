@@ -77,6 +77,7 @@ export default async function RootLayout({
             src={agentic.src}
             data-store-id={agentic.storeId || undefined}
             data-agent={agentic.agent || undefined}
+            data-api-base-url={agentic.apiBaseUrl || undefined}
             strategy="afterInteractive"
           />
         )}

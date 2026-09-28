@@ -218,6 +218,8 @@ export type TenantConfig = {
     storeId: string;
     /** data-agent attribute — the agent slug. */
     agent: string;
+    /** data-api-base-url attribute — the agent API base URL. */
+    apiBaseUrl: string;
   };
 };
 
@@ -594,6 +596,9 @@ export function buildTenantConfigFromEnv(): TenantConfig {
         e.NEXT_PUBLIC_STORE_ID?.trim() ||
         "",
       agent: e.NEXT_PUBLIC_AGENTIC_AGENT?.trim() ?? "",
+      apiBaseUrl:
+        e.NEXT_PUBLIC_AGENTIC_API_BASE_URL?.trim() ||
+        "https://api.elasticpath.solutions",
     },
   };
 }
@@ -774,6 +779,7 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
       src: r.agentic?.src || defaults.agentic.src,
       storeId: r.agentic?.storeId || defaults.agentic.storeId,
       agent: r.agentic?.agent ?? defaults.agentic.agent,
+      apiBaseUrl: r.agentic?.apiBaseUrl || defaults.agentic.apiBaseUrl,
     },
   };
 }

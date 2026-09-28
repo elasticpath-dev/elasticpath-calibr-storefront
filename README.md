@@ -143,6 +143,7 @@ If you see "Manual payments aren't enabled for this store" at checkout, go to Co
 | `NEXT_PUBLIC_AGENTIC_SRC` | Widget script URL. Defaults to `https://chat.elasticpath.solutions/agent-widget.js`. |
 | `NEXT_PUBLIC_AGENTIC_STORE_ID` | `data-store-id` for the widget. Falls back to `NEXT_PUBLIC_STORE_ID` when blank. |
 | `NEXT_PUBLIC_AGENTIC_AGENT` | `data-agent` for the widget — the agent slug (e.g. `dfilms-agent`). |
+| `NEXT_PUBLIC_AGENTIC_API_BASE_URL` | `data-api-base-url` for the widget — the agent API base URL. Defaults to `https://api.elasticpath.solutions`. |
 
 Events are proxied through the storefront's own domain (`/ingest`) so they aren't blocked by ad blockers.
 
