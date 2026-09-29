@@ -58,18 +58,26 @@ export async function GET(req: NextRequest) {
     const records =
       (
         res.data as {
-          data?: Array<{ id?: string; attributes?: Record<string, unknown> }>;
+          data?: Array<
+            { id?: string; attributes?: Record<string, unknown> } & Record<
+              string,
+              unknown
+            >
+          >;
         }
       )?.data ?? [];
 
+    // Custom API entries expose their fields at the top level of the entry
+    // (not under `attributes` like PXM resources), so read from either.
     const options = records
       .map((r) => {
-        const attrs = r.attributes ?? {};
+        const read = (field: string) =>
+          r.attributes?.[field] !== undefined ? r.attributes[field] : r[field];
         const value =
           level.valueField === "id"
             ? (r.id ?? "")
-            : String(attrs[level.valueField] ?? r.id ?? "");
-        const label = String(attrs[level.labelField] ?? value);
+            : String(read(level.valueField) ?? r.id ?? "");
+        const label = String(read(level.labelField) ?? value);
         return { value, label };
       })
       .filter((o) => o.value);
