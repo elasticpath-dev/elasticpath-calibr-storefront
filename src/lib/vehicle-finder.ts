@@ -38,6 +38,9 @@ export type VehicleLevel = {
   /** Filters applied from earlier selections. `field` is the Custom API field;
    * `from` is the parent level whose selected value fills it. */
   filters: Array<{ field: string; from: VehicleLevelKey }>;
+  /** Extra record fields to carry on each option (beyond value/label), e.g. the
+   * engine's `bundle_slug` used by the Shop Bundle button. */
+  extraFields?: string[];
 };
 
 // Modeled on this source fitment record (one row per full combination):
@@ -85,11 +88,12 @@ export const VEHICLE_LEVELS: VehicleLevel[] = [
     key: "engine",
     slug: "vehicle-engines",
     labelField: "engine", // "2.0L 4-cyl Engine Code B4204T28 4 Turbo"
-    valueField: "equipment_unit_id", // 44414080 — the fitment id used by Shop now
+    valueField: "equipment_unit_id", // 44414080 — the fitment id (used by View Kit)
     filters: [
       { field: "make_id", from: "make" },
       { field: "model_id", from: "model" },
     ],
+    extraFields: ["bundle_slug"], // carried on the option for the Shop Bundle button
   },
 ];
 

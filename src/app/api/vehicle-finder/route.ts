@@ -78,7 +78,12 @@ export async function GET(req: NextRequest) {
             ? (r.id ?? "")
             : String(read(level.valueField) ?? r.id ?? "");
         const label = String(read(level.labelField) ?? value);
-        return { value, label };
+        const extra: Record<string, string> = {};
+        for (const f of level.extraFields ?? []) {
+          const v = read(f);
+          if (v !== undefined && v !== null) extra[f] = String(v);
+        }
+        return { value, label, ...extra };
       })
       .filter((o) => o.value);
 

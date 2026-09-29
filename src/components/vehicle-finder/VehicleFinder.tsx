@@ -7,7 +7,7 @@ import { Loader2, Car, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { VEHICLE_LEVELS, type VehicleLevelKey } from "@/lib/vehicle-finder";
 
-type Option = { value: string; label: string };
+type Option = { value: string; label: string; bundle_slug?: string };
 
 export function VehicleFinder({ lang }: { lang: string }) {
   const t = useTranslations("vehicleFinder");
@@ -91,15 +91,18 @@ export function VehicleFinder({ lang }: { lang: string }) {
 
   const allSelected = VEHICLE_LEVELS.every((l) => selections[l.key]);
 
-  const handleShopNow = () => {
-    // Carries every selection as a query param. Point this at your real
-    // results/search target — e.g. filter search by the selected fitment id.
-    const params = new URLSearchParams();
-    for (const l of VEHICLE_LEVELS) {
-      const v = selections[l.key];
-      if (v) params.set(l.key, v);
-    }
-    router.push(`/${lang}/search?${params.toString()}`);
+  // The selected engine option carries the bundle slug + the fitment id.
+  const selectedEngine = (optionsByLevel.engine ?? []).find(
+    (o) => o.value === selections.engine,
+  );
+  const bundleSlug = selectedEngine?.bundle_slug;
+
+  const handleShopBundle = () => {
+    if (bundleSlug) router.push(`/${lang}/products/${bundleSlug}`);
+  };
+
+  const handleViewKit = () => {
+    if (selections.engine) router.push(`/${lang}/kit/${selections.engine}`);
   };
 
   return (
@@ -155,15 +158,26 @@ export function VehicleFinder({ lang }: { lang: string }) {
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
-        <Button
-          variant="primary"
-          size="lg"
-          fullWidth
-          disabled={!allSelected}
-          onClick={handleShopNow}
-        >
-          {t("shopNow")}
-        </Button>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <Button
+            variant="primary"
+            size="lg"
+            fullWidth
+            disabled={!allSelected || !bundleSlug}
+            onClick={handleShopBundle}
+          >
+            {t("shopBundle")}
+          </Button>
+          <Button
+            variant="secondary"
+            size="lg"
+            fullWidth
+            disabled={!allSelected}
+            onClick={handleViewKit}
+          >
+            {t("viewKit")}
+          </Button>
+        </div>
       </div>
     </div>
   );

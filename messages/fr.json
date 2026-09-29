@@ -52,7 +52,8 @@
     "model": "Modèle",
     "engine": "Moteur",
     "selectPlaceholder": "Sélectionner…",
-    "shopNow": "Acheter",
+    "shopBundle": "Acheter le lot",
+    "viewKit": "Voir le kit",
     "loadError": "Impossible de charger les options. Veuillez réessayer."
   },
   "home": {

@@ -52,7 +52,8 @@
     "model": "Model",
     "engine": "Engine",
     "selectPlaceholder": "Select…",
-    "shopNow": "Shop now",
+    "shopBundle": "Shop bundle",
+    "viewKit": "View kit",
     "loadError": "Couldn't load options. Please try again."
   },
   "home": {
