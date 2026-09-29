@@ -172,6 +172,9 @@ const DEFS = [
     apiType: "vehicle_engines_ext",
     name: "Vehicle Engines",
     fields: [
+      // Engines are scoped by year too — the same engine can span multiple
+      // years, so year is part of the record (and its dedup + filter).
+      { slug: "year", name: "Year", type: "integer" },
       { slug: "make_id", name: "Make ID", type: "integer" },
       { slug: "model_id", name: "Model ID", type: "integer" },
       { slug: "equipment_unit_id", name: "Equipment Unit ID", type: "integer" },
@@ -181,6 +184,7 @@ const DEFS = [
       { slug: "spec", name: "Spec", type: "any" },
     ],
     map: (r) => ({
+      year: r.year,
       make_id: r.makeId,
       model_id: r.modelId,
       equipment_unit_id: r.equipmentUnitId,
@@ -188,7 +192,7 @@ const DEFS = [
       bundle_slug: slugify(`${r.make} ${r.model} ${r.year} ${r.engine}`),
       spec: generateSpec(r),
     }),
-    dedupKey: (r) => `${r.makeId}|${r.modelId}|${r.equipmentUnitId}`,
+    dedupKey: (r) => `${r.year}|${r.makeId}|${r.modelId}|${r.equipmentUnitId}`,
   },
 ];
 

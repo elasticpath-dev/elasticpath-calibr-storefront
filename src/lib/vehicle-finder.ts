@@ -90,6 +90,7 @@ export const VEHICLE_LEVELS: VehicleLevel[] = [
     labelField: "engine", // "2.0L 4-cyl Engine Code B4204T28 4 Turbo"
     valueField: "equipment_unit_id", // 44414080 — the fitment id (used by View Kit)
     filters: [
+      { field: "year", from: "year" },
       { field: "make_id", from: "make" },
       { field: "model_id", from: "model" },
     ],
