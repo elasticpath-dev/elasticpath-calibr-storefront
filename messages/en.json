@@ -56,6 +56,18 @@
     "viewKit": "View kit",
     "loadError": "Couldn't load options. Please try again."
   },
+  "kit": {
+    "title": "Recommended Products",
+    "subtitle": "Products that fit your selected vehicle.",
+    "productCount": "{count, plural, one {# product} other {# products}}",
+    "buy": "Buy",
+    "empty": "No products found for this vehicle.",
+    "noProducts": "No compatible products in this category.",
+    "productCode": "Product Code",
+    "retailPrice": "Retail price",
+    "selectForPrice": "Select options to see price",
+    "error": "Couldn't load products. Please try again."
+  },
   "home": {
     "hero": {
       "title": "Discover Your Style",

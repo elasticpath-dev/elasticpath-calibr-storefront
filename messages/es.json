@@ -56,6 +56,18 @@
     "viewKit": "Ver kit",
     "loadError": "No se pudieron cargar las opciones. Inténtalo de nuevo."
   },
+  "kit": {
+    "title": "Productos recomendados",
+    "subtitle": "Productos compatibles con el vehículo seleccionado.",
+    "productCount": "{count, plural, one {# producto} other {# productos}}",
+    "buy": "Comprar",
+    "empty": "No se encontraron productos para este vehículo.",
+    "noProducts": "No hay productos compatibles en esta categoría.",
+    "productCode": "Código de producto",
+    "retailPrice": "Precio de venta",
+    "selectForPrice": "Selecciona las opciones para ver el precio",
+    "error": "No se pudieron cargar los productos. Inténtalo de nuevo."
+  },
   "home": {
     "hero": {
       "title": "Descubre Tu Estilo",
