@@ -4,9 +4,11 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { useTenantConfig } from "@/context/TenantConfigContext";
 
@@ -36,8 +38,12 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   const { isAuthenticated, hasSession, credentials, isLoading: authLoading } =
     useAuth();
   const { marketingMode } = useTenantConfig();
+  const router = useRouter();
   const [catalogId, setCatalogId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // The account we last resolved for. `undefined` = not resolved yet (initial
+  // load), so the first resolution doesn't trigger an extra refresh.
+  const prevAccountRef = useRef<string | undefined>(undefined);
 
   // Marketing mode: don't resolve a catalog (an EP call) until signed in.
   const holdApis = marketingMode && !hasSession;
@@ -49,11 +55,25 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
   // replaced before navigation (which reads it) picks it up.
   useEffect(() => {
     if (authLoading) return; // wait for auth hydration so we don't fetch twice on load
+
+    // The same catalog id can back different accounts with different catalog
+    // rules (pricing, product visibility), so a refresh must key on the ACCOUNT
+    // changing, not the catalog id. Fires after the catalog re-resolves — which
+    // re-establishes the account context server-side — so the soft refresh then
+    // renders the new account's rules. Skips the initial resolve.
+    const account = credentials?.selected ?? "__anon__";
+    const maybeRefresh = () => {
+      const prev = prevAccountRef.current;
+      prevAccountRef.current = account;
+      if (prev !== undefined && prev !== account) router.refresh();
+    };
+
     if (holdApis) {
       // Held (marketing mode, signed out): no EP call, clear any stale cookie.
       writeCatalogCookie(null);
       setCatalogId(null);
       setIsLoading(false);
+      maybeRefresh();
       return;
     }
     let cancelled = false;
@@ -67,6 +87,10 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
         const id = data?.catalogId ?? null;
         writeCatalogCookie(id); // set BEFORE state so nav reads the fresh value
         setCatalogId(id);
+        // Catalog re-resolved with the new account's token → refresh so server
+        // components re-render under the new account's catalog rules (prices,
+        // visibility), without a manual hard refresh.
+        maybeRefresh();
       })
       .catch(() => {})
       .finally(() => {
@@ -75,7 +99,7 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, isAuthenticated, credentials?.selected, holdApis]);
+  }, [authLoading, isAuthenticated, credentials?.selected, holdApis, router]);
 
   return (
     <CatalogContext.Provider value={{ catalogId, isLoading }}>
