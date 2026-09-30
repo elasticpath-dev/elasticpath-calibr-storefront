@@ -39,6 +39,9 @@ import { NodePickerControl } from "@/components/plasmic/blocks/ProductCarousel/N
 // Content — hero carousel (author-composed slides)
 import { HeroCarousel, type HeroCarouselProps } from "@/components/plasmic/blocks/HeroCarousel/HeroCarousel";
 
+// Commerce — faceted search
+import { SearchModule } from "@/components/plasmic/blocks/SearchModule/SearchModule";
+
 // Navigation
 import {
   StorefrontNavigation,
@@ -547,6 +550,128 @@ export function registerPlasmicComponents(
     },
     importPath: "@/components/plasmic/blocks/HeroCarousel/HeroCarousel",
     importName: "HeroCarousel",
+  });
+
+  // ─── SearchModule ─────────────────────────────────────────────────────────
+  loader.registerComponent(SearchModule, {
+    name: "SearchModule",
+    description:
+      "Faceted product search — free-text query + facet filters on the left, product cards on the right. Calls the /search endpoint and updates results and facets in real time.",
+    props: {
+      lang: {
+        type: "string",
+        defaultValue: "en",
+        description: "Locale prefix for product detail links (e.g. 'en', 'fr')",
+      },
+      title: {
+        type: "string",
+        defaultValue: "Search",
+        description: "Heading above the search bar (leave blank to hide)",
+      },
+      pageSize: {
+        type: "number",
+        defaultValue: 24,
+        description: "Products fetched per page (Load more fetches the next page)",
+      },
+      profileId: {
+        type: "string",
+        defaultValue: "",
+        description: "Search profile id — sent in the request body as profile_id",
+      },
+      initialQuery: {
+        type: "string",
+        defaultValue: "",
+        description:
+          "Starting search query — pre-fills the box and runs on load (blank = show everything)",
+      },
+      facetConfig: {
+        type: "array",
+        itemType: {
+          type: "object",
+          nameFunc: (item: { field?: string; label?: string }) =>
+            item?.label || item?.field || "Facet",
+          fields: {
+            field: {
+              type: "string",
+              description:
+                "Facet field, e.g. extensions.attributes.brand or extensions.attributes.color",
+            },
+            label: {
+              type: "string",
+              description: "Optional heading override (defaults to the field name)",
+            },
+          },
+        },
+        defaultValue: [],
+        description:
+          "Facets to show, in order, with optional labels. Leave empty to show every facet the search returns.",
+      },
+      defaultFilters: {
+        type: "array",
+        itemType: {
+          type: "object",
+          nameFunc: (item: { field?: string; value?: string }) =>
+            item?.field && item?.value
+              ? `${item.field} = ${item.value}`
+              : "Filter",
+          fields: {
+            field: {
+              type: "string",
+              description: "Facet field, e.g. extensions.attributes.brand",
+            },
+            value: {
+              type: "string",
+              description: "Value to pre-select, e.g. SOLYX",
+            },
+          },
+        },
+        defaultValue: [],
+        description: "Facet filters applied on load (pre-selected).",
+      },
+      hideFacets: {
+        type: "boolean",
+        defaultValue: false,
+        description: "Hide the left-hand facets section (results go full width)",
+      },
+      colsMobile: {
+        type: "number",
+        defaultValue: 2,
+        description: "Cards per row on mobile",
+      },
+      colsTablet: {
+        type: "number",
+        defaultValue: 3,
+        description: "Cards per row on tablet (≥640px)",
+      },
+      colsDesktop: {
+        type: "number",
+        defaultValue: 4,
+        description: "Cards per row on desktop (≥1280px)",
+      },
+      contentCards: {
+        type: "array",
+        itemType: {
+          type: "object",
+          nameFunc: (item: { title?: string; position?: number }) =>
+            item?.title || (item?.position ? `Position ${item.position}` : "Tile"),
+          fields: {
+            position: {
+              type: "number",
+              description: "1-based slot in the grid where this tile appears",
+            },
+            imageUrl: { type: "imageUrl", description: "Tile image" },
+            title: { type: "string", description: "Tile heading" },
+            text: { type: "string", description: "Tile body text" },
+            href: { type: "string", description: "Optional link target" },
+          },
+        },
+        defaultValue: [],
+        description:
+          "Promotional tiles inserted into the results grid at specific positions — same card size, with your own image and content.",
+      },
+    },
+    importPath: "@/components/plasmic/blocks/SearchModule/SearchModule",
+    importName: "SearchModule",
   });
 
   // ─── StorefrontFooter ─────────────────────────────────────────────────────
