@@ -5,6 +5,7 @@ import {
   useId,
   useMemo,
   useSyncExternalStore,
+  type CSSProperties,
   type ReactNode,
 } from "react";
 import { X } from "lucide-react";
@@ -51,6 +52,28 @@ export type SearchModuleProps = {
   /** Author content tiles inserted into the grid at specific 1-based positions
    * — same card size, with their own image and content. */
   contentCards?: Array<ContentCard>;
+  /** Up to 5 slots for arbitrary Plasmic content, each placed at its 1-based
+   * grid position (0 = unused) and able to span multiple card spaces. */
+  slot1?: ReactNode;
+  slot1Position?: number;
+  slot1ColSpan?: number;
+  slot1RowSpan?: number;
+  slot2?: ReactNode;
+  slot2Position?: number;
+  slot2ColSpan?: number;
+  slot2RowSpan?: number;
+  slot3?: ReactNode;
+  slot3Position?: number;
+  slot3ColSpan?: number;
+  slot3RowSpan?: number;
+  slot4?: ReactNode;
+  slot4Position?: number;
+  slot4ColSpan?: number;
+  slot4RowSpan?: number;
+  slot5?: ReactNode;
+  slot5Position?: number;
+  slot5ColSpan?: number;
+  slot5RowSpan?: number;
   className?: string;
 };
 
@@ -60,6 +83,9 @@ type ContentCard = {
   title?: string;
   text?: string;
   href?: string;
+  /** Card spaces this tile occupies. */
+  colSpan?: number;
+  rowSpan?: number;
 };
 
 const VISITOR_COOKIE = "search-visitor-id";
@@ -98,6 +124,16 @@ function seedSelected(
     (seed[f.field] ??= []).push(String(f.value));
   }
   return seed;
+}
+
+// Grid-cell span (in card spaces) for a tile — clamped to sane bounds.
+function spanStyle(colSpan?: number, rowSpan?: number): CSSProperties {
+  const style: CSSProperties = {};
+  const c = Math.min(6, Math.max(1, Math.round(colSpan ?? 1) || 1));
+  const r = Math.min(4, Math.max(1, Math.round(rowSpan ?? 1) || 1));
+  if (c > 1) style.gridColumn = `span ${c}`;
+  if (r > 1) style.gridRow = `span ${r}`;
+  return style;
 }
 
 // Builds the filter tree: AND across fields, OR within a field's values.
@@ -278,7 +314,20 @@ export function SearchModule({
   colsDesktop = 4,
   contentCards,
   className,
+  ...slotProps
 }: SearchModuleProps) {
+  // Collect the 5 slot definitions into one array.
+  const slotTiles = ([1, 2, 3, 4, 5] as const)
+    .map((n) => {
+      const p = slotProps as Record<string, unknown>;
+      return {
+        node: p[`slot${n}`] as ReactNode,
+        position: (p[`slot${n}Position`] as number) ?? 0,
+        colSpan: (p[`slot${n}ColSpan`] as number) ?? 1,
+        rowSpan: (p[`slot${n}RowSpan`] as number) ?? 1,
+      };
+    })
+    .filter((s) => s.node && s.position > 0);
   // Responsive column counts → a scoped grid class (Tailwind can't take dynamic
   // counts, and inline styles can't hold media queries).
   const clamp = (n: number) => Math.min(8, Math.max(1, Math.round(n) || 1));
@@ -355,20 +404,52 @@ export function SearchModule({
       const card = cardsById[item.document?.id ?? ""];
       if (card) nodes.push(<ProductCard key={item.id} product={card} lang={lang} />);
     }
-    const tiles = (contentCards ?? [])
-      .map((c, i) => ({ ...c, _i: i }))
-      .filter((c) => c.imageUrl || c.title || c.text)
-      // Ascending so absolute positions stay correct as earlier inserts shift.
-      .sort((a, b) => (a.position ?? Infinity) - (b.position ?? Infinity));
+
+    // Tiles = structured content cards + composable slots, each targeting a
+    // 1-based grid position and able to span multiple card spaces.
+    type Tile = { position: number; node: ReactNode; order: number };
+    const tiles: Tile[] = [];
+    (contentCards ?? []).forEach((c, i) => {
+      if (c && (c.imageUrl || c.title || c.text)) {
+        tiles.push({
+          position: c.position ?? nodes.length + 1,
+          node: (
+            <div
+              key={`cc-${i}`}
+              className="h-full"
+              style={spanStyle(c.colSpan, c.rowSpan)}
+            >
+              <ContentCardTile card={c} />
+            </div>
+          ),
+          order: i,
+        });
+      }
+    });
+    slotTiles.forEach((s, i) => {
+      tiles.push({
+        position: s.position,
+        node: (
+          <div
+            key={`slot-${i}`}
+            className="h-full"
+            style={spanStyle(s.colSpan, s.rowSpan)}
+          >
+            {s.node}
+          </div>
+        ),
+        order: 100 + i,
+      });
+    });
+
+    // Ascending so absolute positions stay correct as earlier inserts shift.
+    tiles.sort((a, b) => a.position - b.position || a.order - b.order);
     for (const t of tiles) {
-      const idx = Math.min(
-        Math.max(0, (t.position ?? nodes.length + 1) - 1),
-        nodes.length,
-      );
-      nodes.splice(idx, 0, <ContentCardTile key={`cc-${t._i}`} card={t} />);
+      const idx = Math.min(Math.max(0, t.position - 1), nodes.length);
+      nodes.splice(idx, 0, t.node);
     }
     return nodes;
-  }, [items, cardsById, contentCards, lang]);
+  }, [items, cardsById, contentCards, lang, slotTiles]);
 
   return (
     <div className={cn("w-full", className)}>
