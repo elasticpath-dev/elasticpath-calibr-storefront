@@ -43,7 +43,13 @@ export async function POST(req: NextRequest) {
   const visitorId = req.headers.get("search-visitor-id");
 
   try {
+    // Timing: how long building the EP client takes, vs. how long the search
+    // endpoint itself takes to respond.
+    const clientStart = performance.now();
     const client = await createElasticPathClient();
+    const clientMs = performance.now() - clientStart;
+
+    const searchStart = performance.now();
     const res = await client.post({
       url: SEARCH_PATH,
       security: BEARER,
@@ -53,6 +59,13 @@ export async function POST(req: NextRequest) {
       },
       body: outbound,
     });
+    const searchMs = performance.now() - searchStart;
+
+    console.log(
+      `[search] client ${clientMs.toFixed(0)}ms | ${SEARCH_PATH} ${searchMs.toFixed(
+        0,
+      )}ms | status ${res.response?.status ?? "n/a"}`,
+    );
 
     if (res.error) {
       const err = res.error as {
