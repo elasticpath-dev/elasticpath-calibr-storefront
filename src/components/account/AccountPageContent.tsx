@@ -15,6 +15,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTenantConfig } from "@/context/TenantConfigContext";
 import { isPointManager } from "@/lib/point-management";
 
 type Tab =
@@ -32,6 +33,7 @@ export function AccountPageContent({ lang, children }: Props) {
   const t = useTranslations("account");
   const { credentials, selectedAccount, isAuthenticated, isLoading, logout } =
     useAuth();
+  const { pointManagementEnabled } = useTenantConfig();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -64,8 +66,8 @@ export function AccountPageContent({ lang, children }: Props) {
       icon: <RefreshCw size={15} />,
       label: t("tabSubscriptions"),
     },
-    // Manager-only point management.
-    ...(isPointManager(credentials.member_role)
+    // Manager-only point management (feature-gated).
+    ...(pointManagementEnabled && isPointManager(credentials.member_role)
       ? [
           {
             key: "point-management" as Tab,

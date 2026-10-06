@@ -18,6 +18,7 @@ import {
   Coins,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTenantConfig } from "@/context/TenantConfigContext";
 import { isPointManager } from "@/lib/point-management";
 import { AuthModal } from "@/components/auth/AuthModal";
 
@@ -31,6 +32,7 @@ export function AccountButton() {
     selectAccount,
     logout,
   } = useAuth();
+  const { pointManagementEnabled } = useTenantConfig();
   const [showModal, setShowModal] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -218,7 +220,7 @@ export function AccountButton() {
               <FileText size={15} />
               {tAccount("tabQuotes")}
             </Link>
-            {isPointManager(credentials?.member_role) && (
+            {pointManagementEnabled && isPointManager(credentials?.member_role) && (
               <Link
                 href={`/${lang}/account/point-management`}
                 onClick={() => setShowDropdown(false)}

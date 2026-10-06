@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createElasticPathClient } from "@/lib/create-elastic-path-client";
+import { getTenantConfig } from "@/lib/tenant-config";
 import type { AccountMemberSummary } from "@/lib/point-management";
 
 // Account memberships / members aren't in the SDK surface we use here, so call
@@ -15,6 +16,12 @@ const ROLE_FIELD = process.env.ACCOUNT_MEMBER_ROLE_FIELD || "role";
 export async function GET(req: NextRequest) {
   const accountId = req.nextUrl.searchParams.get("accountId")?.trim();
   if (!accountId) return NextResponse.json({ data: [] });
+
+  // Only used by Point Management — no EP calls when the feature is off.
+  const { features } = await getTenantConfig();
+  if (!features.pointManagementEnabled) {
+    return NextResponse.json({ data: [] });
+  }
 
   try {
     const client = await createElasticPathClient();

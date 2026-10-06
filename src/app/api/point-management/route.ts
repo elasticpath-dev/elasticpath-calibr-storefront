@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createElasticPathClient } from "@/lib/create-elastic-path-client";
+import { getTenantConfig } from "@/lib/tenant-config";
 import {
   POINT_MANAGEMENT_SLUG,
   type PointRecord,
 } from "@/lib/point-management";
+
+async function pointManagementEnabled(): Promise<boolean> {
+  const { features } = await getTenantConfig();
+  return features.pointManagementEnabled;
+}
 
 // Custom API entries are called directly via the hey-api client.
 const BEARER = [{ scheme: "bearer", type: "http" }] as const;
@@ -12,13 +18,50 @@ const BEARER = [{ scheme: "bearer", type: "http" }] as const;
 const API_TYPE =
   process.env.POINT_MANAGEMENT_API_TYPE || "point_management_ext";
 
-/** List point records for an account (one per member). */
+function toRecord(r: Record<string, unknown>): PointRecord {
+  return {
+    account_member_id: String(r.account_member_id ?? r.id ?? ""),
+    account_id: String(r.account_id ?? ""),
+    balance: r.balance as number | undefined,
+    expiry_date: r.expiry_date as string | undefined,
+    auto_renew: r.auto_renew as boolean | undefined,
+    renew_points: r.renew_points as number | undefined,
+  };
+}
+
+/**
+ * Point records. With `accountMemberId` → that member's single record (the
+ * signed-in user's own balance for the header); with `accountId` → every record
+ * for the account (the management table).
+ */
 export async function GET(req: NextRequest) {
   const accountId = req.nextUrl.searchParams.get("accountId")?.trim();
-  if (!accountId) return NextResponse.json({ data: [] });
+  const accountMemberId = req.nextUrl.searchParams
+    .get("accountMemberId")
+    ?.trim();
+
+  // Feature off → no EP call.
+  if (!(await pointManagementEnabled())) {
+    return NextResponse.json({ data: accountMemberId ? null : [] });
+  }
 
   try {
     const client = await createElasticPathClient();
+
+    // Single member — the entry id is the account_member_id.
+    if (accountMemberId) {
+      const res = await client.get({
+        url: `/v2/extensions/${POINT_MANAGEMENT_SLUG}/{entryId}`,
+        path: { entryId: accountMemberId },
+        security: BEARER,
+      });
+      if (res.error) return NextResponse.json({ data: null });
+      const entry = (res.data as { data?: Record<string, unknown> })?.data;
+      return NextResponse.json({ data: entry ? toRecord(entry) : null });
+    }
+
+    if (!accountId) return NextResponse.json({ data: [] });
+
     const res = await client.get({
       url: `/v2/extensions/${POINT_MANAGEMENT_SLUG}`,
       security: BEARER,
@@ -32,14 +75,7 @@ export async function GET(req: NextRequest) {
     // Custom API entries expose their fields at the top level of each entry.
     const records = (
       (res.data as { data?: Array<Record<string, unknown>> })?.data ?? []
-    ).map((r) => ({
-      account_member_id: String(r.account_member_id ?? r.id ?? ""),
-      account_id: String(r.account_id ?? ""),
-      balance: r.balance as number | undefined,
-      expiry_date: r.expiry_date as string | undefined,
-      auto_renew: r.auto_renew as boolean | undefined,
-      renew_points: r.renew_points as number | undefined,
-    }));
+    ).map(toRecord);
 
     return NextResponse.json({ data: records });
   } catch (err) {
@@ -57,6 +93,13 @@ export async function GET(req: NextRequest) {
  * updates it when present (the Custom API must have allow_upserts enabled).
  */
 export async function PUT(req: NextRequest) {
+  if (!(await pointManagementEnabled())) {
+    return NextResponse.json(
+      { error: "Point management is disabled" },
+      { status: 404 },
+    );
+  }
+
   const body = (await req.json().catch(() => ({}))) as Partial<PointRecord>;
   const accountMemberId = String(body.account_member_id ?? "").trim();
   const accountId = String(body.account_id ?? "").trim();

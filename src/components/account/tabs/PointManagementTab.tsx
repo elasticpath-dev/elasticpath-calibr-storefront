@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Loader2, Coins } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTenantConfig } from "@/context/TenantConfigContext";
 import {
   isPointManager,
   type AccountMemberSummary,
@@ -18,10 +19,12 @@ import { Modal } from "@/components/ui/Modal";
 export function PointManagementTab({ lang }: { lang: string }) {
   const t = useTranslations("pointManagement");
   const { credentials, selectedAccount, isLoading } = useAuth();
+  const { pointManagementEnabled } = useTenantConfig();
   const router = useRouter();
 
   const accountId = selectedAccount?.account_id ?? credentials?.selected ?? "";
-  const canManage = isPointManager(credentials?.member_role);
+  const canManage =
+    pointManagementEnabled && isPointManager(credentials?.member_role);
 
   const [members, setMembers] = useState<AccountMemberSummary[]>([]);
   const [records, setRecords] = useState<Record<string, PointRecord>>({});

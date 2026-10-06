@@ -8,6 +8,7 @@ import { BulkOrderButton } from "./BulkOrderButton";
 import { MarketingGate } from "./MarketingGate";
 import { CartButton } from "./cart/CartButton";
 import { AccountButton } from "./AccountButton";
+import { HeaderPoints } from "./HeaderPoints";
 import { SettingsButton } from "./SettingsButton";
 import { getTenantConfig } from "@/lib/tenant-config";
 import { getPlasmicConfig } from "@/lib/plasmic-config";
@@ -92,6 +93,7 @@ export async function Header({ lang }: HeaderProps) {
               <HeaderLocation />
               {features.bulkOrderEnabled && <BulkOrderButton lang={lang} />}
             </MarketingGate>
+            <HeaderPoints />
             <AccountButton />
             <MarketingGate>
               <CartButton />
