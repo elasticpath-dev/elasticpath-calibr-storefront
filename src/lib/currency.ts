@@ -2,6 +2,12 @@ import { getCookie, setCookie } from "cookies-next";
 
 export const CURRENCY_COOKIE_KEY = "_store_ep_currency";
 
+/** Currency resolved from the signed-in account's flow field. When present it
+ * overrides the shopper/default currency (see getServerCurrency). Kept in sync
+ * client-side by CatalogContext (the literal is duplicated there to avoid
+ * importing this module into a place that would pull in server-only deps). */
+export const ACCOUNT_CURRENCY_COOKIE_KEY = "ep_account_currency";
+
 /**
  * NEXT_PUBLIC_DEFAULT_CURRENCY sets the preselected currency;
  * NEXT_PUBLIC_CURRENCIES (comma-separated, e.g. "GBP,USD,CAD")
@@ -60,6 +66,13 @@ export function isSupportedCurrency(code: string | undefined): code is string {
  */
 export function getSelectedCurrency(): string {
   if (typeof window === "undefined") return DEFAULT_CURRENCY;
+  // A signed-in account's currency (flow field) overrides the shopper/default
+  // one so client-side calls (cart, pricing) match the server. Trusted as-is —
+  // it may be any EP-valid currency, not just one in the dropdown list.
+  const accountCurrency = getCookie(ACCOUNT_CURRENCY_COOKIE_KEY);
+  if (typeof accountCurrency === "string" && accountCurrency.trim()) {
+    return accountCurrency.toUpperCase();
+  }
   const cookieValue = getCookie(CURRENCY_COOKIE_KEY);
   return typeof cookieValue === "string" && isSupportedCurrency(cookieValue)
     ? cookieValue.toUpperCase()

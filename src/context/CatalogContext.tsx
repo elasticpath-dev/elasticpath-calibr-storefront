@@ -15,6 +15,9 @@ import { useTenantConfig } from "@/context/TenantConfigContext";
 // Kept as a literal (not imported from the server-only catalog module, which
 // pulls in next/headers) — mirrors how AM_TOKEN_COOKIE is duplicated.
 const CATALOG_ID_COOKIE = "ep_catalog_id";
+// The signed-in account's currency (flow field). Duplicated literal of
+// ACCOUNT_CURRENCY_COOKIE_KEY in src/lib/currency.ts for the same reason.
+const ACCOUNT_CURRENCY_COOKIE = "ep_account_currency";
 
 type CatalogContextValue = {
   catalogId: string | null;
@@ -31,6 +34,14 @@ function writeCatalogCookie(id: string | null) {
     document.cookie = `${CATALOG_ID_COOKIE}=${id}; path=/; max-age=31536000; SameSite=Strict`;
   } else {
     document.cookie = `${CATALOG_ID_COOKIE}=; path=/; max-age=0; SameSite=Strict`;
+  }
+}
+
+function writeAccountCurrencyCookie(currency: string | null) {
+  if (currency) {
+    document.cookie = `${ACCOUNT_CURRENCY_COOKIE}=${currency}; path=/; max-age=31536000; SameSite=Strict`;
+  } else {
+    document.cookie = `${ACCOUNT_CURRENCY_COOKIE}=; path=/; max-age=0; SameSite=Strict`;
   }
 }
 
@@ -69,8 +80,9 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     };
 
     if (holdApis) {
-      // Held (marketing mode, signed out): no EP call, clear any stale cookie.
+      // Held (marketing mode, signed out): no EP call, clear any stale cookies.
       writeCatalogCookie(null);
+      writeAccountCurrencyCookie(null);
       setCatalogId(null);
       setIsLoading(false);
       maybeRefresh();
@@ -78,24 +90,47 @@ export function CatalogProvider({ children }: { children: ReactNode }) {
     }
     let cancelled = false;
     setIsLoading(true);
-    fetch("/api/catalog-id")
-      .then((res) =>
-        res.ok ? (res.json() as Promise<{ catalogId: string | null }>) : null,
-      )
-      .then((data) => {
+
+    // Resolve catalog AND the account's currency together, then refresh once so
+    // server components render under the new account's catalog rules and its
+    // currency (both cookies are fresh before the refresh fires).
+    void (async () => {
+      try {
+        const res = await fetch("/api/catalog-id");
+        const data = res.ok
+          ? ((await res.json()) as { catalogId: string | null })
+          : null;
         if (cancelled) return;
         const id = data?.catalogId ?? null;
         writeCatalogCookie(id); // set BEFORE state so nav reads the fresh value
         setCatalogId(id);
-        // Catalog re-resolved with the new account's token → refresh so server
-        // components re-render under the new account's catalog rules (prices,
-        // visibility), without a manual hard refresh.
-        maybeRefresh();
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (!cancelled) setIsLoading(false);
-      });
+      } catch {
+        // ignore — keep whatever catalog cookie exists
+      }
+
+      // The account's currency flow field (signed out → clear → default applies).
+      let currency: string | null = null;
+      const accountId = isAuthenticated ? credentials?.selected : undefined;
+      if (accountId) {
+        try {
+          const cres = await fetch(
+            `/api/account-currency?accountId=${encodeURIComponent(accountId)}`,
+          );
+          const cdata = cres.ok
+            ? ((await cres.json()) as { currency: string | null })
+            : null;
+          currency = cdata?.currency ?? null;
+        } catch {
+          // ignore — fall back to default currency
+        }
+      }
+      if (cancelled) return;
+      writeAccountCurrencyCookie(currency);
+
+      setIsLoading(false);
+      maybeRefresh();
+    })();
+
     return () => {
       cancelled = true;
     };
