@@ -6,6 +6,7 @@ import { Tag, ChevronDown, ShoppingBag, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { ProductThumbnail } from "./ProductThumbnail";
 import { ProductName } from "./ProductName";
+import { ProductDescription } from "./ProductDescription";
 import { Price } from "./Price";
 import { QuantitySelector } from "./QuantitySelector";
 import { AddToCart } from "./AddToCart";
@@ -263,9 +264,10 @@ export function ProductCard({
             </p>
           )}
           {product.description && (
-            <p className="hidden sm:block mt-1 text-xs text-gray-500 line-clamp-1">
-              {product.description}
-            </p>
+            <ProductDescription
+              description={product.description}
+              className="hidden sm:block mt-1 text-xs text-gray-500 line-clamp-1"
+            />
           )}
         </div>
 
@@ -485,9 +487,10 @@ export function ProductCard({
         )}
 
         {product.description && (
-          <p className="text-xs text-gray-500 line-clamp-1">
-            {product.description}
-          </p>
+          <ProductDescription
+            description={product.description}
+            className="text-xs text-gray-500 line-clamp-1"
+          />
         )}
 
         {product.hasVariations || product.isBundle ? (

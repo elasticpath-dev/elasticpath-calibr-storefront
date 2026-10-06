@@ -6,6 +6,7 @@ import { Eye, Loader2 } from "lucide-react";
 import { Modal } from "@/components/ui/Modal";
 import { ProductThumbnail } from "./ProductThumbnail";
 import { ProductName } from "./ProductName";
+import { ProductDescription } from "./ProductDescription";
 import { Price } from "./Price";
 import { VariantAddToCart } from "./VariantAddToCart";
 import { BundleConfigurator } from "./BundleConfigurator";
@@ -172,7 +173,10 @@ export function QuickViewButton({ product, lang, className }: Props) {
                   imageUrl={displayImageUrl ?? undefined}
                 >
                   {displayDescription && (
-                    <p className="text-sm text-gray-600 line-clamp-3 mb-4">{displayDescription}</p>
+                    <ProductDescription
+                      description={displayDescription}
+                      className="line-clamp-3 mb-4"
+                    />
                   )}
                   <VariantAddToCart
                     productId={detail.id}
@@ -200,7 +204,10 @@ export function QuickViewButton({ product, lang, className }: Props) {
                   </div>
 
                   {displayDescription && (
-                    <p className="text-sm text-gray-600 line-clamp-3">{displayDescription}</p>
+                    <ProductDescription
+                      description={displayDescription}
+                      className="line-clamp-3"
+                    />
                   )}
 
                   <VariantAddToCart
