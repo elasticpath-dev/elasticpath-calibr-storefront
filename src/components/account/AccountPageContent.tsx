@@ -11,9 +11,11 @@ import {
   ShoppingCart,
   FileText,
   RefreshCw,
+  Coins,
   LogOut,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { isPointManager } from "@/lib/point-management";
 
 type Tab =
   | "personal"
@@ -21,7 +23,8 @@ type Tab =
   | "orders"
   | "carts"
   | "quotes"
-  | "subscriptions";
+  | "subscriptions"
+  | "point-management";
 
 type Props = { lang: string; children: React.ReactNode };
 
@@ -61,6 +64,16 @@ export function AccountPageContent({ lang, children }: Props) {
       icon: <RefreshCw size={15} />,
       label: t("tabSubscriptions"),
     },
+    // Manager-only point management.
+    ...(isPointManager(credentials.member_role)
+      ? [
+          {
+            key: "point-management" as Tab,
+            icon: <Coins size={15} />,
+            label: t("tabPointManagement"),
+          },
+        ]
+      : []),
   ];
 
   return (

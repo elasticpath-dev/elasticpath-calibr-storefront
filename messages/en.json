@@ -68,6 +68,25 @@
     "selectForPrice": "Select options to see price",
     "error": "Couldn't load products. Please try again."
   },
+  "pointManagement": {
+    "title": "Point Management",
+    "subtitle": "Manage point balances for members of your account.",
+    "noMembers": "No account members found.",
+    "member": "Member",
+    "balance": "Balance",
+    "expiry": "Expiry date",
+    "autoRenew": "Auto-renew",
+    "renewPoints": "Renew points",
+    "actions": "Actions",
+    "yes": "Yes",
+    "no": "No",
+    "edit": "Edit",
+    "setUp": "Set up",
+    "editTitle": "Edit points",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saveError": "Couldn't save. Please try again."
+  },
   "home": {
     "hero": {
       "title": "Discover Your Style",
@@ -291,6 +310,7 @@
     "tabCarts": "Carts",
     "tabQuotes": "Quotes",
     "tabSubscriptions": "Subscriptions",
+    "tabPointManagement": "Point Management",
     "memberName": "Name",
     "memberEmail": "Email",
     "noAddresses": "No saved addresses yet",

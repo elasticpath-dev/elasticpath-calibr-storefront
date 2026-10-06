@@ -52,7 +52,13 @@ export type AccountMemberCredentials = {
   accountMemberId: string;
   member_name?: string;
   member_email?: string;
+  /** The member's `role` flow field (e.g. "Manager") — gates Point Management. */
+  member_role?: string;
 };
+
+// The account-member flow field holding the role. Override via env if named
+// differently in Commerce Manager.
+const ROLE_FIELD = process.env.ACCOUNT_MEMBER_ROLE_FIELD || "role";
 
 export function buildCredentials(
   result: Awaited<ReturnType<typeof postV2AccountMembersTokens>>,
@@ -89,7 +95,7 @@ export async function fetchMemberProfile(
   amToken: string,
   accountMemberId: string,
   connection: EpConnectionConfig,
-): Promise<{ name: string; email: string }> {
+): Promise<{ name: string; email: string; role?: string }> {
   try {
     const client = getAuthClient(connection);
     const interceptorFn = (req: Request) => {
@@ -102,9 +108,14 @@ export async function fetchMemberProfile(
         client,
         path: { accountMemberID: accountMemberId },
       });
+      const data = result.data?.data as
+        | (Record<string, unknown> & { name?: string; email?: string })
+        | undefined;
+      const roleRaw = data?.[ROLE_FIELD];
       return {
-        name: result.data?.data?.name ?? "",
-        email: result.data?.data?.email ?? "",
+        name: data?.name ?? "",
+        email: data?.email ?? "",
+        role: typeof roleRaw === "string" ? roleRaw : undefined,
       };
     } finally {
       client.interceptors.request.eject(interceptorFn);
@@ -144,6 +155,7 @@ export async function loginWithAccountManagement(
     );
     credentials.member_name = profile.name;
     credentials.member_email = profile.email || email;
+    credentials.member_role = profile.role;
   } else {
     credentials.member_email = email;
   }

@@ -68,6 +68,25 @@
     "selectForPrice": "Selecciona las opciones para ver el precio",
     "error": "No se pudieron cargar los productos. Inténtalo de nuevo."
   },
+  "pointManagement": {
+    "title": "Gestión de puntos",
+    "subtitle": "Gestiona los saldos de puntos de los miembros de tu cuenta.",
+    "noMembers": "No se encontraron miembros de la cuenta.",
+    "member": "Miembro",
+    "balance": "Saldo",
+    "expiry": "Fecha de caducidad",
+    "autoRenew": "Renovación automática",
+    "renewPoints": "Puntos de renovación",
+    "actions": "Acciones",
+    "yes": "Sí",
+    "no": "No",
+    "edit": "Editar",
+    "setUp": "Configurar",
+    "editTitle": "Editar puntos",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "saveError": "No se pudo guardar. Inténtalo de nuevo."
+  },
   "home": {
     "hero": {
       "title": "Descubre Tu Estilo",
@@ -291,6 +310,7 @@
     "tabCarts": "Carritos",
     "tabQuotes": "Presupuestos",
     "tabSubscriptions": "Suscripciones",
+    "tabPointManagement": "Gestión de puntos",
     "memberName": "Nombre",
     "memberEmail": "Correo electrÃ³nico",
     "noAddresses": "No hay direcciones guardadas",

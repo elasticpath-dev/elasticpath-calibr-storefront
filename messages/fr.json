@@ -68,6 +68,25 @@
     "selectForPrice": "Sélectionnez les options pour voir le prix",
     "error": "Impossible de charger les produits. Veuillez réessayer."
   },
+  "pointManagement": {
+    "title": "Gestion des points",
+    "subtitle": "Gérez les soldes de points des membres de votre compte.",
+    "noMembers": "Aucun membre de compte trouvé.",
+    "member": "Membre",
+    "balance": "Solde",
+    "expiry": "Date d'expiration",
+    "autoRenew": "Renouvellement auto",
+    "renewPoints": "Points de renouvellement",
+    "actions": "Actions",
+    "yes": "Oui",
+    "no": "Non",
+    "edit": "Modifier",
+    "setUp": "Configurer",
+    "editTitle": "Modifier les points",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "saveError": "Échec de l'enregistrement. Veuillez réessayer."
+  },
   "home": {
     "hero": {
       "title": "DÃ©couvrez Votre Style",
@@ -291,6 +310,7 @@
     "tabCarts": "Paniers",
     "tabQuotes": "Devis",
     "tabSubscriptions": "Abonnements",
+    "tabPointManagement": "Gestion des points",
     "memberName": "Nom",
     "memberEmail": "E-mail",
     "noAddresses": "Aucune adresse enregistrÃ©e",

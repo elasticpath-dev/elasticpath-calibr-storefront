@@ -15,8 +15,10 @@ import {
   ShoppingCart,
   RefreshCw,
   FileText,
+  Coins,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { isPointManager } from "@/lib/point-management";
 import { AuthModal } from "@/components/auth/AuthModal";
 
 export function AccountButton() {
@@ -216,6 +218,16 @@ export function AccountButton() {
               <FileText size={15} />
               {tAccount("tabQuotes")}
             </Link>
+            {isPointManager(credentials?.member_role) && (
+              <Link
+                href={`/${lang}/account/point-management`}
+                onClick={() => setShowDropdown(false)}
+                className="flex items-center gap-2 w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                <Coins size={15} />
+                {tAccount("tabPointManagement")}
+              </Link>
+            )}
           </div>
           <div className="border-t border-gray-100" />
           <button
