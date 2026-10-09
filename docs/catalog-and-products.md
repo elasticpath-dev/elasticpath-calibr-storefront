@@ -64,7 +64,7 @@ This doc leads with a **Capabilities** catalog (what exists), then
 
 ### Catalog search
 - Full-text search across name, description and SKU (gated on search being enabled).
-- Faceted filtering: always a 3-level category hierarchy + a currency-aware price range; additional attribute facets are configurable.
+- Faceted filtering: always a category hierarchy; additional attribute facets are configurable as checkbox, radio or slider (numeric range) — a currency-aware price slider is the `price.float_price` facet with type `slider`.
 - Sort by relevance, price (either direction) or name (either direction).
 - Search/filter state reflects in the URL, so results are bookmarkable and back-button safe.
 - The **same** adapter powers category browsing when search is enabled; with search off, category pages fall back to a plain server-rendered grid (no filters/sort).
@@ -90,7 +90,7 @@ the same fields can come from the remote config per-hostname.
 |---|---|---|---|
 | `NEXT_PUBLIC_SEARCH_ENABLED` | `true`/`false` | `false` | Master switch: interactive search/category (filters, sort, pagination) vs static server-rendered grid. Also gates the sidebar filters. |
 | `NEXT_PUBLIC_LAZY_LOAD_RESULTS` | `true`/`false` | `false` | Infinite scroll + back-to-top button vs numbered pagination on search/category. |
-| `NEXT_PUBLIC_FILTER_ITEMS` | `attr\|Label\|type,…` | `""` | Custom attribute facet filters (checkbox/radio) added to the sidebar. |
+| `NEXT_PUBLIC_FILTER_ITEMS` | `attr\|Label\|type,…` | `""` | Custom facet filters added to the sidebar. `type` is `checkbox`, `radio` or `slider` (numeric min/max range from the facet's stats — use `price.float_price\|Price\|slider` for a currency-aware price slider). Every attribute is sent as `facet_by`; an un-facetable field fails the search request. |
 | `NEXT_PUBLIC_HIDE_NAV_HIERARCHY` | `true`/`false` | `false` | Flatten the hierarchy root out of the category filter tree / nav. |
 | `NEXT_PUBLIC_FULL_WIDTH` | `true`/`false` | `false` | Full-viewport shell + denser product grid (4–5 cols). |
 | `NEXT_PUBLIC_EP_INVENTORIES_MULTI_LOCATION` | `true`/`false` | `false` | Batch stock fetch + out-of-stock gating on cards/PDP; adds the multi-location header to EP calls. |
@@ -163,8 +163,11 @@ Feature: Filter and sort results
     Given attribute filters are configured
     Then each renders as a checkbox or radio group and refines in place
 
-  Scenario: Price range
-    Then a currency-aware price-range filter refines by min/max
+  Scenario: Numeric range (price slider)
+    # Switch: NEXT_PUBLIC_FILTER_ITEMS entry with type slider, e.g. price.float_price|Price|slider
+    Given a slider facet is configured and the response carries its min/max stats
+    Then a dual-thumb slider plus min/max fields refine by range
+    And the slider commits the refinement on release; a thumb left on a bound clears that side
 
   Scenario Outline: Sort
     When I choose "<option>"
@@ -237,6 +240,7 @@ Feature: Configure a product on the PDP
 | Turn on search/filters/sort | `NEXT_PUBLIC_SEARCH_ENABLED=true` |
 | Infinite scroll instead of a pager | `NEXT_PUBLIC_LAZY_LOAD_RESULTS=true` |
 | Add attribute facets | `NEXT_PUBLIC_FILTER_ITEMS=brand\|Brand\|checkbox,…` |
+| Show a price slider | `NEXT_PUBLIC_FILTER_ITEMS=price.float_price\|Price\|slider` |
 | Show bundle option images | `NEXT_PUBLIC_SHOW_BUNDLE_OPTION_IMAGES=true` |
 | Gate out-of-stock products | `NEXT_PUBLIC_EP_INVENTORIES_MULTI_LOCATION=true` |
 | Denser, full-width grid | `NEXT_PUBLIC_FULL_WIDTH=true` |

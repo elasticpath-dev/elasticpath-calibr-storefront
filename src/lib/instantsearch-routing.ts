@@ -22,9 +22,26 @@ export const CATEGORY_HIERARCHICAL_ATTRIBUTES = [
   "meta.search.categories.lvl8",
 ];
 
+/**
+ * The `facet_by` sent to catalog search: the category hierarchy plus every
+ * attribute listed in NEXT_PUBLIC_FILTER_ITEMS (checkbox, radio and slider
+ * alike). The adapter ignores widget-requested facets once `facet_by` is set,
+ * so a sidebar facet that isn't listed here gets no counts/stats and never
+ * renders.
+ */
+export function buildFacetBy(filterItems: string): string {
+  const extras = filterItems
+    .split(",")
+    .map((e) => e.trim().split("|")[0]?.trim())
+    .filter(Boolean) as string[];
+  return [...CATEGORY_HIERARCHICAL_ATTRIBUTES, ...extras].join(",");
+}
+
 const RESERVED = new Set(["q", "page"]);
 
-export function createSearchRouting({ syncPage = true }: { syncPage?: boolean } = {}) {
+export function createSearchRouting({
+  syncPage = true,
+}: { syncPage?: boolean } = {}) {
   return {
     stateMapping: {
       stateToRoute(uiState: UiState): Record<string, unknown> {

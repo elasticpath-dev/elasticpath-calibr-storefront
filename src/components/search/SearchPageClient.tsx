@@ -17,7 +17,7 @@ import { PaginatedResults, InfiniteResults } from "@/components/search/ResultsGr
 import { useTenantConfig } from "@/context/TenantConfigContext";
 import { Button } from "@/components/ui/Button";
 import {
-  CATEGORY_HIERARCHICAL_ATTRIBUTES,
+  buildFacetBy,
   createSearchRouting,
   SEARCH_INDEX_NAME,
 } from "@/lib/instantsearch-routing";
@@ -55,14 +55,6 @@ function hitToCard(hit: Record<string, unknown>): ProductCardData {
         attrs.components && Object.keys(attrs.components as object).length > 0
       ),
   };
-}
-
-function buildFacetBy(filterItems: string): string {
-  const extras = filterItems
-    .split(",")
-    .map((e) => e.trim().split("|")[0]?.trim())
-    .filter(Boolean) as string[];
-  return [...CATEGORY_HIERARCHICAL_ATTRIBUTES, ...extras].join(",");
 }
 
 // ─── Search Results ───────────────────────────────────────────────────────────

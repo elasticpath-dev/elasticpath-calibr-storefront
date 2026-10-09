@@ -3,13 +3,11 @@
 import { useTranslations } from "next-intl";
 import { ClearFiltersButton } from "./ClearFiltersButton";
 import { CategoryFilter } from "./CategoryFilter";
-import { PriceRangeFilter } from "./PriceRangeFilter";
 import { ProductSpecification } from "./ProductSpecification";
 
 type Props = {
   showCategories?: boolean;
-  showPriceRange?: boolean;
-  currencyCode?: string;
+  /** "attribute|Label|type,…" — see ProductSpecification. */
   filterItems?: string;
   hideNavHierarchy?: boolean;
   /** Category-page current node name — expands the category tree to it. */
@@ -18,8 +16,6 @@ type Props = {
 
 export function FilterSidebar({
   showCategories = true,
-  showPriceRange = true,
-  currencyCode,
   filterItems,
   hideNavHierarchy = false,
   currentCategoryName,
@@ -37,7 +33,6 @@ export function FilterSidebar({
           currentCategoryName={currentCategoryName}
         />
       )}
-      {showPriceRange && <PriceRangeFilter currencyCode={currencyCode} />}
       <ProductSpecification filterItems={filterItems} />
     </div>
   );

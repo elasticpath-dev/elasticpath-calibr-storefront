@@ -2,6 +2,7 @@
 
 import { FilterCheckbox } from "./FilterCheckbox";
 import { FilterRadio } from "./FilterRadio";
+import { FilterRange } from "./FilterRange";
 
 type FilterItem = {
   attribute: string;
@@ -38,6 +39,15 @@ export function ProductSpecification({
   return (
     <>
       {items.map((item) => {
+        if (item.type === "slider") {
+          return (
+            <FilterRange
+              key={item.attribute}
+              attribute={item.attribute}
+              name={item.name}
+            />
+          );
+        }
         if (item.type === "radio") {
           return (
             <FilterRadio

@@ -111,6 +111,9 @@ export type TenantConfig = {
   theme: ThemeConfig;
   features: {
     searchEnabled: boolean;
+    /** Sidebar facets as "attribute|Label|type,…" where type is checkbox
+     * (default), radio or slider. A slider facet (e.g. price.float_price)
+     * renders a min/max range built from the facet's numeric stats. */
     filterItems: string;
     extensionsExcluded: string[];
     /** Hide catalog hierarchy roots from the top navigation and promote

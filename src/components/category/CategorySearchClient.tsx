@@ -16,20 +16,12 @@ import { PaginatedResults, InfiniteResults } from "@/components/search/ResultsGr
 import { useTenantConfig } from "@/context/TenantConfigContext";
 import { Button } from "@/components/ui/Button";
 import {
-  CATEGORY_HIERARCHICAL_ATTRIBUTES,
+  buildFacetBy,
   SEARCH_INDEX_NAME,
 } from "@/lib/instantsearch-routing";
 import { FilterSidebar } from "@/components/search/filters";
 import { SortBy } from "@/components/search/SortBy";
 import type { ProductCardData } from "@/lib/api/products";
-
-function buildFacetBy(filterItems: string): string {
-  const extras = filterItems
-    .split(",")
-    .map((e) => e.trim().split("|")[0]?.trim())
-    .filter(Boolean) as string[];
-  return [...CATEGORY_HIERARCHICAL_ATTRIBUTES, ...extras].join(",");
-}
 
 function hitToCard(hit: Record<string, unknown>): ProductCardData {
   const attrs = (hit.attributes as Record<string, any>) ?? {};

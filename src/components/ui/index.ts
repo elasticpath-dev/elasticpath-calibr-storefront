@@ -45,3 +45,6 @@ export type { PaginationProps } from "./Pagination";
 
 export { Tooltip } from "./Tooltip";
 export type { TooltipProps, TooltipPlacement } from "./Tooltip";
+
+export { RangeSlider } from "./RangeSlider";
+export type { RangeSliderProps, RangeSliderValue } from "./RangeSlider";
