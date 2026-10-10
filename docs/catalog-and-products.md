@@ -92,6 +92,7 @@ the same fields can come from the remote config per-hostname.
 | `NEXT_PUBLIC_LAZY_LOAD_RESULTS` | `true`/`false` | `false` | Infinite scroll + back-to-top button vs numbered pagination on search/category. |
 | `NEXT_PUBLIC_FILTER_ITEMS` | `attr\|Label\|type,…` | `""` | Custom facet filters added to the sidebar. `type` is `checkbox`, `radio` or `slider` (numeric min/max range from the facet's stats — use `price.float_price\|Price\|slider` for a currency-aware price slider). Every attribute is sent as `facet_by`; an un-facetable field fails the search request. |
 | `NEXT_PUBLIC_HIDE_NAV_HIERARCHY` | `true`/`false` | `false` | Flatten the hierarchy root out of the category filter tree / nav. |
+| `NEXT_PUBLIC_PRODUCT_QUESTIONS_ENABLED` | `true`/`false` | `false` | Render the product-questions widget on the PDP: a `<div data-yd-questions data-product="<sku>">` mount point plus its script (PDP only). `NEXT_PUBLIC_PRODUCT_QUESTIONS_SRC` / `_STORE_ID` / `_DOMAIN` / `_WORKFLOW_SLUG` / `_ENDPOINT` / `_ENVIRONMENT_ID` fill the script's `src` and `data-*` attributes; store and environment ids fall back to `NEXT_PUBLIC_STORE_ID` / `NEXT_PUBLIC_ENVIRONMENT_ID`. |
 | `NEXT_PUBLIC_FULL_WIDTH` | `true`/`false` | `false` | Full-viewport shell + denser product grid (4–5 cols). |
 | `NEXT_PUBLIC_EP_INVENTORIES_MULTI_LOCATION` | `true`/`false` | `false` | Batch stock fetch + out-of-stock gating on cards/PDP; adds the multi-location header to EP calls. |
 | `NEXT_PUBLIC_EP_INVENTORIES_DEFAULT_LOCATION` | slug | `""` | Location used for stock when no location cookie is set. |
@@ -241,6 +242,7 @@ Feature: Configure a product on the PDP
 | Infinite scroll instead of a pager | `NEXT_PUBLIC_LAZY_LOAD_RESULTS=true` |
 | Add attribute facets | `NEXT_PUBLIC_FILTER_ITEMS=brand\|Brand\|checkbox,…` |
 | Show a price slider | `NEXT_PUBLIC_FILTER_ITEMS=price.float_price\|Price\|slider` |
+| Show product questions on the PDP | `NEXT_PUBLIC_PRODUCT_QUESTIONS_ENABLED=true` (+ `_ENVIRONMENT_ID`, other `_PRODUCT_QUESTIONS_*` to override defaults) |
 | Show bundle option images | `NEXT_PUBLIC_SHOW_BUNDLE_OPTION_IMAGES=true` |
 | Gate out-of-stock products | `NEXT_PUBLIC_EP_INVENTORIES_MULTI_LOCATION=true` |
 | Denser, full-width grid | `NEXT_PUBLIC_FULL_WIDTH=true` |

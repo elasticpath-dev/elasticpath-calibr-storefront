@@ -24,6 +24,7 @@ import { ProductBreadcrumb } from "@/components/product/ProductBreadcrumb";
 import { ProductCarouselDisplay } from "@/components/product/ProductCarouselDisplay";
 import { SubscriptionProductActions } from "@/components/product/SubscriptionProductActions";
 import { ProductExtensions } from "@/components/product/ProductExtensions";
+import { ProductQuestions } from "@/components/product/ProductQuestions";
 import type { Metadata } from "next";
 
 type Props = {
@@ -51,7 +52,7 @@ export default async function ProductDetailPage({ params }: Props) {
     offering,
     relationshipCarousels,
     breadcrumbItems,
-    { ui, features },
+    { ui, features, productQuestions },
   ] = await Promise.all([
     getTranslations("product"),
     getMessages(),
@@ -319,6 +320,15 @@ export default async function ProductDetailPage({ params }: Props) {
               )}
           </div>
         </div>
+
+        {/* Product questions widget — PDP only, mounted on the product SKU. */}
+        {product.sku && (
+          <ProductQuestions
+            sku={product.sku}
+            config={productQuestions}
+            className="mt-16"
+          />
+        )}
 
         {relationshipCarousels.map((carousel) => (
           <section key={carousel.slug} className="mt-16">

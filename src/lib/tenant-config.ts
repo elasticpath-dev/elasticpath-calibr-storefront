@@ -228,6 +228,25 @@ export type TenantConfig = {
     /** data-api-base-url attribute — the agent API base URL. */
     apiBaseUrl: string;
   };
+  /** Product questions widget. When enabled, the PDP renders the widget's
+   * mount point (`<div data-yd-questions data-product="<sku>">`) and loads
+   * its script — PDP only, not the root layout. Configured via
+   * NEXT_PUBLIC_PRODUCT_QUESTIONS_*. */
+  productQuestions: {
+    enabled: boolean;
+    /** Widget script src. */
+    src: string;
+    /** data-store-id attribute (falls back to NEXT_PUBLIC_STORE_ID). */
+    storeId: string;
+    /** data-domain attribute — the questions API origin. */
+    domain: string;
+    /** data-workflow-slug attribute. */
+    workflowSlug: string;
+    /** data-endpoint attribute — path under `domain`. */
+    endpoint: string;
+    /** data-environment-id attribute (falls back to NEXT_PUBLIC_ENVIRONMENT_ID). */
+    environmentId: string;
+  };
 };
 
 /**
@@ -612,6 +631,28 @@ export function buildTenantConfigFromEnv(): TenantConfig {
         e.NEXT_PUBLIC_AGENTIC_API_BASE_URL?.trim() ||
         "https://api.elasticpath.solutions",
     },
+    productQuestions: {
+      enabled: e.NEXT_PUBLIC_PRODUCT_QUESTIONS_ENABLED === "true",
+      src:
+        e.NEXT_PUBLIC_PRODUCT_QUESTIONS_SRC?.trim() ||
+        "https://app.younifyd.com/product-questions.js",
+      // Both ids fall back to the store's configured values when a dedicated
+      // one isn't set.
+      storeId:
+        e.NEXT_PUBLIC_PRODUCT_QUESTIONS_STORE_ID?.trim() ||
+        e.NEXT_PUBLIC_STORE_ID?.trim() ||
+        "",
+      domain:
+        e.NEXT_PUBLIC_PRODUCT_QUESTIONS_DOMAIN?.trim() ||
+        "https://eu.younifyd.com",
+      workflowSlug:
+        e.NEXT_PUBLIC_PRODUCT_QUESTIONS_WORKFLOW_SLUG?.trim() || "elasticpath",
+      endpoint: e.NEXT_PUBLIC_PRODUCT_QUESTIONS_ENDPOINT?.trim() || "/questions",
+      environmentId:
+        e.NEXT_PUBLIC_PRODUCT_QUESTIONS_ENVIRONMENT_ID?.trim() ||
+        e.NEXT_PUBLIC_ENVIRONMENT_ID?.trim() ||
+        "",
+    },
   };
 }
 
@@ -635,6 +676,7 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
     ui: Partial<TenantConfig["ui"]>;
     analytics: Partial<TenantConfig["analytics"]>;
     agentic: Partial<TenantConfig["agentic"]>;
+    productQuestions: Partial<TenantConfig["productQuestions"]>;
   }>;
 
   const theme = { ...defaults.theme } as ThemeConfig;
@@ -795,6 +837,22 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
       storeId: r.agentic?.storeId || defaults.agentic.storeId,
       agent: r.agentic?.agent ?? defaults.agentic.agent,
       apiBaseUrl: r.agentic?.apiBaseUrl || defaults.agentic.apiBaseUrl,
+    },
+    productQuestions: {
+      enabled:
+        r.productQuestions?.enabled ?? defaults.productQuestions.enabled,
+      src: r.productQuestions?.src || defaults.productQuestions.src,
+      storeId:
+        r.productQuestions?.storeId || defaults.productQuestions.storeId,
+      domain: r.productQuestions?.domain || defaults.productQuestions.domain,
+      workflowSlug:
+        r.productQuestions?.workflowSlug ||
+        defaults.productQuestions.workflowSlug,
+      endpoint:
+        r.productQuestions?.endpoint || defaults.productQuestions.endpoint,
+      environmentId:
+        r.productQuestions?.environmentId ||
+        defaults.productQuestions.environmentId,
     },
   };
 }
