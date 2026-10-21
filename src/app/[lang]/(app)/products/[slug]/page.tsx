@@ -283,6 +283,16 @@ export default async function ProductDetailPage({ params }: Props) {
               </div>
             )}
 
+            {/* Product questions widget — PDP only, mounted on the product
+                SKU; sits between the description and the attributes. */}
+            {product.sku && (
+              <ProductQuestions
+                sku={product.sku}
+                config={productQuestions}
+                className="mt-8"
+              />
+            )}
+
             {/* Array-of-strings extensions: bullet lists right under the
                 description (kept out of the extensions table). */}
             {product.extensionLists?.map((list) => (
@@ -320,15 +330,6 @@ export default async function ProductDetailPage({ params }: Props) {
               )}
           </div>
         </div>
-
-        {/* Product questions widget — PDP only, mounted on the product SKU. */}
-        {product.sku && (
-          <ProductQuestions
-            sku={product.sku}
-            config={productQuestions}
-            className="mt-16"
-          />
-        )}
 
         {relationshipCarousels.map((carousel) => (
           <section key={carousel.slug} className="mt-16">
