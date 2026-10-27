@@ -1,24 +1,11 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
+import { initPlasmicLoader as initServerPlasmicLoader } from "@plasmicapp/loader-react/react-server";
 import { getServerPlasmicLoader } from "./plasmic-server-loader";
 import { getPlasmicConfig } from "@/lib/plasmic-config";
+import { DEFAULT_PLASMIC_HOST } from "@/lib/tenant-config";
 
 type CmsArgs = [projectId: string, apiToken: string, host: string, component: string];
-
-async function fetchComponentData(
-  projectId: string,
-  apiToken: string,
-  preview: boolean,
-  host: string,
-  component: string,
-) {
-  try {
-    const loader = getServerPlasmicLoader({ projectId, apiToken, preview, host });
-    return (await loader?.maybeFetchComponentData(component)) ?? null;
-  } catch {
-    return null;
-  }
-}
 
 /**
  * Published content (cms.preview off): every maybeFetchComponentData call
@@ -29,22 +16,53 @@ async function fetchComponentData(
  * the static key array), so different tenants' CMS projects never collide.
  */
 const getPublishedComponentData = unstable_cache(
-  (...args: CmsArgs) => fetchComponentData(args[0], args[1], false, args[2], args[3]),
+  async (...[projectId, apiToken, host, component]: CmsArgs) => {
+    try {
+      const loader = getServerPlasmicLoader({ projectId, apiToken, preview: false, host });
+      return (await loader?.maybeFetchComponentData(component)) ?? null;
+    } catch {
+      return null;
+    }
+  },
   ["plasmic-component-data"],
   { revalidate: 300 },
 );
 
 /**
- * Preview content (cms.preview on): nothing is cached across requests — the
- * Data Cache is bypassed (so nothing persists on Vercel between requests)
- * and the loader itself re-downloads on every call in production (see
- * plasmic-server-loader). Every page render pulls the latest draft from the
- * CMS. React's cache() still dedupes within one request, so Logo/Header/
- * Footer on the same page share a single download rather than three.
+ * Preview content (cms.preview on): nothing is cached across requests, so
+ * every page render pulls the latest draft from the CMS and nothing persists
+ * on Vercel between requests. Two things make that true:
+ *  - the Data Cache (unstable_cache) is bypassed entirely;
+ *  - the loader is created per request (React cache() scopes it to the
+ *    current render) via the base loader-react factory rather than the
+ *    Next.js wrapper. The wrapper forces alwaysFresh on the server, which
+ *    would re-download the whole bundle for each component on the page
+ *    (logo, nav, footer, page body — 20s+ per request). A fresh non-alwaysFresh
+ *    instance downloads once per request and serves every component from
+ *    that in-memory bundle, then is discarded with the request.
  */
-const getPreviewComponentData = cache((...args: CmsArgs) =>
-  fetchComponentData(args[0], args[1], true, args[2], args[3]),
+const getPreviewLoader = cache((projectId: string, apiToken: string, host: string) =>
+  initServerPlasmicLoader({
+    projects: [{ id: projectId, token: apiToken }],
+    host: host || DEFAULT_PLASMIC_HOST,
+    preview: true,
+    alwaysFresh: false,
+    // Same platform options the Next.js wrapper sets, so the generated code
+    // matches what PlasmicRootProvider expects.
+    platform: "nextjs",
+    platformOptions: { nextjs: { appDir: true } },
+    onClientSideFetch: "warn",
+  }),
 );
+
+async function getPreviewComponentData(...[projectId, apiToken, host, component]: CmsArgs) {
+  try {
+    const loader = getPreviewLoader(projectId, apiToken, host);
+    return (await loader.maybeFetchComponentData(component)) ?? null;
+  } catch {
+    return null;
+  }
+}
 
 export async function getPlasmicComponentData(component: string) {
   const { projectId, apiToken, preview, host } = await getPlasmicConfig();

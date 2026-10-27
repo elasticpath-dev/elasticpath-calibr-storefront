@@ -14,6 +14,7 @@
     "@epcc-sdk/sdks-nextjs": "^0.0.11",
     "@epcc-sdk/sdks-shopper": "^0.1.0",
     "@plasmicapp/loader-nextjs": "^2.0.7",
+    "@plasmicapp/loader-react": "2.0.7",
     "@stripe/react-stripe-js": "^6.6.0",
     "@stripe/stripe-js": "^9.8.0",
     "@vercel/analytics": "^2.0.1",
