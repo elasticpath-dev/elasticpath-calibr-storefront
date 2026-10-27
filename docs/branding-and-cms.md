@@ -20,7 +20,7 @@ Entirely environment-variable driven — no code changes needed to rebrand:
 ### Elastic Path CMS (Plasmic)
 Optional visual content management for the homepage, footer, logo — and additional registered blocks (e.g. hero carousel, product carousel, navigation):
 - Enabled by providing a CMS project ID and API token; disabled (falling back to the built-in hard-coded sections) if either is blank, or if a component fetch fails.
-- **Preview mode** fetches the latest unpublished draft on every request — useful while designing, but slow, so it should stay off in production.
+- **Preview mode** renders the latest unpublished draft, fetched live from the CMS on every request with nothing cached — not in the Next/Vercel data cache and not in the loader's memory — so a change saved in the studio shows on the next page load. Useful while designing, but slow, so it should stay off in production.
 - With preview off, published CMS content is cached for ~5 minutes, so editorial changes appear within a few minutes without a redeploy while keeping page loads fast.
 - A root-level catch-all renders Plasmic content by path (header/footer always; blank main when there's no matching Plasmic page — no 404).
 
@@ -38,7 +38,7 @@ Optional visual content management for the homepage, footer, logo — and additi
 | `NEXT_PUBLIC_COLOR_SUCCESS_*` / `_ERROR_*` / `_WARNING_*` | hex | see defaults | Semantic colours. |
 | `NEXT_PUBLIC_EP_CMS_PROJECT_ID` | string | `""` | Plasmic project id. Blank → CMS disabled. |
 | `NEXT_PUBLIC_EP_CMS_API_TOKEN` | string | `""` | Plasmic API token. Blank → CMS disabled. |
-| `NEXT_PUBLIC_EP_CMS_PREVIEW` | `true`/`false` | `false` | Fetch unpublished drafts on every request (design-time only). |
+| `NEXT_PUBLIC_EP_CMS_PREVIEW` | `true`/`false` | `false` | Render unpublished drafts, fetched live on every request with no caching (design-time only). |
 | `NEXT_PUBLIC_EP_CMS_HOST` | URL | EP default | Plasmic host. |
 
 > Any unset colour falls back to a built-in default — partial branding is safe.

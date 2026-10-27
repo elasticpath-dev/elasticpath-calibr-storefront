@@ -26,6 +26,9 @@ export function getClientPlasmicLoader(cms: {
       projects: [{ id: cms.projectId, token: cms.apiToken }],
       host: cms.host || DEFAULT_PLASMIC_HOST,
       preview: cms.preview,
+      // Mirror the server loader: in preview, never serve a bundle this
+      // instance fetched earlier — any client-side fetch gets the latest draft.
+      alwaysFresh: cms.preview,
       platformOptions: { nextjs: { appDir: true } },
     });
     registerPlasmicComponents(loader);
