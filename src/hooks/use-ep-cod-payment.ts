@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { checkoutApi, paymentSetup } from "@epcc-sdk/sdks-shopper";
+import { epErrorMessage } from "@/lib/ep-error";
 import type { AccountAddressResponse } from "@epcc-sdk/sdks-shopper";
 import { useTranslations } from "next-intl";
 import { useCart } from "@/context/CartContext";
@@ -174,6 +175,11 @@ export function useEpCODPayment(
           },
         });
 
+        // The SDK resolves with { error } rather than throwing — surface the
+        // API's own reason (e.g. a preview cart with a snapshot date can't be
+        // checked out) instead of a generic failure.
+        if (orderRes.error)
+          throw new Error(epErrorMessage(orderRes.error, t("orderCreationFailed")));
         const orderId = orderRes.data?.data?.id;
         if (!orderId) throw new Error(t("orderCreationFailed"));
 

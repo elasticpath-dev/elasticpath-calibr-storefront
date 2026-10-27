@@ -7,6 +7,7 @@ import {
   confirmPayment,
   getV2AccountsAccountId,
 } from "@epcc-sdk/sdks-shopper";
+import { epErrorMessage } from "@/lib/ep-error";
 import type { AccountAddressResponse } from "@epcc-sdk/sdks-shopper";
 import type { Stripe, StripeElements } from "@stripe/stripe-js";
 import { useTranslations } from "next-intl";
@@ -182,6 +183,11 @@ export function useEpStripePayment(
           },
         });
 
+        // The SDK resolves with { error } rather than throwing — surface the
+        // API's own reason (e.g. a preview cart with a snapshot date can't be
+        // checked out) instead of a generic failure.
+        if (orderRes.error)
+          throw new Error(epErrorMessage(orderRes.error, t("orderCreationFailed")));
         const orderId = orderRes.data?.data?.id;
         if (!orderId) throw new Error(t("orderCreationFailed"));
 

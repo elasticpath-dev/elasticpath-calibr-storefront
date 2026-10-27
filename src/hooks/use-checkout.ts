@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { checkoutApi } from "@epcc-sdk/sdks-shopper";
+import { epErrorMessage } from "@/lib/ep-error";
 import { useCart } from "@/context/CartContext";
 import { useRouter } from "next/navigation";
 import { createEpClient } from "@/lib/api/ep-client";
@@ -140,6 +141,13 @@ export function useCheckout(lang: string, savedAddresses: AccountAddressResponse
           },
         });
 
+        // Surface the API's own reason (e.g. a preview cart with a snapshot
+        // date can't be checked out) instead of a generic failure.
+        if (res.error) {
+          throw new Error(
+            epErrorMessage(res.error, "Order creation failed — no order ID returned."),
+          );
+        }
         const orderId = res.data?.data?.id;
         if (!orderId) {
           throw new Error("Order creation failed — no order ID returned.");
