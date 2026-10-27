@@ -35,12 +35,12 @@ const getPublishedComponentData = unstable_cache(
 );
 
 /**
- * Preview content (cms.preview on): nothing is cached — not in the Data
- * Cache (so nothing persists on Vercel between requests) and not in the
- * loader (alwaysFresh, see plasmic-server-loader). Every page render pulls
- * the latest draft from the CMS. React's cache() still dedupes the fetch
- * within one request, so Logo/Header/Footer on the same page share a single
- * download rather than three.
+ * Preview content (cms.preview on): nothing is cached across requests — the
+ * Data Cache is bypassed (so nothing persists on Vercel between requests)
+ * and the loader itself re-downloads on every call in production (see
+ * plasmic-server-loader). Every page render pulls the latest draft from the
+ * CMS. React's cache() still dedupes within one request, so Logo/Header/
+ * Footer on the same page share a single download rather than three.
  */
 const getPreviewComponentData = cache((...args: CmsArgs) =>
   fetchComponentData(args[0], args[1], true, args[2], args[3]),

@@ -21,12 +21,10 @@ export function getServerPlasmicLoader(cms: {
       projects: [{ id: cms.projectId, token: cms.apiToken }],
       host: cms.host || DEFAULT_PLASMIC_HOST,
       preview: cms.preview,
-      // The loader keeps the fetched bundle in memory for the life of this
-      // (memoized) instance and only re-fetches for components it hasn't
-      // seen. In preview that would pin the first draft it downloaded until
-      // the server restarts — alwaysFresh makes every call hit the CMS so
-      // the latest draft is rendered (plasmic-data.ts dedupes per request).
-      alwaysFresh: cms.preview,
+      // Note: the Next.js wrapper forces alwaysFresh on the server at runtime
+      // (every maybeFetchComponentData call re-downloads the bundle) and only
+      // keeps an on-disk cache in dev, where the studio watcher clears it on
+      // each save. Cross-request caching is plasmic-data.ts's job.
       platformOptions: { nextjs: { appDir: true } },
     });
     loaderCache.set(cacheKey, loader);
