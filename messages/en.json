@@ -873,5 +873,26 @@
     "currency": "Currency",
     "footerHint": "Changes apply immediately and persist across sessions.",
     "location": "Location"
+  },
+  "preview": {
+    "badge": "Preview Mode",
+    "barMessage": "You are viewing a preview of this store. Prices and promotions may differ from the live site.",
+    "cartButton": "Preview Cart",
+    "cartButtonActive": "Previewing {date}",
+    "dialogTitle": "Preview cart at a future date",
+    "dialogDescription": "Pick a future date and time to see the cart as it would be at that moment — prices, promotions and availability follow the selected date. A cart with a preview date cannot be checked out.",
+    "currentDate": "Current preview date",
+    "date": "Date",
+    "time": "Time",
+    "apply": "Set preview date",
+    "applying": "Setting…",
+    "cancel": "Cancel",
+    "newCart": "Start a new cart (no preview date)",
+    "newCartName": "Preview cart",
+    "errorPastDate": "Pick a date and time in the future.",
+    "errorNoCart": "No cart yet — add an item first.",
+    "errorUpdate": "Could not set the preview date: {message}",
+    "successSet": "Preview date set to {date}",
+    "successNewCart": "New cart created"
   }
 }

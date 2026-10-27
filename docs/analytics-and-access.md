@@ -29,6 +29,11 @@ What the storefront supports for measuring usage and restricting access.
 ### Require login
 - Separately, the store can require authentication before any page (no anonymous browsing).
 
+### Preview mode
+- A tenant flag that marks the storefront as a preview store: an amber **announcement bar** above the header on every page carries a "Preview Mode" label and a short notice, so nobody mistakes the site for production.
+- The same bar holds the **Preview Cart** control: pick a future date and time and the active cart's `snapshot_date` is set, so Elastic Path prices the cart and applies promotions as of that moment. The control shows the active preview date, and offers to start a fresh cart since a cart with a snapshot date cannot be checked out.
+- The flag can come from env or the tenant-config endpoint; off by default. See **[cart.md](cart.md)** for the cart side.
+
 ---
 
 ## Configuration
@@ -39,6 +44,7 @@ What the storefront supports for measuring usage and restricting access.
 | `NEXT_PUBLIC_POSTHOG_HOST` | URL | `https://eu.i.posthog.com` | PostHog region/host. |
 | `GATEKEEPER_PASSWORD` (server) | string | `""` | Site-wide password gate. Unset → no gate. |
 | `REQUIRE_LOGIN` (server) | `true`/`false` | `false` | Forces sign-in before any page. |
+| `NEXT_PUBLIC_PREVIEW_MODE` | `true`/`false` | `false` | Preview store: "Preview Mode" announcement bar above the header on every page, with the Preview Cart (snapshot date) control. |
 
 **Per-shopper state:** gate-grant cookie (session); `ep_am_token` cookie (sign-in).
 
@@ -74,6 +80,30 @@ Feature: Access control
     Then every page redirects to sign-in unless authenticated
 ```
 
+```gherkin
+Feature: Preview mode
+  # Switch: NEXT_PUBLIC_PREVIEW_MODE (or tenant-config features.previewMode)
+
+  Scenario: Announcement bar
+    Given preview mode is on
+    Then every page shows an announcement bar above the header with a "Preview Mode" label and notice
+
+  Scenario: Preview cart date
+    Given preview mode is on and Elastic Path APIs are available
+    When I open Preview Cart in the announcement bar and pick a future date and time
+    Then the active cart's snapshot_date is set and the cart re-prices as of that moment
+    And the header control shows the active preview date
+
+  Scenario: Past date
+    When I pick a date and time that is not in the future
+    Then nothing is sent and an error toast explains why
+
+  Scenario: Leave preview
+    Given the cart has a preview date
+    When I choose "Start a new cart"
+    Then a fresh cart without a snapshot date becomes active
+```
+
 ---
 
 ## Quick reference
@@ -83,5 +113,6 @@ Feature: Access control
 | Enable PostHog analytics | `NEXT_PUBLIC_POSTHOG_KEY=…` (+ `NEXT_PUBLIC_POSTHOG_HOST` for region) |
 | Password-protect a preview deploy | `GATEKEEPER_PASSWORD=…` |
 | Disallow anonymous browsing | `REQUIRE_LOGIN=true` |
+| Mark the site as a preview store (announcement bar + Preview Cart) | `NEXT_PUBLIC_PREVIEW_MODE=true` |
 
 **Related:** [account.md](account.md) (shopper authentication, separate from the site gate)

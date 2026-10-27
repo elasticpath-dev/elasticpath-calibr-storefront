@@ -50,7 +50,12 @@ export async function Header({ lang }: HeaderProps) {
     ui.headerNavPosition === "below" || ui.headerNavPosition === "below-center";
 
   return (
-    <header className="sticky top-0 z-30 w-full bg-white/95 backdrop-blur-sm border-b border-gray-100 supports-[backdrop-filter]:bg-white/80">
+    <header
+      className={`sticky z-30 w-full bg-white/95 backdrop-blur-sm border-b border-gray-100 supports-[backdrop-filter]:bg-white/80 ${
+        // Sit below the sticky preview announcement bar (h-10) when it's shown.
+        features.previewMode ? "top-10" : "top-0"
+      }`}
+    >
       <div className="container-shell px-4 sm:px-6 lg:px-8">
         <div className="flex items-center min-h-16 py-2 gap-4">
           {/* Mobile: hamburger — mirrors the Plasmic nav when it drives desktop */}

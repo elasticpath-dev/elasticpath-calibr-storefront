@@ -873,5 +873,26 @@
     "currency": "Devise",
     "footerHint": "Les modifications s'appliquent immédiatement et persistent d'une session à l'autre.",
     "location": "Emplacement"
+  },
+  "preview": {
+    "badge": "Mode aperçu",
+    "barMessage": "Vous consultez un aperçu de cette boutique. Les prix et promotions peuvent différer du site réel.",
+    "cartButton": "Panier d'aperçu",
+    "cartButtonActive": "Aperçu {date}",
+    "dialogTitle": "Voir le panier à une date future",
+    "dialogDescription": "Choisissez une date et une heure futures pour voir le panier tel qu'il serait à ce moment : prix, promotions et disponibilité suivent la date choisie. Un panier avec une date d'aperçu ne peut pas être validé.",
+    "currentDate": "Date d'aperçu actuelle",
+    "date": "Date",
+    "time": "Heure",
+    "apply": "Définir la date",
+    "applying": "Enregistrement…",
+    "cancel": "Annuler",
+    "newCart": "Commencer un nouveau panier (sans date d'aperçu)",
+    "newCartName": "Panier d'aperçu",
+    "errorPastDate": "Choisissez une date et une heure futures.",
+    "errorNoCart": "Pas encore de panier : ajoutez d'abord un article.",
+    "errorUpdate": "Impossible de définir la date : {message}",
+    "successSet": "Date d'aperçu : {date}",
+    "successNewCart": "Nouveau panier créé"
   }
 }

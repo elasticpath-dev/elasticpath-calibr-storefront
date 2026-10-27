@@ -13,6 +13,7 @@ import { FooterSection } from "@/components/footer/FooterSection";
 import { ClientProvider } from "@/components/ClientProvider";
 import { Toaster } from "sonner";
 import { PromotionSuggestionsModal } from "@/components/cart/PromotionSuggestionsModal";
+import { PreviewAnnouncementBar } from "@/components/PreviewAnnouncementBar";
 export default async function AppLayout({
   children,
   params,
@@ -40,6 +41,7 @@ export default async function AppLayout({
             <CatalogProvider>
             <NavigationProvider>
             <CartProvider>
+            <PreviewAnnouncementBar />
             {children}
             <FooterSection lang={lang} />
             <PromotionSuggestionsModal lang={lang} />

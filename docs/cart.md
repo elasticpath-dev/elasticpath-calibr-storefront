@@ -80,6 +80,7 @@ Available to authenticated shoppers:
 | `NEXT_PUBLIC_CART_EDITABLE_INPUTS` | selector list | `""` | Make named custom inputs inline-editable on lines. |
 | `NEXT_PUBLIC_EP_INVENTORIES_MULTI_LOCATION` | `true`/`false` | `false` | Tag lines with a stock location; show it and re-send on updates. |
 | `NEXT_PUBLIC_MARKETING_MODE` | `true`/`false` | `false` | No cart is created/loaded until sign-in. |
+| `NEXT_PUBLIC_PREVIEW_MODE` | `true`/`false` | `false` | Preview store: the Preview Cart control in the announcement bar sets the cart's `snapshot_date` (future pricing/promotions; such a cart can't be checked out). See [analytics-and-access.md](analytics-and-access.md). |
 | `NEXT_PUBLIC_DEFAULT_CURRENCY` / `NEXT_PUBLIC_CURRENCIES` | ISO codes | `USD` | Cart currency. |
 
 > **Selector syntax** (grouping / editable inputs): a dot-path custom input
@@ -175,5 +176,6 @@ Feature: States
 | Group lines by a PO/custom field | `NEXT_PUBLIC_CART_GROUP_BY=product_fields[key="purchase_order"]` |
 | Edit custom fields on the cart | `NEXT_PUBLIC_CART_EDITABLE_INPUTS=po_number,…` |
 | Tag lines with a location | `NEXT_PUBLIC_EP_INVENTORIES_MULTI_LOCATION=true` |
+| Preview the cart at a future date | `NEXT_PUBLIC_PREVIEW_MODE=true` (announcement bar → Preview Cart) |
 
 **Related:** [catalog-and-products.md](catalog-and-products.md) · [checkout.md](checkout.md) · [quotes.md](quotes.md) · [account.md](account.md)

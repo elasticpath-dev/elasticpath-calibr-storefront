@@ -873,5 +873,26 @@
     "currency": "Moneda",
     "footerHint": "Los cambios se aplican de inmediato y persisten entre sesiones.",
     "location": "Ubicación"
+  },
+  "preview": {
+    "badge": "Modo vista previa",
+    "barMessage": "Estás viendo una vista previa de esta tienda. Los precios y promociones pueden diferir del sitio real.",
+    "cartButton": "Carrito de prueba",
+    "cartButtonActive": "Vista previa {date}",
+    "dialogTitle": "Ver el carrito en una fecha futura",
+    "dialogDescription": "Elige una fecha y hora futuras para ver el carrito tal como estaría en ese momento: precios, promociones y disponibilidad siguen la fecha seleccionada. Un carrito con fecha de vista previa no se puede finalizar.",
+    "currentDate": "Fecha de vista previa actual",
+    "date": "Fecha",
+    "time": "Hora",
+    "apply": "Establecer fecha",
+    "applying": "Guardando…",
+    "cancel": "Cancelar",
+    "newCart": "Empezar un carrito nuevo (sin fecha de vista previa)",
+    "newCartName": "Carrito de prueba",
+    "errorPastDate": "Elige una fecha y hora futuras.",
+    "errorNoCart": "Aún no hay carrito: añade un artículo primero.",
+    "errorUpdate": "No se pudo establecer la fecha: {message}",
+    "successSet": "Fecha de vista previa: {date}",
+    "successNewCart": "Carrito nuevo creado"
   }
 }

@@ -144,6 +144,11 @@ export type TenantConfig = {
     /** Hide the "create account" link on the login overlay — shoppers can log
      * in but not self-register. From NEXT_PUBLIC_DISABLE_REGISTRATION. */
     disableRegistration: boolean;
+    /** Preview store: shows a "Preview Mode" announcement bar above the header
+     * on every page, with a Preview Cart control that sets the cart's
+     * `snapshot_date` so prices/promotions resolve as of a future moment. Off
+     * by default. From NEXT_PUBLIC_PREVIEW_MODE. */
+    previewMode: boolean;
     /** Non-transactional "marketing" storefront: until a shopper signs in, no
      * calls are made to the Elastic Path endpoint (no access token, catalog,
      * cart or navigation) — only Plasmic content renders. Signing in lifts the
@@ -283,6 +288,8 @@ export type ClientTenantConfig = {
   loginToSeePrice: boolean;
   /** Hide the create-account link on the login overlay — see features.disableRegistration. */
   disableRegistration: boolean;
+  /** Preview store (announcement bar + Preview Cart control) — see features.previewMode. */
+  previewMode: boolean;
   cms: { projectId: string; apiToken: string; preview: boolean; host: string };
   currency: { default: string; available: string[] };
   epContextTag?: string;
@@ -335,6 +342,7 @@ export function toClientTenantConfig(config: TenantConfig): ClientTenantConfig {
     hideAddToCartWhenNoPrice: config.features.hideAddToCartWhenNoPrice,
     loginToSeePrice: config.features.loginToSeePrice,
     disableRegistration: config.features.disableRegistration,
+    previewMode: config.features.previewMode,
     storeName: config.site.name,
     brandInk900: config.theme.ink900,
     currency: config.currency,
@@ -570,6 +578,7 @@ export function buildTenantConfigFromEnv(): TenantConfig {
         e.NEXT_PUBLIC_HIDE_ADD_TO_CART_WHEN_NO_PRICE === "true",
       loginToSeePrice: e.NEXT_PUBLIC_LOGIN_TO_SEE_PRICE === "true",
       disableRegistration: e.NEXT_PUBLIC_DISABLE_REGISTRATION === "true",
+      previewMode: e.NEXT_PUBLIC_PREVIEW_MODE === "true",
       purchaseHistoryEnabled:
         e.NEXT_PUBLIC_PURCHASE_HISTORY_ENABLED === "true",
       alternativePriceBooks: parseAlternativePriceBooks(
@@ -772,6 +781,7 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
       disableRegistration:
         r.features?.disableRegistration ??
         defaults.features.disableRegistration,
+      previewMode: r.features?.previewMode ?? defaults.features.previewMode,
       purchaseHistoryEnabled:
         r.features?.purchaseHistoryEnabled ??
         defaults.features.purchaseHistoryEnabled,
