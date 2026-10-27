@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { configureByContextProduct } from "@epcc-sdk/sdks-shopper";
 import type { Client } from "@hey-api/client-fetch";
@@ -13,6 +13,10 @@ import { Badge } from "@/components/ui/Badge/Badge";
 import { Skeleton } from "@/components/ui/Skeleton/Skeleton";
 import { ProductThumbnail } from "./ProductThumbnail";
 import { QuantitySelector } from "./QuantitySelector";
+import {
+  ProductVariationSelector,
+  resolveChildProductId,
+} from "./ProductVariationSelector";
 import type {
   BundleComponent,
   BundleComponentOption,
@@ -31,14 +35,24 @@ type Props = {
   stickyFooter?: boolean;
 };
 
+/** Child product ids reachable from a parent option's variation matrix. */
+function collectChildIds(node: unknown, out = new Set<string>()): Set<string> {
+  if (typeof node === "string") out.add(node);
+  else if (node && typeof node === "object")
+    for (const v of Object.values(node)) collectChildIds(v, out);
+  return out;
+}
+
 function buildInitialSelections(components: BundleComponent[]): SelectionState {
   const state: SelectionState = {};
   for (const component of components) {
     if (component.min === 0) {
       state[component.key] = [];
     } else {
-      const defaults = component.options.filter((o) => o.isDefault);
-      const rest = component.options.filter((o) => !o.isDefault);
+      // Parent options need a variant picked first, so never pre-select them.
+      const plain = component.options.filter((o) => !o.isParent);
+      const defaults = plain.filter((o) => o.isDefault);
+      const rest = plain.filter((o) => !o.isDefault);
       const pool = [...defaults, ...rest];
       state[component.key] = pool.slice(0, component.min).map((o) => ({
         productId: o.id,
@@ -71,6 +85,18 @@ export function BundleConfigurator({
     buildInitialSelections(sorted),
   );
   const [quantity, setQuantity] = useState(1);
+  // Per parent option: chosen variation option ids ({ [variationId]: optionId }).
+  const [variantChoices, setVariantChoices] = useState<
+    Record<string, Record<string, string>>
+  >({});
+
+  const childIdsByOption = useMemo(() => {
+    const map: Record<string, Set<string>> = {};
+    for (const c of components)
+      for (const o of c.options)
+        if (o.isParent) map[o.id] = collectChildIds(o.variationMatrix);
+    return map;
+  }, [components]);
 
   const [optionPrices, setOptionPrices] = useState<Record<string, OptionPrice>>(
     () => {
@@ -117,6 +143,7 @@ export function BundleConfigurator({
       (a, b) => a.sortOrder - b.sortOrder,
     );
     setSelections(buildInitialSelections(sortedComponents));
+    setVariantChoices({});
     const prices: Record<string, OptionPrice> = {};
     for (const c of components) {
       for (const o of c.options) {
@@ -260,6 +287,57 @@ export function BundleConfigurator({
     });
   };
 
+  const handleVariantChange = (
+    component: BundleComponent,
+    option: BundleComponentOption,
+    variationId: string,
+    optionId: string,
+  ) => {
+    // Mirror the card's display rule: a complete pick that is no longer
+    // selected was reset, so start fresh instead of reusing stale choices.
+    const prior = variantChoices[option.id] ?? {};
+    const priorComplete = option.variations!.every((v) => prior[v.id]);
+    const priorSelected = (selections[component.key] ?? []).some((s) =>
+      childIdsByOption[option.id].has(s.productId),
+    );
+    const base = priorComplete && !priorSelected ? {} : prior;
+    const choices = { ...base, [variationId]: optionId };
+    setVariantChoices((prev) => ({ ...prev, [option.id]: choices }));
+
+    const allChosen = option.variations!.every((v) => choices[v.id]);
+    const childId = allChosen
+      ? resolveChildProductId(
+          option.variationMatrix!,
+          option.variations!.map((v) => choices[v.id]),
+        )
+      : null;
+
+    const { key, max } = component;
+    const own = childIdsByOption[option.id];
+    setSelections((prev) => {
+      const others = (prev[key] ?? []).filter((s) => !own.has(s.productId));
+      if (!childId) return { ...prev, [key]: others };
+      const entry = { productId: childId, quantity: option.quantity };
+      if (max === 1) return { ...prev, [key]: [entry] };
+      if (others.length >= max) return { ...prev, [key]: others };
+      return { ...prev, [key]: [...others, entry] };
+    });
+  };
+
+  const clearParentOption = (
+    component: BundleComponent,
+    option: BundleComponentOption,
+  ) => {
+    const own = childIdsByOption[option.id];
+    setVariantChoices((prev) => ({ ...prev, [option.id]: {} }));
+    setSelections((prev) => ({
+      ...prev,
+      [component.key]: (prev[component.key] ?? []).filter(
+        (s) => !own.has(s.productId),
+      ),
+    }));
+  };
+
   const changeOptionQty = (
     componentKey: string,
     optProductId: string,
@@ -347,28 +425,50 @@ export function BundleConfigurator({
               {/* Options */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {sortedOptions.map((option) => {
-                  const isSelected = currentSels.some(
-                    (s) => s.productId === option.id,
+                  const ownChildIds = option.isParent
+                    ? childIdsByOption[option.id]
+                    : undefined;
+                  // A parent option is selected via its resolved child product id.
+                  const matches = (productId: string) =>
+                    ownChildIds
+                      ? ownChildIds.has(productId)
+                      : productId === option.id;
+                  const isSelected = currentSels.some((s) =>
+                    matches(s.productId),
                   );
-                  const selectedEntry = currentSels.find(
-                    (s) => s.productId === option.id,
+                  const selectedEntry = currentSels.find((s) =>
+                    matches(s.productId),
                   );
                   const isDisabled = !isSelected && atMax && max > 1;
                   const canDeselect = isSelected && selectedCount > min;
-                  const optPrice = optionPrices[option.id];
+                  const optPrice =
+                    optionPrices[selectedEntry?.productId ?? option.id] ??
+                    optionPrices[option.id];
+                  const choices = variantChoices[option.id] ?? {};
+                  const choicesComplete =
+                    !!option.variations &&
+                    option.variations.every((v) => choices[v.id]);
+                  // Drop a complete-but-deselected pick (e.g. replaced in a
+                  // single-select component) so the card resets cleanly.
+                  const shownChoices =
+                    isSelected || !choicesComplete ? choices : {};
                   const hasVariableQty =
                     option.min !== undefined &&
                     option.max !== undefined &&
                     option.max > option.min;
-                  const clickable = isSelected ? canDeselect : !isDisabled;
+                  const clickable = option.isParent
+                    ? false
+                    : isSelected
+                      ? canDeselect
+                      : !isDisabled;
 
                   return (
                     // div instead of button — QuantitySelector has its own interactive elements inside
                     <div
                       key={option.id}
-                      role="button"
-                      tabIndex={clickable ? 0 : -1}
-                      aria-pressed={isSelected}
+                      role={option.isParent ? undefined : "button"}
+                      tabIndex={option.isParent ? undefined : clickable ? 0 : -1}
+                      aria-pressed={option.isParent ? undefined : isSelected}
                       onClick={() =>
                         clickable && toggleOption(component, option)
                       }
@@ -379,6 +479,8 @@ export function BundleConfigurator({
                         }
                       }}
                       className={`relative flex items-start gap-3 p-3 rounded-lg border-2 text-left transition-colors select-none ${
+                        option.isParent ? "sm:col-span-2" : ""
+                      } ${
                         hasVariableQty ? (isSelected ? "pb-10" : "pb-6") : ""
                       } ${optPrice?.saleId ? "pt-5" : ""} ${
                         isSelected
@@ -445,6 +547,40 @@ export function BundleConfigurator({
                             {t("quantityDisplay", { qty: option.quantity })}
                           </p>
                         ) : null}
+                        {option.isParent && (
+                          <div className="mt-3 space-y-2">
+                            <ProductVariationSelector
+                              variations={option.variations!}
+                              variationMatrix={option.variationMatrix!}
+                              selectedOptions={shownChoices}
+                              onProductResolved={() => {}}
+                              onOptionChange={(variationId, optionId) =>
+                                handleVariantChange(
+                                  component,
+                                  option,
+                                  variationId,
+                                  optionId,
+                                )
+                              }
+                            />
+                            {!isSelected && (
+                              <p className="text-xs text-gray-500">
+                                {t("chooseVariant")}
+                              </p>
+                            )}
+                            {isSelected && canDeselect && (
+                              <Button
+                                variant="link"
+                                size="xs"
+                                onClick={() =>
+                                  clearParentOption(component, option)
+                                }
+                              >
+                                {t("clearSelection")}
+                              </Button>
+                            )}
+                          </div>
+                        )}
                       </div>
 
                       {/* Radio (single) or checkbox (multi) indicator */}
@@ -502,7 +638,11 @@ export function BundleConfigurator({
                           <QuantitySelector
                             value={selectedEntry?.quantity ?? option.quantity}
                             onChange={(qty) =>
-                              changeOptionQty(key, option.id, qty)
+                              changeOptionQty(
+                                key,
+                                selectedEntry?.productId ?? option.id,
+                                qty,
+                              )
                             }
                             min={option.min!}
                             max={option.max!}

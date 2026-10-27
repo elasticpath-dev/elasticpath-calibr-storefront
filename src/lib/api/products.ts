@@ -68,6 +68,12 @@ export type BundleComponentOption = {
   priceFormatted?: string;
   originalPriceFormatted?: string;
   saleId?: string;
+  /** True when the option is a parent product flagged
+   * `product_should_be_substituted_with_child` — the shopper picks a variation
+   * and the resolved child product id is what goes into the bundle selection. */
+  isParent?: boolean;
+  variations?: ProductVariation[];
+  variationMatrix?: Record<string, unknown>;
 };
 
 export type BundleComponent = {
@@ -366,6 +372,27 @@ function formatProduct(
   };
 }
 
+type RawVariation = NonNullable<Product["meta"]>["variations"];
+
+function formatVariations(raw: RawVariation): ProductVariation[] {
+  return (raw ?? [])
+    .map((v) => ({
+      id: v.id ?? "",
+      name: v.name ?? "",
+      sortOrder: v.sort_order ?? 0,
+      options: (v.options ?? [])
+        .sort((a, b) => (b.sort_order ?? 0) - (a.sort_order ?? 0))
+        .map((o) => ({
+          id: o.id ?? "",
+          name: o.name ?? "",
+          description: o.description ?? undefined,
+          sortOrder: o.sort_order ?? 0,
+        })),
+    }))
+    .filter((v) => v.id && v.options.length > 0)
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+}
+
 async function formatProductDetail(
   product: Product,
   included?: IncludedResponse,
@@ -418,8 +445,25 @@ async function formatProductDetail(
                   .filter(Boolean)
                   .join(" / ") || undefined
               : undefined;
+            const isParent =
+              !!(opt as { product_should_be_substituted_with_child?: boolean })
+                .product_should_be_substituted_with_child;
+            const matrix = optProduct?.meta?.variation_matrix as
+              | Record<string, unknown>
+              | undefined;
+            const optVariations = isParent
+              ? formatVariations(optProduct?.meta?.variations)
+              : [];
+            const parentWithVariants =
+              isParent &&
+              optVariations.length > 0 &&
+              !!matrix &&
+              Object.keys(matrix).length > 0;
             return {
               id: opt.id!,
+              isParent: parentWithVariants || undefined,
+              variations: parentWithVariants ? optVariations : undefined,
+              variationMatrix: parentWithVariants ? matrix : undefined,
               name: optProduct?.attributes?.name ?? opt.id!,
               sku: optProduct?.attributes?.sku,
               imageUrl: optImage?.link?.href,
@@ -452,22 +496,7 @@ async function formatProductDetail(
       })
       .sort((a, b) => a.sortOrder - b.sortOrder);
   }
-  const variations: ProductVariation[] = (product.meta?.variations ?? [])
-    .map((v) => ({
-      id: v.id ?? "",
-      name: v.name ?? "",
-      sortOrder: v.sort_order ?? 0,
-      options: (v.options ?? [])
-        .sort((a, b) => (b.sort_order ?? 0) - (a.sort_order ?? 0))
-        .map((o) => ({
-          id: o.id ?? "",
-          name: o.name ?? "",
-          description: o.description ?? undefined,
-          sortOrder: o.sort_order ?? 0,
-        })),
-    }))
-    .filter((v) => v.id && v.options.length > 0)
-    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  const variations = formatVariations(product.meta?.variations);
 
   const selectedOptionIds = product.meta?.child_option_ids?.length
     ? (product.meta.child_option_ids as string[])

@@ -11,7 +11,7 @@ type Props = {
   onOptionChange: (variationId: string, optionId: string) => void;
 };
 
-function resolveChildProductId(
+export function resolveChildProductId(
   matrix: Record<string, unknown>,
   optionIds: string[],
 ): string | null {

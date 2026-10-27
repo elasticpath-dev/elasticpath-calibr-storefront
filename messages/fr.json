@@ -291,7 +291,9 @@
     "moreNeeded": "({count} de plus nécessaire(s))",
     "qtyRange": "Qté : {min}–{max}",
     "addToCart": "Ajouter le lot au panier",
-    "adding": "Ajout…"
+    "adding": "Ajout…",
+    "chooseVariant": "Choisissez une variante pour sélectionner cette option",
+    "clearSelection": "Effacer la sélection"
   },
   "account": {
     "title": "Mon compte",

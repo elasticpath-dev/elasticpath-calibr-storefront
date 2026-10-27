@@ -291,7 +291,9 @@
     "moreNeeded": "({count} more needed)",
     "qtyRange": "Qty: {min}–{max}",
     "addToCart": "Add Bundle to Cart",
-    "adding": "Adding…"
+    "adding": "Adding…",
+    "chooseVariant": "Choose a variant to select this option",
+    "clearSelection": "Clear selection"
   },
   "account": {
     "title": "My Account",
