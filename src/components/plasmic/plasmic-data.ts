@@ -1,6 +1,10 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
-import { initPlasmicLoader as initServerPlasmicLoader } from "@plasmicapp/loader-react/react-server";
+import { PHASE_PRODUCTION_BUILD } from "next/constants";
+import {
+  initPlasmicLoader as initServerPlasmicLoader,
+  type PlasmicComponentLoader,
+} from "@plasmicapp/loader-react/react-server";
 import { getServerPlasmicLoader } from "./plasmic-server-loader";
 import { getPlasmicConfig } from "@/lib/plasmic-config";
 import { DEFAULT_PLASMIC_HOST } from "@/lib/tenant-config";
@@ -41,8 +45,8 @@ const getPublishedComponentData = unstable_cache(
  *    instance downloads once per request and serves every component from
  *    that in-memory bundle, then is discarded with the request.
  */
-const getPreviewLoader = cache((projectId: string, apiToken: string, host: string) =>
-  initServerPlasmicLoader({
+function createPreviewLoader(projectId: string, apiToken: string, host: string) {
+  return initServerPlasmicLoader({
     projects: [{ id: projectId, token: apiToken }],
     host: host || DEFAULT_PLASMIC_HOST,
     preview: true,
@@ -52,8 +56,31 @@ const getPreviewLoader = cache((projectId: string, apiToken: string, host: strin
     platform: "nextjs",
     platformOptions: { nextjs: { appDir: true } },
     onClientSideFetch: "warn",
-  }),
-);
+  });
+}
+
+// Per request at runtime (React cache() is scoped to the current render).
+const getRequestPreviewLoader = cache(createPreviewLoader);
+
+// During `next build`, prerendering spins up a render per static page; a
+// loader per render would re-download the bundle for each of them (dozens
+// of multi-second fetches, which trips the 60s per-page prerender limit).
+// Build output is a snapshot by nature, so share one loader per build
+// worker there — the same thing the Next.js wrapper does.
+const buildPreviewLoaders = new Map<string, PlasmicComponentLoader>();
+
+function getPreviewLoader(projectId: string, apiToken: string, host: string) {
+  if (process.env.NEXT_PHASE !== PHASE_PRODUCTION_BUILD) {
+    return getRequestPreviewLoader(projectId, apiToken, host);
+  }
+  const key = `${projectId}:${host}`;
+  let loader = buildPreviewLoaders.get(key);
+  if (!loader) {
+    loader = createPreviewLoader(projectId, apiToken, host);
+    buildPreviewLoaders.set(key, loader);
+  }
+  return loader;
+}
 
 async function getPreviewComponentData(...[projectId, apiToken, host, component]: CmsArgs) {
   try {
