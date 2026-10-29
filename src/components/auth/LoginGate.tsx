@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { LoginForm } from "./LoginForm";
 import { SignupForm } from "./SignupForm";
@@ -15,18 +14,23 @@ type Props = {
   from: string;
 };
 
+// Hard navigation (not router.replace) once signed in: login()/register()
+// already fire router.refresh(), which races a client-side replace, and the
+// router cache can still hold the earlier proxy redirect to /login-required
+// for `from`. A full load sends the fresh ep_am_token cookie to the proxy.
+const goTo = (path: string) => window.location.replace(path);
+
 // Full-page counterpart to AuthModal, used on the /login-required gate
 // (see proxy.ts) — same login/signup/forgot-password views, but redirecting
 // to `from` on success instead of closing a modal over the current page.
 export function LoginGate({ from }: Props) {
   const [view, setView] = useState<AuthView>("login");
-  const router = useRouter();
   const { login, register, forgotPassword, isLoading, error, clearError } =
     useAuth();
 
   const handleLogin = async (data: { email: string; password: string }) => {
     await login(data.email, data.password);
-    router.replace(from);
+    goTo(from);
   };
 
   const handleSignup = async (data: {
@@ -36,7 +40,7 @@ export function LoginGate({ from }: Props) {
     confirmPassword: string;
   }) => {
     await register(data.name, data.email, data.password);
-    router.replace(from);
+    goTo(from);
   };
 
   const handleForgotPassword = async (data: { email: string }) => {
