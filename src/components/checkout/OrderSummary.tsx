@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { ShoppingBag } from "lucide-react";
 import type { CartLineItem } from "@/context/CartContext";
+import { formatLike } from "@/lib/format-like";
 
 type Props = {
   items: CartLineItem[];
@@ -21,10 +22,7 @@ export function OrderSummary({ items, cartTotal, cartTotalAmount, cartSubtotal, 
   const shippingFormatted = cartShippingAmount === 0 ? t("free") : cartShipping;
 
   const orderTotal = cartShippingAmount > 0 && cartTotalAmount > 0
-    ? new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency: items[0]?.currency ?? "USD",
-      }).format((cartTotalAmount + cartShippingAmount) / 100)
+    ? formatLike(cartTotal, cartTotalAmount + cartShippingAmount)
     : cartTotal;
 
   return (

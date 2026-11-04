@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { ShoppingBag } from "lucide-react";
 import { CheckoutForm } from "./CheckoutForm";
 import { OrderSummary } from "./OrderSummary";
+import { formatLike } from "@/lib/format-like";
 import { useCart } from "@/context/CartContext";
 import { useCheckout } from "@/hooks/use-checkout";
 import { useAccountAddresses } from "@/hooks/use-account-addresses";
@@ -31,10 +32,8 @@ export function CheckoutPageContent({ lang }: Props) {
         acc[key] = {
           ...existing,
           quantity: totalQty,
-          lineTotalFormatted: new Intl.NumberFormat(undefined, {
-            style: "currency",
-            currency: existing.currency,
-          }).format(totalCents / 100),
+          lineTotalFormatted:
+            formatLike(existing.unitPriceFormatted, totalCents),
         };
       } else {
         acc[key] = { ...item };

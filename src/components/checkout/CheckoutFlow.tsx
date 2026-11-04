@@ -24,6 +24,7 @@ import { CheckoutUserInfo } from "./CheckoutUserInfo";
 import { ShippingGroupManager } from "./ShippingGroupManager";
 import { B2CDeliverySection } from "./B2CDeliverySection";
 import { OrderSummary } from "./OrderSummary";
+import { formatLike } from "@/lib/format-like";
 import { StripePaymentForm } from "./StripePaymentForm";
 import { POPaymentForm } from "./POPaymentForm";
 import { BillingAddressSection } from "./BillingAddressSection";
@@ -209,10 +210,8 @@ export function CheckoutFlow({
         acc[key] = {
           ...existing,
           quantity: totalQty,
-          lineTotalFormatted: new Intl.NumberFormat(undefined, {
-            style: "currency",
-            currency: existing.currency,
-          }).format(totalCents / 100),
+          lineTotalFormatted:
+            formatLike(existing.unitPriceFormatted, totalCents),
         };
       } else {
         acc[key] = { ...item };
@@ -433,13 +432,8 @@ export function CheckoutFlow({
   // B2C charges shipping via a hidden custom item, so the cart total
   // already includes it — split it back out for the summary rows.
   const b2cShippingCents = isB2C ? (b2cShipping?.cents ?? 0) : 0;
-  const summaryCurrency =
-    b2cShipping?.currency ?? items[0]?.currency ?? "USD";
   const fmtSummary = (cents: number) =>
-    new Intl.NumberFormat(undefined, {
-      style: "currency",
-      currency: summaryCurrency,
-    }).format(cents / 100);
+    formatLike(cartTotal || cartSubtotal, cents);
 
   const summaryTotalAmount = isB2C
     ? Math.max(0, cartTotalAmount - b2cShippingCents)
