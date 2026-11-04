@@ -92,7 +92,7 @@ export function B2CDeliverySection({
 }: Props) {
   const t = useTranslations("checkout");
   const tAddr = useTranslations("address");
-  const { cartId, refreshCart } = useCart();
+  const { cartId, refreshCart, cartTotal } = useCart();
   const { isAuthenticated } = useAuth();
   const {
     addresses,
@@ -611,7 +611,7 @@ export function B2CDeliverySection({
                 <span className="text-sm font-bold text-gray-900 flex-none">
                   {m.shipping_cost === 0
                     ? t("b2cFreeShipping")
-                    : toCurrency(m.shipping_cost, m.currency)}
+                    : toCurrency(m.shipping_cost, m.currency, cartTotal)}
                 </span>
                 {isSelected && ready && (
                   <Check size={16} className="text-brand-primary flex-none" />

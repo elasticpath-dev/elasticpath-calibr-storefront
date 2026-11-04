@@ -11,6 +11,7 @@ import { Modal } from "@/components/ui/Modal/Modal";
 import { Card, CardBody } from "@/components/ui/Card";
 import { Combobox } from "@/components/ui/Combobox";
 import { Package } from "lucide-react";
+import { useCart } from "@/context/CartContext";
 import { toCurrency } from "./helpers";
 import { DeliveryAddress } from "./DeliveryAddress";
 import { COUNTRIES } from "@/lib/countries";
@@ -50,6 +51,7 @@ export function CreateShipmentForm({
 }: Props) {
   const t = useTranslations("shipping");
   const tAddr = useTranslations("address");
+  const { cartTotal } = useCart();
 
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [addressForm, setAddressForm] = useState<NewAddressFields>({
@@ -189,7 +191,7 @@ export function CreateShipmentForm({
                   >
                     {m.shipping_cost === 0
                       ? t("included")
-                      : toCurrency(m.shipping_cost, m.currency)}
+                      : toCurrency(m.shipping_cost, m.currency, cartTotal)}
                   </span>
                 </button>
               );

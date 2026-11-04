@@ -6,6 +6,7 @@ import { Trash2, Package, Pencil, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardHeader, CardBody, CardFooter } from "@/components/ui/Card";
 import { QuantitySelector } from "@/components/product/QuantitySelector";
+import { useCart } from "@/context/CartContext";
 import { toCurrency, formatEstimateDate } from "./helpers";
 import type { CartItem, Group, ShippingMethod, SplitState } from "./types";
 import { DeliveryAddress } from "./DeliveryAddress";
@@ -83,6 +84,7 @@ export function ShipmentCard({
   onAssignItem, onRemoveFromShipment, onSplitConfirm, onDeleteRequest,
 }: Props) {
   const t = useTranslations("shipping");
+  const { cartTotal } = useCart();
   const units = activeItems.reduce((s, i) => s + (i.quantity ?? 0), 0);
 
   const methodKey = groupMethods[activeGroup.id] ?? "";
@@ -458,7 +460,7 @@ export function ShipmentCard({
             <p className="text-sm font-bold text-gray-900">{method.shipping_method}</p>
           </div>
           <span className={`text-base font-bold flex-shrink-0 ${method.shipping_cost === 0 ? "text-green-600" : "text-gray-900"}`}>
-            {method.shipping_cost === 0 ? t("free") : toCurrency(method.shipping_cost, method.currency)}
+            {method.shipping_cost === 0 ? t("free") : toCurrency(method.shipping_cost, method.currency, cartTotal)}
           </span>
         </CardFooter>
       )}

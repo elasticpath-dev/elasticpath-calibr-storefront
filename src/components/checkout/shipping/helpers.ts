@@ -1,8 +1,15 @@
 import { updateACartItem, deleteACartItem, type ShippingGroupResponse } from "@epcc-sdk/sdks-shopper";
+import { formatLike } from "@/lib/format-like";
 import { createEpClient } from "@/lib/api/ep-client";
 import type { CartItem, Group } from "./types";
 
-export function toCurrency(cents: number, currency = "USD") {
+/**
+ * Formats a shipping amount. Pass `reference` (an API-formatted cart price) so
+ * custom currencies like "24,600 Points" keep the store's format; Intl is only
+ * the fallback and would render unknown codes as "PGB 492.00".
+ */
+export function toCurrency(cents: number, currency = "USD", reference?: string) {
+  if (reference) return formatLike(reference, cents);
   return new Intl.NumberFormat(undefined, { style: "currency", currency }).format(cents / 100);
 }
 
