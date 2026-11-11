@@ -10,6 +10,7 @@ export async function getProductBreadcrumb(
   lang: string,
   breadCrumbNodes: string[],
   breadCrumbs: Record<string, string[]>,
+  hideNavHierarchy = false,
 ): Promise<BreadcrumbItem[]> {
   if (!breadCrumbNodes.length) return [];
 
@@ -42,7 +43,7 @@ export async function getProductBreadcrumb(
 
   // Build URLs from node slugs directly — no hierarchy fetch needed.
   // The category page resolves by the leaf (last) slug, so cumulative slug paths work.
-  return orderedNodes.map((node, idx) => {
+  const items = orderedNodes.map((node, idx) => {
     const slugPath = orderedNodes
       .slice(0, idx + 1)
       .map((n) => n.attributes?.slug ?? n.id)
@@ -52,4 +53,8 @@ export async function getProductBreadcrumb(
       href: `/${lang}/category/${slugPath}`,
     };
   });
+
+  // hideNavHierarchy: the first crumb is the hierarchy root (lvl0) — drop it,
+  // unless it's the only crumb. Remaining hrefs keep the full slug path.
+  return hideNavHierarchy && items.length > 1 ? items.slice(1) : items;
 }

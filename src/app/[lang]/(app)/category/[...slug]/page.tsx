@@ -53,6 +53,13 @@ export default async function CategoryPage({ params }: Props) {
     isCurrent: i === slug.length - 1,
   }));
 
+  // hideNavHierarchy: the first segment is the hierarchy root (lvl0) — drop it
+  // from the trail, unless it's the only crumb (viewing the root itself).
+  const visibleCrumbs = () =>
+    features.hideNavHierarchy && breadcrumbs.length > 1
+      ? breadcrumbs.slice(1)
+      : breadcrumbs;
+
   if (features.searchEnabled) {
     const category = await resolveCategory(slug).catch(() => null);
     const categoryName = category?.name ?? slugToLabel(slug[slug.length - 1]);
@@ -63,7 +70,7 @@ export default async function CategoryPage({ params }: Props) {
       <div className="min-h-screen bg-white">
         <Header lang={lang} />
         <main className="container-shell px-4 sm:px-6 lg:px-8 py-10">
-          <Breadcrumb lang={lang} breadcrumbs={breadcrumbs} />
+          <Breadcrumb lang={lang} breadcrumbs={visibleCrumbs()} />
           <CategorySearchClient
             lang={lang}
             categoryName={categoryName}
@@ -90,7 +97,7 @@ export default async function CategoryPage({ params }: Props) {
     <div className="min-h-screen bg-white">
       <Header lang={lang} />
       <main className="container-shell px-4 sm:px-6 lg:px-8 py-10">
-        <Breadcrumb lang={lang} breadcrumbs={breadcrumbs} />
+        <Breadcrumb lang={lang} breadcrumbs={visibleCrumbs()} />
 
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">{categoryName}</h1>

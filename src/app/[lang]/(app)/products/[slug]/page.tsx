@@ -46,6 +46,8 @@ export default async function ProductDetailPage({ params }: Props) {
   const product = await getProductBySlug(slug).catch(() => null);
   if (!product) notFound();
 
+  const tenantConfig = await getTenantConfig();
+
   const [
     t,
     messages,
@@ -66,9 +68,10 @@ export default async function ProductDetailPage({ params }: Props) {
           lang,
           product.breadCrumbNodes,
           product.breadCrumbs,
+          tenantConfig.features.hideNavHierarchy,
         ).catch(() => [])
       : Promise.resolve([]),
-    getTenantConfig(),
+    tenantConfig,
   ]);
 
   const alternativePriceRows = resolveAlternativePriceRows(
