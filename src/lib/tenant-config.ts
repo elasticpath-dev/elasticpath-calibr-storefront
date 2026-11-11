@@ -121,6 +121,10 @@ export type TenantConfig = {
      * navigation.ts, which derives this from the same /catalog/nodes call
      * (no extra API request). */
     hideNavHierarchy: boolean;
+    /** Build the top navigation from a catalog search (query "*", category
+     * facets) instead of the hierarchies/nodes APIs. Only takes effect when
+     * searchEnabled is also true. From NEXT_PUBLIC_NAV_FROM_SEARCH. */
+    navFromSearch: boolean;
     /** Show pricebook "alternative_prices" (from product meta) on the PDP. */
     showAlternativePrices: boolean;
     /** Enable the Bulk / Quick Order page and its header entry point. */
@@ -567,6 +571,7 @@ export function buildTenantConfigFromEnv(): TenantConfig {
         .map((s) => s.trim().toLowerCase())
         .filter(Boolean),
       hideNavHierarchy: e.NEXT_PUBLIC_HIDE_NAV_HIERARCHY === "true",
+      navFromSearch: e.NEXT_PUBLIC_NAV_FROM_SEARCH === "true",
       marketingMode: e.NEXT_PUBLIC_MARKETING_MODE === "true",
       showAlternativePrices:
         e.NEXT_PUBLIC_SHOW_ALTERNATIVE_PRICES === "true",
@@ -762,6 +767,8 @@ function normalizeTenantConfig(raw: Record<string, unknown>): TenantConfig {
         defaults.features.extensionsExcluded,
       hideNavHierarchy:
         r.features?.hideNavHierarchy ?? defaults.features.hideNavHierarchy,
+      navFromSearch:
+        r.features?.navFromSearch ?? defaults.features.navFromSearch,
       marketingMode: r.features?.marketingMode ?? defaults.features.marketingMode,
       showAlternativePrices:
         r.features?.showAlternativePrices ??

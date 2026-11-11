@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import {
   getByContextAllHierarchies,
   getByContextAllNodes,
+  postMultiSearch,
   type Node,
 } from "@epcc-sdk/sdks-shopper";
 
@@ -144,6 +145,139 @@ async function fetchSiteNavigation(
   );
 }
 
+const SEARCH_CATEGORY_SEPARATOR = " > ";
+
+// Same lvl0..lvl8 facets as CATEGORY_HIERARCHICAL_ATTRIBUTES, redefined here
+// because instantsearch-routing.ts is a "use client" module — importing its
+// values into server code yields client references, not the real array.
+const SEARCH_CATEGORY_FACETS = Array.from(
+  { length: 9 },
+  (_, i) => `meta.search.categories.lvl${i}`,
+);
+
+// Fallback slug (spaces -> hyphens, case kept) for categories with no slug in
+// any hit's meta.search.nodes — the same rule CategoryFilter uses.
+function slugifyName(name: string): string {
+  return name.trim().replace(/\s+/g, "-");
+}
+
+// Builds the nav from ONE catalog search (q="*", per_page=0) instead of the
+// hierarchies/nodes APIs. The category facets (meta.search.categories.lvlN)
+// hold every category as a full path from the hierarchy root
+// ("Root > Child > Grandchild"), which is enough to reconstruct the tree with
+// the same depth/hideNavHierarchy bucketing as fetchSiteNavigation.
+async function fetchSiteNavigationFromSearch(
+  client: Awaited<ReturnType<typeof createElasticPathClient>>,
+  hideNavHierarchy: boolean,
+): Promise<NavItem[]> {
+  const PAGE_SIZE = 250;
+  const MAX_PAGES = 20; // safety cap: 5,000 products' worth of slug lookups
+  const search = async (page: number, withFacets: boolean) => {
+    const res = await postMultiSearch({
+      client,
+      body: {
+        searches: [
+          {
+            type: "search",
+            q: "*",
+            query_by: "name,description,sku",
+            ...(withFacets
+              ? {
+                  facet_by: SEARCH_CATEGORY_FACETS.join(","),
+                  max_facet_values: 1000,
+                }
+              : {}),
+            // Only the category nodes are needed from each hit (name -> slug).
+            include_fields: "meta.search.nodes",
+            page,
+            per_page: PAGE_SIZE,
+          } as any,
+        ],
+      },
+    });
+    if (res.error || !res.data) {
+      const detail =
+        (res.error as any)?.errors?.[0]?.detail ?? JSON.stringify(res.error);
+      throw new Error(`Navigation search failed: ${detail}`);
+    }
+    return res.data.results?.[0];
+  };
+
+  const first = await search(1, true);
+
+  const paths = new Map<string, number>();
+  for (const facet of first?.facet_counts ?? []) {
+    if (!facet.field_name?.startsWith("meta.search.categories.lvl")) continue;
+    for (const v of facet.counts ?? []) {
+      if (v.value && !paths.has(v.value)) paths.set(v.value, v.count ?? 0);
+    }
+  }
+
+  // Facets carry category names only; each hit's meta.search.nodes carries
+  // the real {name, slug}, so collect them across every page of "*" results.
+  const nameToSlug = new Map<string, string>();
+  const collectSlugs = (result: typeof first) => {
+    for (const hit of result?.hits ?? []) {
+      const nodes = (hit.document as any)?.meta?.search?.nodes;
+      if (!Array.isArray(nodes)) continue;
+      for (const n of nodes) {
+        if (n?.name && n?.slug && !nameToSlug.has(n.name)) {
+          nameToSlug.set(n.name, n.slug);
+        }
+      }
+    }
+  };
+  collectSlugs(first);
+  const totalPages = Math.min(
+    MAX_PAGES,
+    Math.ceil(Number(first?.found ?? 0) / PAGE_SIZE),
+  );
+  if (totalPages > 1) {
+    const rest = await Promise.all(
+      Array.from({ length: totalPages - 1 }, (_, i) => search(i + 2, false)),
+    );
+    rest.forEach(collectSlugs);
+  }
+  const slugFor = (name: string) => nameToSlug.get(name) ?? slugifyName(name);
+
+  const offset = hideNavHierarchy ? 1 : 0;
+  const topById = new Map<string, CrumbWithPath>();
+  const childrenByParent = new Map<string, CrumbWithPath[]>();
+
+  // Shallow paths first so display order is stable (by count, then name).
+  const sorted = [...paths.entries()].sort(
+    (a, b) =>
+      a[0].split(SEARCH_CATEGORY_SEPARATOR).length -
+        b[0].split(SEARCH_CATEGORY_SEPARATOR).length ||
+      b[1] - a[1] ||
+      a[0].localeCompare(b[0]),
+  );
+
+  for (const [path] of sorted) {
+    const names = path.split(SEARCH_CATEGORY_SEPARATOR);
+    const depth = names.length;
+    if (depth <= offset) continue;
+    const slugs = names.map(slugFor);
+    const self: CrumbWithPath = {
+      id: path,
+      name: names[depth - 1],
+      slug: slugs[depth - 1],
+      path: slugs.join("/"),
+    };
+    if (depth === 1 + offset) {
+      topById.set(self.id, self);
+    } else {
+      const parentId = names.slice(0, depth - 1).join(SEARCH_CATEGORY_SEPARATOR);
+      if (!childrenByParent.has(parentId)) childrenByParent.set(parentId, []);
+      childrenByParent.get(parentId)!.push(self);
+    }
+  }
+
+  return Array.from(topById.values())
+    .slice(0, 5)
+    .map((top) => assembleNavItem(top, childrenByParent));
+}
+
 // Shared by the main nav build and subtree derivation: turns one root crumb
 // plus the adjacency map into a NavItem carrying both dropdown shapes.
 // - megaMenu keeps the layout-driven caps (5 columns × 8 links + view-all),
@@ -240,6 +374,7 @@ function getCachedNavItems(
   environmentId: string | undefined,
   storeId: string | undefined,
   hideNavHierarchy: boolean,
+  navFromSearch: boolean,
   amToken: string | undefined,
   navigationCache: boolean,
   forwardHeaders: Record<string, string> | undefined,
@@ -259,11 +394,15 @@ function getCachedNavItems(
       amToken,
       forwardHeaders,
     );
-    return fetchSiteNavigation(client, hideNavHierarchy);
+    return navFromSearch
+      ? fetchSiteNavigationFromSearch(client, hideNavHierarchy)
+      : fetchSiteNavigation(client, hideNavHierarchy);
   };
 
   // Caching disabled (features.navigationCache) — rebuild on every request.
-  if (!navigationCache) return build();
+  // TEMPORARY: the search-built nav is also never cached for now (remove the
+  // navFromSearch check to cache it again).
+  if (!navigationCache || navFromSearch) return build();
 
   return unstable_cache(
     build,
@@ -272,6 +411,7 @@ function getCachedNavItems(
       // so the version must change whenever the payload shape/content changes.
       "site-navigation-v4",
       catalogId ?? "",
+      navFromSearch ? "search-v2" : "nodes",
     ],
     {
       revalidate: false,
@@ -302,6 +442,8 @@ export async function buildSiteNavigation(): Promise<NavItem[]> {
     requestHeaders.environmentId,
     requestHeaders.storeId,
     features.hideNavHierarchy,
+    // Search-built nav only applies when search itself is enabled.
+    features.navFromSearch && features.searchEnabled,
     amToken,
     features.navigationCache,
     forwardHeaders,
