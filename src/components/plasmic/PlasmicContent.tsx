@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useState, type ComponentProps } from "react";
 import NextLink from "next/link";
 import { useLocale } from "next-intl";
 import {
@@ -19,6 +19,21 @@ type PlasmicContentProps = {
   componentProps?: Record<string, unknown>;
   prefetchedData?: ComponentRenderData | null;
 };
+
+// next/link throws when href is undefined, and a Studio link element with no
+// target set passes exactly that — one blank link would take down the whole
+// page. Fall back to a plain <a> (no navigation) in that case.
+const PlasmicSafeLink = forwardRef<HTMLAnchorElement, ComponentProps<typeof NextLink>>(
+  function PlasmicSafeLink(props, ref) {
+    if (props.href === undefined || props.href === null) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { href, prefetch, replace, scroll, shallow, passHref, legacyBehavior, locale, ...rest } =
+        props as Record<string, unknown>;
+      return <a ref={ref} {...(rest as ComponentProps<"a">)} />;
+    }
+    return <NextLink ref={ref} {...props} />;
+  },
+);
 
 export default function PlasmicContent({
   component,
@@ -76,7 +91,7 @@ export default function PlasmicContent({
       // Studio-authored link elements render through next/link — without
       // this they emit plain <a> tags and every click does a full page load
       // instead of client-side navigation.
-      Link={NextLink}
+      Link={PlasmicSafeLink}
       // This app loads its own fonts via next/font (see app/layout.tsx) —
       // without this, Plasmic additionally injects a render-blocking
       // <link> to fonts.googleapis.com for the same typeface.
