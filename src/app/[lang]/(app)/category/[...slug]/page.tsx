@@ -108,7 +108,7 @@ export default async function CategoryPage({ params }: Props) {
           )}
         </div>
 
-        <ProductGrid products={products} lang={lang} />
+        <ProductGrid products={products} lang={lang} fourColumns />
       </main>
     </div>
   );

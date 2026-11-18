@@ -32,9 +32,11 @@ type MatrixApiParent = {
 type ProductGridProps = {
   products: ProductCardData[];
   lang: string;
+  /** Force 4 cards per row on large screens (category pages without search). */
+  fourColumns?: boolean;
 };
 
-export function ProductGrid({ products, lang }: ProductGridProps) {
+export function ProductGrid({ products, lang, fourColumns }: ProductGridProps) {
   const { outOfStockById } = useProductsInventory(
     useMemo(() => products.map((p) => p.id), [products]),
   );
@@ -283,9 +285,11 @@ export function ProductGrid({ products, lang }: ProductGridProps) {
           className={[
             "grid grid-cols-1 sm:grid-cols-2 gap-6",
             // Full-width shells have room for more cards per row.
-            fullWidth
-              ? "lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5"
-              : "lg:grid-cols-3 xl:grid-cols-3",
+            fourColumns
+              ? "lg:grid-cols-4 xl:grid-cols-4"
+              : fullWidth
+                ? "lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-5"
+                : "lg:grid-cols-3 xl:grid-cols-3",
           ].join(" ")}
         >
           {products.map((product, i) => (
