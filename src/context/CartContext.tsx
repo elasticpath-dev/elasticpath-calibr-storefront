@@ -561,7 +561,19 @@ function toCartSummary(
   };
 }
 
-export function CartProvider({ children }: { children: ReactNode }) {
+export function CartProvider({
+  children,
+  fixedCartId,
+}: {
+  children: ReactNode;
+  /**
+   * Pin this provider to a specific cart (e.g. /checkout/<cartId>). The
+   * shopper's own active cart (localStorage / account cart) is neither read
+   * nor written, and the login-merge flow is skipped, so leaving the page
+   * returns them to their normal cart.
+   */
+  fixedCartId?: string;
+}) {
   const { isAuthenticated, hasSession } = useAuth();
   const { marketingMode, multiLocation } = useTenantConfig();
   // Marketing mode: don't create/load a cart (EP calls) until signed in.
@@ -653,7 +665,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const client = createEpClient();
     setEpClient(client);
 
-    initializeCart()
+    (fixedCartId ? Promise.resolve(fixedCartId) : initializeCart())
       .then(async (id) => {
         setCartId(id);
         const itemsRes = await getCartItems({
@@ -683,12 +695,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
         console.error(err);
         setIsInitializing(false);
       });
-  }, [holdApis]);
+  }, [holdApis, fixedCartId]);
 
   // On login: load account carts and merge the guest cart if needed.
   // On logout: clear cart list and create a fresh guest cart.
   useEffect(() => {
-    if (!epClient) return;
+    // Pinned cart: never merge/replace it or touch the stored active cart.
+    if (!epClient || fixedCartId) return;
 
     const wasAuth = prevIsAuthRef.current;
     prevIsAuthRef.current = isAuthenticated;
@@ -797,7 +810,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setAppliedPromoCodes(extractAppliedPromoCodes(mergedItemsRes.data));
       }
     })();
-  }, [isAuthenticated, epClient, cartId]);
+  }, [isAuthenticated, epClient, cartId, fixedCartId]);
 
   const loadItems = useCallback(async () => {
     if (!epClient || !cartId) return;
